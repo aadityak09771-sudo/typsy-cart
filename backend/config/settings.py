@@ -45,6 +45,10 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+for default_origin in ["https://*.onrender.com", "https://typsy-cart.onrender.com"]:
+    if default_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(default_origin)
+
 if render_host:
     https_host = f"https://{render_host}"
     if https_host not in CSRF_TRUSTED_ORIGINS:
@@ -159,7 +163,7 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 

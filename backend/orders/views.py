@@ -135,6 +135,13 @@ def validate_mobile_order_items(raw_items):
 @require_GET
 def products_json(request):
     try:
+        if not Product.objects.exists():
+            from django.core.management import call_command
+            try:
+                call_command("loaddata", "initial_products.json", verbosity=0)
+            except Exception as se:
+                logger.warning("Could not auto-seed initial products: %s", se)
+
         products = Product.objects.filter(
             is_active=True
         ).order_by("id")

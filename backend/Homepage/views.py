@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 
 def home(request):
     try:
+        if not Product.objects.exists():
+            from django.core.management import call_command
+            try:
+                call_command("loaddata", "initial_products.json", verbosity=0)
+            except Exception as se:
+                logger.warning("Could not auto-seed initial products: %s", se)
+
         featured_products = list(
             Product.objects.filter(
                 is_active=True
@@ -38,6 +45,13 @@ def categories(request):
 
 def shop(request):
     try:
+        if not Product.objects.exists():
+            from django.core.management import call_command
+            try:
+                call_command("loaddata", "initial_products.json", verbosity=0)
+            except Exception as se:
+                logger.warning("Could not auto-seed initial products: %s", se)
+
         products = Product.objects.filter(
             is_active=True
         ).order_by("-created_at")
