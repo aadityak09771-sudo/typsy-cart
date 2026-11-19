@@ -134,12 +134,12 @@ def validate_mobile_order_items(raw_items):
 # PUBLIC API: Active products for the mobile app.
 @require_GET
 def products_json(request):
-    products = Product.objects.filter(
-        is_active=True
-    ).order_by("id")
+    try:
+        products = Product.objects.filter(
+            is_active=True
+        ).order_by("id")
 
-    return JsonResponse({
-        "products": [
+        items = [
             {
                 "id": product.id,
                 "name": product.name,
@@ -153,6 +153,12 @@ def products_json(request):
             }
             for product in products
         ]
+    except Exception as e:
+        logger.exception("Error in products_json: %s", e)
+        items = []
+
+    return JsonResponse({
+        "products": items
     })
 
 

@@ -1,0 +1,1682 @@
+[
+{
+  "model": "products.product",
+  "pk": 1,
+  "fields": {
+    "name": "Daily Essential Pack",
+    "description": "",
+    "category": "Daily Essentials",
+    "subcategory": "",
+    "brand": "",
+    "price": "249.00",
+    "stock": 36,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-02T00:03:30.604Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 3,
+  "fields": {
+    "name": "Personal Safety Kit",
+    "description": "Loud emergency alarm to attract attention and deter threats,Easy SOS panic activation Compact and lightweight portable design Durable build for daily use USB rechargeable battery.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "",
+    "price": "779.00",
+    "stock": 101,
+    "image_url": "https://www.indiyase.in/cdn/shop/files/Rechargeable-Teddy-Personal-Safety-Alarm-Keychain-Loud-Emergency-SOS-Alert-indiya-Se-30708655947965.jpg?v=1778581869&width=533",
+    "is_active": true,
+    "created_at": "2026-11-02T11:51:44.382Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 4,
+  "fields": {
+    "name": "Hygiene Wipes",
+    "description": "",
+    "category": "Personal Care",
+    "subcategory": "",
+    "brand": "",
+    "price": "79.00",
+    "stock": 47,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-02T11:53:36.029Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 5,
+  "fields": {
+    "name": "sanitary pads",
+    "description": "",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "99.00",
+    "stock": 94,
+    "image_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuPWPP-xfAtnEUe2XCEzneG8P6QUzxPFP3T1glVTK39Q&s=10",
+    "is_active": true,
+    "created_at": "2026-11-02T12:15:13.093Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 6,
+  "fields": {
+    "name": "Hand Sanitizer",
+    "description": "",
+    "category": "Personal Care",
+    "subcategory": "",
+    "brand": "",
+    "price": "49.00",
+    "stock": 42,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-02T12:16:05.492Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 7,
+  "fields": {
+    "name": "Period Care Pack",
+    "description": "Menstrual hygiene essentials bundle",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "",
+    "price": "199.00",
+    "stock": 95,
+    "image_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgbH05xwMd9CRG9nhPIO9Wg06zAZMQf6GSG2Awv--Xpw&s=10",
+    "is_active": true,
+    "created_at": "2026-11-02T12:17:04.569Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 9,
+  "fields": {
+    "name": "Potato",
+    "description": "Fresh potatoes - 1 kg pack",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "30.00",
+    "stock": 47,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T09:25:05.980Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 10,
+  "fields": {
+    "name": "Onion",
+    "description": "Fesh onion",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "60.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T12:41:47.500Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 11,
+  "fields": {
+    "name": "Garlic",
+    "description": "Fresh Garlic",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "35.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T12:42:45.408Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 12,
+  "fields": {
+    "name": "Ginger",
+    "description": "Fresh Ginger",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "25.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:40:43.996Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 13,
+  "fields": {
+    "name": "Carot",
+    "description": "Fresh carot",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "45.00",
+    "stock": 45,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:42:59.801Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 14,
+  "fields": {
+    "name": "Tomatoes",
+    "description": "Fresh Tomatoes",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "25.00",
+    "stock": 37,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:43:56.448Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 15,
+  "fields": {
+    "name": "Banana",
+    "description": "Fresh Banana",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "69.00",
+    "stock": 42,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:45:05.240Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 16,
+  "fields": {
+    "name": "Shimla Apple",
+    "description": "Fresh Shimla Apple",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "125.00",
+    "stock": 49,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:46:58.537Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 17,
+  "fields": {
+    "name": "Nagpur orange",
+    "description": "Fresh nagpur orange",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "49.00",
+    "stock": 49,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:47:40.427Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 18,
+  "fields": {
+    "name": "Pomegranate",
+    "description": "Fresh Pomegranate",
+    "category": "Groceries",
+    "subcategory": "Fruits & Vegetables",
+    "brand": "",
+    "price": "119.00",
+    "stock": 46,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T16:49:05.692Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 19,
+  "fields": {
+    "name": "Aashirvaad Atta",
+    "description": "5kg",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "Aashirvaad",
+    "price": "259.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T18:57:29.023Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 20,
+  "fields": {
+    "name": "Fortune Basmati Rice",
+    "description": "1kg",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "139.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T18:58:48.302Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 21,
+  "fields": {
+    "name": "Regular Rice",
+    "description": "",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "79.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T18:59:32.894Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 22,
+  "fields": {
+    "name": "Toor Dal",
+    "description": "1kg",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "169.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:00:07.902Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 23,
+  "fields": {
+    "name": "Moong Dal",
+    "description": "1kg",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "159.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:00:38.215Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 24,
+  "fields": {
+    "name": "Chana Dal",
+    "description": "1kg",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "109.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:01:09.862Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 25,
+  "fields": {
+    "name": "Besan",
+    "description": "500g",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "65.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:01:44.694Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 26,
+  "fields": {
+    "name": "Suji",
+    "description": "500g",
+    "category": "Groceries",
+    "subcategory": "Atta, Rice & Pulses",
+    "brand": "",
+    "price": "39.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:02:13.156Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 27,
+  "fields": {
+    "name": "Amul Taaza Milk",
+    "description": "1L",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "Amul",
+    "price": "68.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:04:26.653Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 28,
+  "fields": {
+    "name": "Amul Masti Dahi",
+    "description": "400g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "Amul",
+    "price": "35.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:05:32.595Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 29,
+  "fields": {
+    "name": "Amul Paneer",
+    "description": "200g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "Amul",
+    "price": "90.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:06:09.540Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 30,
+  "fields": {
+    "name": "Amul Butter",
+    "description": "100g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "Amul",
+    "price": "62.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:07:00.386Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 31,
+  "fields": {
+    "name": "Amul Cheese",
+    "description": "200g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "Amul",
+    "price": "130.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:07:46.823Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 32,
+  "fields": {
+    "name": "White Bread",
+    "description": "400g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "",
+    "price": "40.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:08:35.446Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 33,
+  "fields": {
+    "name": "Brown Bread",
+    "description": "400g",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "",
+    "price": "50.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:09:06.486Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 34,
+  "fields": {
+    "name": "Eggs",
+    "description": "Pack of 6",
+    "category": "Groceries",
+    "subcategory": "Dairy & Bakery",
+    "brand": "",
+    "price": "48.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:10:04.304Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 35,
+  "fields": {
+    "name": "Parle-G Biscuits",
+    "description": "250g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Parle-G",
+    "price": "25.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:11:57.260Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 36,
+  "fields": {
+    "name": "Britannia Good Day",
+    "description": "200g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Britannia",
+    "price": "40.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:12:44.448Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 37,
+  "fields": {
+    "name": "Lay's Chips",
+    "description": "50g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Lay's",
+    "price": "20.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:13:46.423Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 38,
+  "fields": {
+    "name": "Kurkure",
+    "description": "80g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Kurkure",
+    "price": "20.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:15:05.717Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 39,
+  "fields": {
+    "name": "Tata Tea Premium",
+    "description": "250g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Tata Tea",
+    "price": "145.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:16:17.525Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 40,
+  "fields": {
+    "name": "Nescafe Classic Coffee",
+    "description": "50g",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Nescafe",
+    "price": "180.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:17:18.570Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 41,
+  "fields": {
+    "name": "Coca-Cola",
+    "description": "750ml",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "Coca-Cola",
+    "price": "40.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:22:45.732Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 42,
+  "fields": {
+    "name": "Real Mixed Fruit Juice",
+    "description": "1L",
+    "category": "Groceries",
+    "subcategory": "Snacks & Beverages",
+    "brand": "",
+    "price": "120.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:23:32.697Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 43,
+  "fields": {
+    "name": "Vim Dishwash Bar",
+    "description": "300g",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "30.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:24:52.233Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 44,
+  "fields": {
+    "name": "Surf Excel Detergent",
+    "description": "1kg",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "125.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:25:28.059Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 45,
+  "fields": {
+    "name": "Harpic Toilet Cleaner",
+    "description": "500ml",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "105.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:26:03.766Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 46,
+  "fields": {
+    "name": "izol Floor Cleaner",
+    "description": "500ml",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "105.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:26:49.315Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 47,
+  "fields": {
+    "name": "Vim Dishwash Liquid",
+    "description": "500ml",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "110.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:27:33.629Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 48,
+  "fields": {
+    "name": "Good Knight Refill",
+    "description": "45ml",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "80.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:28:06.662Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 49,
+  "fields": {
+    "name": "Colin Glass Cleaner",
+    "description": "500ml",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "110.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:28:49.518Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 50,
+  "fields": {
+    "name": "Garbage Bags",
+    "description": "30 Pieces",
+    "category": "Groceries",
+    "subcategory": "Household Essentials",
+    "brand": "",
+    "price": "60.00",
+    "stock": 50,
+    "image_url": "",
+    "is_active": true,
+    "created_at": "2026-11-15T19:29:27.571Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 51,
+  "fields": {
+    "name": "Whisper Choice Ultra XL",
+    "description": "Sanitary Pads (pack of 10)",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "70.00",
+    "stock": 99,
+    "image_url": "https://mypillo.in/_next/image?url=https%3A%2F%2Fd2ffmswuyj0h1d.cloudfront.net%2Fstorage%2Fitemoriginalcopy%2Fmedicines%2Fa8355dc8-e8fe-11ef-bec8-0242c0a85005.jpg&w=640&q=75",
+    "is_active": true,
+    "created_at": "2026-11-16T23:42:31.826Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 52,
+  "fields": {
+    "name": "Whisper Choice XL – 18 Pads",
+    "description": "Whisper Choice XL sanitary pads, 18 pads pack. Designed for comfortable protection during periods.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "119.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/4/9/4987176319319__1_.jpg?tr=q-80%2Cf-webp%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:34:27.863Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 53,
+  "fields": {
+    "name": "Whisper Choice XL Super Saver – 36 Pads",
+    "description": "Value pack of Whisper Choice XL sanitary pads for regular menstrual care.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "230.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/4/9/4987176319173__1_.jpg?tr=q-80%2Cf-webp%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:41:48.292Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 54,
+  "fields": {
+    "name": "Whisper Ultra Skin Love Soft XL+ – 15 Pads",
+    "description": "Extra-large sanitary pads featuring a soft top layer, wings and absorbent core for comfortable protection.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "179.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media//catalog/product/w/h/whi0217_1-july23.jpg?tr=q-80%2Cf-auto%2Cw-250%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:43:46.667Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 55,
+  "fields": {
+    "name": "Whisper Bindazzz Nights XXL+ – 16 Pads",
+    "description": "Extra-long overnight sanitary pads with wider back coverage for heavy-flow nights.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "241.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/w/h/whi0240_1_1.jpg?tr=q-80%2Cf-webp%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:45:55.443Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 56,
+  "fields": {
+    "name": "Whisper Ultra No Gap No Leaks XL+ – 15 Pads",
+    "description": "XL+ sanitary pads with an absorbent core and extended coverage for heavy-flow days.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Whisper",
+    "price": "200.00",
+    "stock": 99,
+    "image_url": "https://images.apollo247.in/pub/media//catalog/product/w/h/whi0040_7.jpg?tr=q-75%2Cf-auto%2Cw-250%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:47:12.594Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 57,
+  "fields": {
+    "name": "Stayfree Secure Cottony Soft XL – 18 Pads",
+    "description": "XL sanitary pads with a cottony-soft cover, absorbent core and secure wings.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Stayfree",
+    "price": "119.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media//catalog/product/s/t/sta0561_1_1.jpg?tr=q-75%2Cf-auto%2Cw-250%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:49:15.390Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 58,
+  "fields": {
+    "name": "Stayfree Secure Nights XXL – 18 Pads",
+    "description": "Overnight sanitary pads with extended coverage and cottony comfort for night-time use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Stayfree",
+    "price": "134.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/s/t/sta0754_front_01_1_.jpg?tr=q-80%2Cf-webp%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:52:18.336Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 59,
+  "fields": {
+    "name": "Sofy Bodyfit Pro XL – 18 Pads",
+    "description": "Extra-long sanitary pads with deep absorption, centre-thick fit and a soft dry cover.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sofy",
+    "price": "104.00",
+    "stock": 100,
+    "image_url": "https://www.sofy.in/wp-content/uploads/2024/09/Sofy-Bodyfit-XL-Pro_18P-front.png",
+    "is_active": true,
+    "created_at": "2026-11-17T09:54:37.185Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 60,
+  "fields": {
+    "name": "Nua Complete Comfort XL+ – 12 Pads",
+    "description": "Ultra-thin sanitary pads with a soft breathable top layer and wider back coverage.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "200.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media//catalog/product/n/u/nua0036_1_.jpg?tr=q-75%2Cf-auto%2Cw-250%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T09:55:42.026Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 61,
+  "fields": {
+    "name": "Pee Safe Aloe Vera Panty Liners",
+    "description": "Pee Safe Aloe Vera Panty Liners are designed for everyday freshness and light discharge protection. Their soft and comfortable design helps you feel fresh throughout the day. Suitable for daily use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Pee Safe",
+    "price": "60.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/p/e/pee0051_1_2_.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:09:55.625Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 62,
+  "fields": {
+    "name": "Pee Safe Reusable Menstrual Cup",
+    "description": "Pee Safe Reusable Menstrual Cup is designed to collect menstrual flow during periods. Its reusable design offers an alternative to disposable period products. Follow the product instructions for correct insertion, cleaning and sterilization.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Pee Safe",
+    "price": "327.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/p/e/pee0048_1_1__1.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:14:21.512Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 63,
+  "fields": {
+    "name": "Stayfree o.b Pro Comfort Regular – 20 Count",
+    "description": "Stayfree o.b Pro Comfort Regular Tampons are designed for menstrual flow absorption with a compact and discreet design. They offer a convenient alternative to external period products. Always follow the usage and replacement instructions on the package.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Stayfree o.b",
+    "price": "284.10",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/o/b/obt0004-1-oct.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:16:18.359Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 64,
+  "fields": {
+    "name": "Sirona Pad-Free Menstrual Cup – Medium",
+    "description": "Sirona Menstrual Cup is a reusable period care product designed to collect menstrual flow. It provides a reusable alternative to disposable sanitary products. Clean and sterilize the cup according to the manufacturer's instructions before and after use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "261.80",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/s/i/sir0065_1-dec_1_.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:16:18.415Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 65,
+  "fields": {
+    "name": "Stayfree o.b Pro Comfort Super – 10 Count",
+    "description": "Stayfree o.b Pro Comfort Super Tampons are designed to absorb menstrual flow during periods. Their compact design offers a discreet period care option. Choose the absorbency level suitable for your flow and follow the package instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Stayfree o.b",
+    "price": "156.80",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/o/b/obt0005-1-.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:19:18.094Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 66,
+  "fields": {
+    "name": "Sirona Heavy Flow Tampons – 20 Count",
+    "description": "Sirona Heavy Flow Tampons are designed for menstrual flow absorption on heavier flow days. Their compact design makes them convenient to carry and use. Follow the package instructions and change at the recommended intervals.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "228.70",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/S/I/SIR0075_1-AUG23_1.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:24:31.710Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 67,
+  "fields": {
+    "name": "Sirona Hygienic Menstrual Cup Wash – 100 ml",
+    "description": "Sirona Menstrual Cup Wash is designed for cleaning reusable menstrual cups. It helps maintain cup hygiene as part of your period care routine. Use according to the manufacturer's instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "211.70",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/c/o/copy_of_01.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:25:39.788Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 68,
+  "fields": {
+    "name": "Apollo Pharmacy Women's Intimate Wipes – 30 Count",
+    "description": "Apollo Pharmacy Women's Intimate Wipes are designed for convenient external intimate hygiene and freshness. Their portable pack makes them easy to carry while travelling or during daily routines. For external use only.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Apollo Pharmacy",
+    "price": "180.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/a/p/aph0059-1_2_.jpg?tr=q-80%2Cf-webp%2Cw-300%2Cc-at_max",
+    "is_active": true,
+    "created_at": "2026-11-17T10:27:17.663Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 69,
+  "fields": {
+    "name": "Nua Cramp Comfort Heat Patch – Pack of 3",
+    "description": "Nua Cramp Comfort Heat Patches are designed to provide soothing warmth during period discomfort. These self-heating patches are convenient to carry and use as part of your monthly comfort routine. Follow the instructions on the packaging.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "299.00",
+    "stock": 100,
+    "image_url": "https://cdn.fcglcdn.com/brainbees/images/products/zoom/nua-cramp-comfort-heat-patches-for-period-pain-pack-of-3-patches-19654834zzsq.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:29:50.922Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 70,
+  "fields": {
+    "name": "Nua Cramp Relief Roll-On – 40 ml",
+    "description": "Nua Cramp Relief Roll-On is a convenient topical product designed for period discomfort. Its compact 40 ml packaging makes it easy to carry and apply to the areas mentioned on the product label. Use as directed by the manufacturer.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "249.00",
+    "stock": 100,
+    "image_url": "https://images.apollo247.in/pub/media/catalog/product/n/u/nua0041_1_.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:32:12.071Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 71,
+  "fields": {
+    "name": "Sirona Cute Teddy Electric Hot Water Bag",
+    "description": "Sirona Cute Teddy Electric Hot Water Bag provides comforting warmth for period cramps and muscle discomfort. Its soft teddy design, portable construction and automatic shut-off feature make it a convenient heat therapy accessory. Follow the charging and safety instructions before use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "699.00",
+    "stock": 100,
+    "image_url": "https://thesirona.com/cdn/shop/files/2_8_3f0b324a-1e9c-412b-b20a-7e07c1f2550e.png?v=1772731516&width=3840",
+    "is_active": true,
+    "created_at": "2026-11-17T10:34:18.907Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 72,
+  "fields": {
+    "name": "Sirona Feminine Pain Relief Patch – Pack of 5",
+    "description": "Sirona Feminine Pain Relief Patches are designed for targeted comfort during period cramps and lower back discomfort. The herbal formula includes menthol and eucalyptus and provides a cooling sensation. Apply according to the manufacturer's instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "225.00",
+    "stock": 100,
+    "image_url": "https://365dayson.in/cdn/shop/files/P-1_f43eab6e-7804-43cf-b461-7953e2b3d4cc.jpg?v=1754028861&width=1946",
+    "is_active": true,
+    "created_at": "2026-11-17T10:35:53.164Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 73,
+  "fields": {
+    "name": "Sirona Electric Menstrual Cup Sterilizer",
+    "description": "Sirona Electric Menstrual Cup Sterilizer is designed to help maintain menstrual cup hygiene through steam sterilization. Its compact design makes it suitable for home use. Follow the manufacturer's instructions for safe operation and cleaning.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "1999.00",
+    "stock": 100,
+    "image_url": "https://images-static.nykaa.com/media/catalog/product/1/3/139475a8906103791710_02.jpg?tr=w-500",
+    "is_active": true,
+    "created_at": "2026-11-17T10:37:40.847Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 74,
+  "fields": {
+    "name": "Sirona Reusable Period Panty – Size L",
+    "description": "Sirona Reusable Period Panty is designed for comfortable menstrual protection with an absorbent and leak-resistant inner layer. Its breathable fabric and washable construction make it a reusable alternative to disposable period products. Wash and care according to the label instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "599.00",
+    "stock": 100,
+    "image_url": "https://images-static.nykaa.com/media/catalog/product/a/b/ab27524FSP1146_2.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:38:56.124Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 75,
+  "fields": {
+    "name": "Sirona Sanitary Disposal Bags – Pack of 45",
+    "description": "Sirona Sanitary Disposal Bags are designed for hygienic and discreet disposal of used sanitary pads and other menstrual waste. Their odour-concealing and leak-resistant design makes them convenient for home and travel use. Pack contains 45 disposal bags.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "199.00",
+    "stock": 100,
+    "image_url": "https://instamart-media-assets.swiggy.com/swiggy/image/upload/fl_lossy%2Cf_auto%2Cq_auto%2Ch_600/NI_CATALOG/IMAGES/ciw/2026/2/18/50f78ed7-335d-475e-b011-c019d238ff31_1WRPTV8JF7_MN_18022026.png",
+    "is_active": true,
+    "created_at": "2026-11-17T10:41:08.235Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 76,
+  "fields": {
+    "name": "Nua Gentle Intimate Wash – 100 ml",
+    "description": "Nua Gentle Intimate Wash is designed for external intimate hygiene and everyday freshness. Its foaming formula is made for gentle cleansing and comes in a convenient 100 ml bottle. Use externally as directed on the product label.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "209.00",
+    "stock": 100,
+    "image_url": "https://www.jiomart.com/images/product/original/rvxgytx97u/nua-foaming-intimate-wash-with-aloe-vera-lactic-acid-100ml-product-images-orvxgytx97u-p591296471-0-202402071102.jpg?im=Resize%3D%28420%2C420%",
+    "is_active": true,
+    "created_at": "2026-11-17T10:42:18.347Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 77,
+  "fields": {
+    "name": "Nua Comfort Period Panties – Pack of 5",
+    "description": "Nua Comfort Period Panties are disposable menstrual underwear designed for comfortable period protection. Their panty-style fit offers convenient coverage during periods. Pack contains five disposable panties. Select the correct size according to the packaging.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "358.00",
+    "stock": 100,
+    "image_url": "https://images-static.nykaa.com/media/catalog/product/3/d/3d262cbNUAXX00000061_15.jpg?tr=w-500",
+    "is_active": true,
+    "created_at": "2026-11-17T10:44:21.669Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 78,
+  "fields": {
+    "name": "Sirona Disposable Period Panties – Pack of 10",
+    "description": "Sirona Disposable Period Panties are designed for convenient menstrual protection during the day and night. Their absorbent construction and snug fit help provide coverage during period days. Pack contains ten disposable panties. Choose the correct size before use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "450.00",
+    "stock": 100,
+    "image_url": "https://images-static.nykaa.com/media/catalog/product/6/8/68a1899SIRON00000435_1.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:45:46.035Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 79,
+  "fields": {
+    "name": "Anandi 100% Organic Cotton Panty Liners – 40 Count",
+    "description": "Anandi 100% Organic Cotton Panty Liners feature a soft organic cotton top layer and breathable plant-based backsheet. These ultra-thin liners are designed for everyday freshness, light discharge and spotting. Individually wrapped for convenient use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Anandi",
+    "price": "349.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/89d8d2bb589f4bef958610855a2e73ca.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:55:26.971Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 80,
+  "fields": {
+    "name": "Donna Organic Menstrual Cup – Large",
+    "description": "Donna Organic Menstrual Cup is a reusable period care product designed to collect menstrual flow. Its flexible cup design offers an alternative to disposable sanitary products. Follow the manufacturer's instructions for insertion, removal, cleaning and sterilization.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Donna",
+    "price": "585.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/7308848a847247c8a24b22aae3695c4f.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:56:48.583Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 81,
+  "fields": {
+    "name": "Amrutanjan Comfy Snug Fit Sanitary Pads Dry XL – 18 Pads",
+    "description": "Amrutanjan Comfy Snug Fit Dry XL Sanitary Pads are designed for menstrual flow absorption and comfortable protection. Their extra-long 280 mm design, larger wings and anti-leak system provide additional coverage during heavy flow days. Pack contains 18 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Amrutanjan Comfy",
+    "price": "100.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/aa4584c9cffc449390ed17bfc9cf7404.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:58:38.328Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 82,
+  "fields": {
+    "name": "Everteen Period Care Soft Top Layer Sanitary Pads – 40 Count",
+    "description": "Everteen Period Care Sanitary Pads are designed to provide comfortable menstrual protection with a soft top layer. Their absorbent construction helps manage menstrual flow and offers convenient everyday period care. Pack contains 40 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Everteen",
+    "price": "199.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/252226c6d66c4d3eba3e4f092eeefae8.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T10:59:32.012Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 83,
+  "fields": {
+    "name": "Plush 100% U.S. Pure Cotton Daily Panty Liner – 20 Count",
+    "description": "Plush 100% U.S. Pure Cotton Daily Panty Liners feature a soft cotton top sheet and breathable backsheet. Their lightweight design provides everyday freshness and helps absorb light discharge and spotting. Fragrance-free and suitable for daily intimate hygiene.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Plush",
+    "price": "123.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/bfe89da411b84e5c81655c66fe31298f.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:00:50.859Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 84,
+  "fields": {
+    "name": "Securteen Menstrual Cup – Large, 30 ml",
+    "description": "Securteen Menstrual Cup is made from medical-grade silicone and designed to collect menstrual flow. Its reusable construction offers a pad-free period care alternative. The large variant has a 30 ml capacity. Follow the product instructions for proper use and sterilization.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Securteen",
+    "price": "474.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/cropped/kzfmjwtwscp1ierjeezv.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:01:46.230Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 85,
+  "fields": {
+    "name": "QNIX Boxer Brief Period Underwear – XL Black",
+    "description": "QNIX Boxer Brief Period Underwear is designed to provide menstrual protection in a comfortable boxer-style fit. Its absorbent construction offers an alternative to disposable period products. This black XL variant is suitable for reusable period care. Follow the garment washing instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "QNIX",
+    "price": "1429.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/f3000ecf-6d56-438f-88ef-0e0d5e162345.jpeg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:02:58.215Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 86,
+  "fields": {
+    "name": "Sirona Premium Applicator Super Plus Heavy Flow Tampons – 16 Count",
+    "description": "Sirona Premium Applicator Super Plus Tampons are designed for menstrual flow absorption on heavy flow days. Their applicator design supports convenient insertion and comfortable use. Pack contains 16 tampons. Follow the instructions and recommended replacement intervals.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "720.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/8834cbefcf3048eb89802418474922e9.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:14:56.596Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 87,
+  "fields": {
+    "name": "Hi Life Flow Easy Organic Pad with Honeycomb LeakLock – 30 Pads",
+    "description": "Hi Life Flow Easy Organic Pads feature a honeycomb-style LeakLock design for menstrual flow absorption. Their organic-focused period care design provides comfortable coverage and helps manage leakage. Pack contains 30 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Hi Life",
+    "price": "999.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/98713d539beb49708cb59b9c7a97a3c4.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:15:58.825Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 88,
+  "fields": {
+    "name": "Be Me Organic Sanitary Pads with Disposal Pouches – 30 Pads",
+    "description": "Be Me Organic Sanitary Pads are designed for moderate to heavy menstrual flow protection. Their soft organic cotton-focused construction offers comfortable coverage, while individual disposal pouches make used-pad disposal more convenient and discreet. Pack contains 30 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Be Me",
+    "price": "497.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/075d85bfbe9b4f81aa97296ec95d8524.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:17:00.157Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 89,
+  "fields": {
+    "name": "Stayfree Dry-Max All Night Ultra-Dry – 42 Pads",
+    "description": "Stayfree Dry-Max All Night Ultra-Dry Sanitary Pads are designed for overnight menstrual protection. Their extra-long and extra-wide design provides extended coverage, while Super Lock Pockets help absorb and lock in menstrual flow. Individually wrapped for convenient use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Stayfree",
+    "price": "630.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/ad04707faf5546d1929470e22595f5a8.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:25:09.551Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 90,
+  "fields": {
+    "name": "Nua All Night Comfort Sanitary Pads XXXL – 18 Pads",
+    "description": "Nua All Night Comfort XXXL Sanitary Pads are designed for overnight use and heavy menstrual flow. Their extra-long 400 mm design provides extended coverage and comfortable protection during sleep. Pack contains 18 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Nua",
+    "price": "371.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/9620e35558154394b9641ffb6d61be76.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:27:14.506Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 91,
+  "fields": {
+    "name": "Sofy Anti Bacteria Sanitary Pads XL – 14 Pads",
+    "description": "Sofy Anti Bacteria Sanitary Pads XL are designed for comfortable menstrual protection with an antibacterial sheet featuring Herbal Shield technology. Their Comfy Dry Cover helps maintain dryness and comfort during periods. Pack contains 14 XL pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sofy",
+    "price": "140.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/636695cb53a34e29b670b8c7701988be.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:28:33.106Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 92,
+  "fields": {
+    "name": "Bella Softi Wings Classic Sanitary Pads – 15 Pads",
+    "description": "Bella Softi Wings Classic Sanitary Pads are designed to provide comfortable protection during menstrual periods. Their soft surface and side wings help keep the pad securely positioned and provide coverage against leakage. Pack contains 15 pads.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Bella",
+    "price": "111.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/bf9c85aa92584560b3e257ef185eca15.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:29:55.199Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 93,
+  "fields": {
+    "name": "Menarche 100% Organic Cotton Tampons – Regular Flow, 20 Count",
+    "description": "Menarche 100% Organic Cotton Tampons are made with highly absorbent soft cotton fibres for menstrual flow management. Their smooth rounded tip and anti-slip grip are designed for convenient insertion. Suitable for regular flow days. Pack contains 20 tampons.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Menarche",
+    "price": "301.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/todvmiuomiugqcehfgrs.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:30:51.600Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 94,
+  "fields": {
+    "name": "Zoy Reusable Menstrual Cup – Small, BPA Free",
+    "description": "Zoy Reusable Menstrual Cup is a BPA-free period care product designed to collect menstrual flow. Its flexible reusable design offers an alternative to disposable sanitary products. Clean and sterilize according to the manufacturer's instructions before and after use.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Zoy",
+    "price": "245.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/20107f0975594fcfafa6fff782e15139.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:31:56.566Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 95,
+  "fields": {
+    "name": "Imasafe Reusable Menstrual Cup – Black Medium",
+    "description": "Imasafe Reusable Menstrual Cup is made from 100% medical-grade liquid silicone. Its flexible design is intended to collect menstrual flow and provide a reusable alternative to disposable period products. Follow the manufacturer's instructions for correct use and sterilization.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Imasafe",
+    "price": "299.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/38e6f669d28c427292f9340843273942.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:33:32.223Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 96,
+  "fields": {
+    "name": "Sirona Small Pro Super Soft Reusable Menstrual Cup",
+    "description": "Sirona Small Pro Super Soft Menstrual Cup is a reusable silicone cup designed to collect menstrual flow rather than absorb it. Its soft and flexible construction offers a comfortable period care alternative. Follow the product instructions for insertion, removal, cleaning and sterilization.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Sirona",
+    "price": "346.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/22cb4cfb2fd144d89973c57ce7d193a5.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:34:26.132Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 97,
+  "fields": {
+    "name": "Yoni Organic Cotton Applicator Tampons – Regular, 16 Count",
+    "description": "Yoni Organic Cotton Applicator Tampons are made with certified organic cotton, including the string. Their cardboard applicator is designed for convenient insertion, while the absorbent cotton core helps manage menstrual flow. Pack contains 16 regular-flow tampons.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "Yoni",
+    "price": "563.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/mwv1hyxiq6mii4xudz7z.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T11:35:25.651Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 98,
+  "fields": {
+    "name": "iCare Hygienic Reusable Menstrual Cup – Large",
+    "description": "iCare Hygienic Reusable Menstrual Cup is made from soft medical-grade silicone. Its flexible and foldable design is intended to collect menstrual flow and provide reusable period protection. Clean and sterilize according to the manufacturer's instructions.",
+    "category": "Period Care",
+    "subcategory": "",
+    "brand": "iCare",
+    "price": "377.00",
+    "stock": 100,
+    "image_url": "https://onemg.gumlet.io/l_watermark_346%2Cw_480%2Ch_480/a_ignore%2Cw_480%2Ch_480%2Cc_fit%2Cq_auto%2Cf_auto/cropped/mixix0brrbmfnvdyzzrt.png?dpr=3&format=auto&h=320&w=412",
+    "is_active": true,
+    "created_at": "2026-11-17T11:36:25.092Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 99,
+  "fields": {
+    "name": "Personal Safety Alarm Keychain",
+    "description": "Compact emergency alarm keychain with a loud siren feature. Easy to attach to handbags, backpacks or keys for everyday carrying.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "",
+    "price": "160.00",
+    "stock": 100,
+    "image_url": "https://wishmestore.in/cdn/shop/files/tuwDw7EdvUhSvWdkzJj8UFM7kLMjtzFf8TvZ4Vd2.jpg?v=1773757307&width=533",
+    "is_active": true,
+    "created_at": "2026-11-17T12:25:54.197Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 100,
+  "fields": {
+    "name": "Emergency Whistle Keychain",
+    "description": "Lightweight emergency whistle with a keychain ring. Produces an audible alert to attract attention during outdoor activities or unexpected situations.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "",
+    "price": "248.00",
+    "stock": 100,
+    "image_url": "https://rukminim2.flixcart.com/image/xif0q/whistle/6/v/h/multipurpose-sports-whistle-for-teachers-coaches-referees-c-1-original-imahsmjfdfbvhgrz.jpeg",
+    "is_active": true,
+    "created_at": "2026-11-17T12:28:04.675Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 101,
+  "fields": {
+    "name": "Eveready Siren DL102 Safety Torch",
+    "description": "A compact rechargeable torch with a built-in emergency siren. Combines night-time visibility with an audible alert in one portable device.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Eveready",
+    "price": "225.00",
+    "stock": 100,
+    "image_url": "https://m.media-amazon.com/images/I/618nupcI3IL.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T12:29:16.385Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 102,
+  "fields": {
+    "name": "Metal Emergency Whistle Keychain",
+    "description": "Portable metal whistle with a key ring. Its compact design makes it convenient to carry on keys or a travel bag.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "199.00",
+    "stock": 100,
+    "image_url": "https://m.media-amazon.com/images/I/51EQizU6%2BGL.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T12:30:08.175Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 103,
+  "fields": {
+    "name": "Copper Multipurpose Security Padlock",
+    "description": "Compact metal padlock supplied with two keys. Useful for securing lockers, bags, cabinets and small storage spaces.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "115.00",
+    "stock": 100,
+    "image_url": "https://wishmestore.in/cdn/shop/files/mpBwkkfwF5gTMZRf6WmHjzpjAnCGIvFrzik9PXZH.jpg?v=1783265542&width=533",
+    "is_active": true,
+    "created_at": "2026-11-17T12:31:03.406Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 104,
+  "fields": {
+    "name": "Brass Multipurpose Security Lock",
+    "description": "A compact brass-finish lock with keys for everyday storage security. Suitable for lockers, cabinets, gates and travel bags.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "160.00",
+    "stock": 100,
+    "image_url": "https://wishmestore.in/cdn/shop/files/lRrYMZ6k0Nfdju1gY4pFjknhbcJ7zpj36RjXFmwV.jpg?v=1783265539&width=533",
+    "is_active": true,
+    "created_at": "2026-11-17T12:32:01.866Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 105,
+  "fields": {
+    "name": "Retractable Anti-Lost Keychain",
+    "description": "Retractable key holder with a steel cable and clip. Helps keep keys, access cards and small accessories attached and easy to reach.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "99.00",
+    "stock": 100,
+    "image_url": "https://wishmestore.in/cdn/shop/files/VV2q4x1160wGmoVaGZNQQbNO4WSBIcKIK3BfL4cG.jpg?v=1783247794&width=533",
+    "is_active": true,
+    "created_at": "2026-11-17T12:32:56.627Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 106,
+  "fields": {
+    "name": "Waterproof Anti-Theft Crossbody Sling Bag",
+    "description": "Lightweight crossbody bag with multiple zipper compartments and an adjustable strap. Helps keep everyday essentials organised while commuting or travelling.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "299.00",
+    "stock": 100,
+    "image_url": "https://wishmestore.in/cdn/shop/files/bWymqfNA78yLlUljxcyp7sAOfhpZy1jlbMNgsMRf.jpg?v=1775465832&width=1946",
+    "is_active": true,
+    "created_at": "2026-11-17T12:33:44.235Z"
+  }
+},
+{
+  "model": "products.product",
+  "pk": 107,
+  "fields": {
+    "name": "Emergency Whistle with Lanyard",
+    "description": "Simple portable emergency whistle with a keychain-style carrying design. Suitable for travel, outdoor use and emergency signalling.",
+    "category": "Safety",
+    "subcategory": "",
+    "brand": "Generic",
+    "price": "149.00",
+    "stock": 100,
+    "image_url": "https://m.media-amazon.com/images/I/51EQizU6%2BGL.jpg",
+    "is_active": true,
+    "created_at": "2026-11-17T12:34:36.010Z"
+  }
+}
+]
