@@ -1,0 +1,127 @@
+
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="max-width: 850px; padding: 20px;">
+
+    <h1>Bulk Product Import</h1>
+
+    <p>Upload your CSV file and preview the results before importing products.</p>
+
+    {% if fatal_error %}
+        <div style="padding: 15px; margin: 20px 0; background: #fde8e8; color: #9b1c1c; border-radius: 8px;">
+            <strong>CSV Error:</strong> {{ fatal_error }}
+        </div>
+    {% endif %}
+
+    {% if preview %}
+        <div style="padding: 20px; margin: 20px 0; background: #f5f5f5; border-radius: 10px;">
+            <h2>Import Preview</h2>
+
+            <p><strong>Valid products:</strong> {{ valid_count }}</p>
+            <p><strong>Duplicate products:</strong> {{ duplicate_count }}</p>
+            <p><strong>Invalid rows:</strong> {{ error_count }}</p>
+
+            {% if errors %}
+                <h3>Errors found</h3>
+                <ul>
+                    {% for error in errors %}
+                        <li style="color: #b42318; margin-bottom: 8px;">
+                            {{ error }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        {% if valid_count > 0 and error_count == 0 %}
+            <div style="padding: 15px; background: #e8f5e9; border-radius: 8px; margin-bottom: 20px;">
+                Preview successful. No invalid rows found.
+                Confirm import only if these products are intended for your live store.
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <label><strong>Select the same CSV file again to confirm:</strong></label>
+                <br><br>
+
+                <input
+                    type="file"
+                    name="csv_file"
+                    accept=".csv"
+                    required
+                >
+
+                <br><br>
+
+                <button
+                    type="submit"
+                    name="action"
+                    value="confirm"
+                    class="default"
+                    style="padding: 10px 20px;"
+                >
+                    Confirm Import
+                </button>
+            </form>
+        {% else %}
+            <p style="color: #b42318;">
+                Import is disabled because no valid products remain or errors were found.
+                Correct the CSV and preview it again.
+            </p>
+        {% endif %}
+
+    {% else %}
+        <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>Required CSV columns</h3>
+
+            <code>
+                name,description,category,subcategory,brand,price,stock,image_url,is_active
+            </code>
+
+            <p style="margin-top: 15px;">
+                Allowed categories:
+                <strong>Personal Care, Safety, Daily Essentials</strong>
+            </p>
+
+            <p>is_active: true or false</p>
+            <p>Maximum file size: 5 MB</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <label for="csv_file"><strong>Select CSV file:</strong></label>
+            <br><br>
+
+            <input
+                type="file"
+                name="csv_file"
+                id="csv_file"
+                accept=".csv"
+                required
+            >
+
+            <br><br>
+
+            <button
+                type="submit"
+                name="action"
+                value="preview"
+                class="default"
+                style="padding: 10px 20px;"
+            >
+                Preview CSV
+            </button>
+        </form>
+    {% endif %}
+
+    <p style="margin-top: 25px;">
+        <a href="{% url 'admin:products_product_changelist' %}">
+            Back to Products
+        </a>
+    </p>
+
+</div>
+{% endblock %}

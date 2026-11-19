@@ -1,0 +1,390 @@
+
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Checkout | Tipsy Cart{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/checkout.css' %}">
+<style>
+.order-success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(48, 36, 44, 0.72);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+}
+.order-success-dialog {
+    background: white;
+    border-radius: 22px;
+    max-width: 520px;
+    width: 100%;
+    padding: 28px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    max-height: 92vh;
+    overflow-y: auto;
+    animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPop {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.order-success-header {
+    text-align: center;
+    margin-bottom: 18px;
+}
+.order-success-icon {
+    font-size: 46px;
+    margin-bottom: 6px;
+}
+.order-success-header h2 {
+    margin: 0 0 6px 0;
+    color: #137333;
+    font-size: 22px;
+}
+.order-success-header p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+.modal-eta-banner {
+    background: #fdf5f8;
+    border: 1px solid #f6dbe6;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.modal-eta-icon {
+    font-size: 26px;
+}
+.modal-items-section {
+    background: #faf7f9;
+    border: 1px solid #f2e6ed;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+.modal-items-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #a52d55;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.modal-items-list {
+    max-height: 140px;
+    overflow-y: auto;
+}
+.modal-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 13px;
+}
+.modal-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid #ebdbe2;
+    font-size: 14px;
+}
+.modal-address-section {
+    background: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+.modal-address-section h4 {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    font-weight: 800;
+    color: #666;
+    text-transform: uppercase;
+}
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.modal-step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eef9f2;
+    color: #137333;
+    border: 1px solid #c7eed5;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: 0.3px;
+}
+.modal-steps-mini {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0 16px;
+    padding: 10px 8px;
+    background: #fbfbfc;
+    border: 1px solid #eee;
+    border-radius: 12px;
+}
+.mini-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10px;
+    color: #888;
+    text-align: center;
+    position: relative;
+    flex: 1;
+}
+.mini-step.done {
+    color: #137333;
+    font-weight: 700;
+}
+.mini-step.active {
+    color: #a52d55;
+    font-weight: 800;
+}
+.mini-step-icon {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+.mini-step-text {
+    font-size: 9px;
+    line-height: 1.1;
+}
+.modal-item-thumb {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.modal-item-meta {
+    flex-grow: 1;
+    padding: 0 10px;
+}
+.modal-item-meta strong {
+    display: block;
+    color: #222;
+    font-size: 13px;
+    line-height: 1.2;
+}
+.modal-item-meta small {
+    color: #666;
+    font-size: 11px;
+}
+.btn-track-order {
+    background: linear-gradient(135deg, #a52d55, #63213d);
+    color: white !important;
+    text-decoration: none;
+    padding: 13px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(165, 45, 85, 0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+.btn-track-order:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(165, 45, 85, 0.35);
+}
+.btn-continue-shop {
+    background: transparent;
+    color: #666 !important;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+.btn-continue-shop:hover {
+    background: #f8f9fa;
+    color: #333 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <section class="checkout-hero">
+        <p class="eyebrow">CARE THAT COMES TO YOU</p>
+        <h1>Secure Checkout</h1>
+        <p>Almost there! Confirm your details for a caring delivery.</p>
+    </section>
+
+    <div class="checkout-layout">
+        <section class="checkout-card">
+            <h2>Delivery Details</h2>
+
+            <form id="checkout-form">
+                {% csrf_token %}
+
+                <label for="full_name">Full Name</label>
+                <input id="full_name" name="full_name"
+                       type="text" maxlength="150" required
+                       autocomplete="name" placeholder="Enter your full name">
+
+                <label for="phone">Mobile Number</label>
+                <input id="phone" name="phone" type="tel"
+                       inputmode="numeric" maxlength="10" required
+                       autocomplete="tel" pattern="[0-9]{10}"
+                       placeholder="10-digit mobile number">
+
+                <label for="address">Full Address</label>
+                <textarea id="address" name="address" required
+                          autocomplete="street-address"
+                          placeholder="House number, street, area"></textarea>
+
+                <div class="form-row">
+                    <div>
+                        <label for="city">City</label>
+                        <input id="city" name="city" type="text"
+                               maxlength="100" required autocomplete="address-level2">
+                    </div>
+
+                    <div>
+                        <label for="state">State</label>
+                        <input id="state" name="state" type="text"
+                               maxlength="100" required autocomplete="address-level1">
+                    </div>
+                </div>
+
+                <label for="pincode">PIN Code</label>
+                <input id="pincode" name="pincode" type="text"
+                       inputmode="numeric" maxlength="6" required
+                       pattern="[0-9]{6}" autocomplete="postal-code"
+                       placeholder="6-digit PIN code">
+
+                <h3>Payment Method</h3>
+                <div class="payment-option">
+                    <input type="radio" id="cod" name="payment_method"
+                           value="COD" checked>
+                    <label for="cod">Cash on Delivery (COD)</label>
+                </div>
+
+                <p class="privacy-note">
+                    Your delivery details are used to process your order.
+                </p>
+
+                <p id="checkout-message" role="status" aria-live="polite"></p>
+
+                <button id="place-order-button" type="submit">
+                    Place Order
+                </button>
+            </form>
+        </section>
+
+        <aside class="checkout-card order-summary">
+            <h2>Order Summary</h2>
+            <div id="checkout-items">
+                <p>Loading your cart...</p>
+            </div>
+
+            <div class="summary-total">
+                <span>Total Amount</span>
+                <strong>₹<span id="checkout-total">0.00</span></strong>
+            </div>
+
+            <p class="summary-note">
+                Please review your cart before placing your order.
+            </p>
+        </aside>
+    </div>
+
+    <!-- Order Success Modal / Screen -->
+    <div id="order-success-modal" class="order-success-overlay" style="display: none;">
+        <div class="order-success-dialog">
+            <div class="order-success-header">
+                <div class="order-success-icon">🎉</div>
+                <h2>Order Placed Successfully!</h2>
+                <p>Thank you! Your order <strong id="modal-order-id">#--</strong> has been received.</p>
+            </div>
+
+            <!-- Step Progress Indicator -->
+            <div style="text-align: center; margin-bottom: 14px;">
+                <span class="modal-step-badge" id="modal-step-badge">
+                    📍 Step 1 of 6 Completed • ⏳ 5 Steps Remaining
+                </span>
+                <div class="modal-steps-mini">
+                    <div class="mini-step done"><span class="mini-step-icon">🛍️</span><span class="mini-step-text">Placed<br><b style="color:#137333;">✓ Done</b></span></div>
+                    <div class="mini-step active"><span class="mini-step-icon">📋</span><span class="mini-step-text">Confirm<br><b style="color:#a52d55;">Next</b></span></div>
+                    <div class="mini-step"><span class="mini-step-icon">🛵</span><span class="mini-step-text">Assign<br>Waiting</span></div>
+                    <div class="mini-step"><span class="mini-step-icon">📦</span><span class="mini-step-text">Pickup<br>Waiting</span></div>
+                    <div class="mini-step"><span class="mini-step-icon">🚚</span><span class="mini-step-text">Out<br>Waiting</span></div>
+                    <div class="mini-step"><span class="mini-step-icon">🎉</span><span class="mini-step-text">Delivered<br>Waiting</span></div>
+                </div>
+            </div>
+
+            <div class="modal-eta-banner">
+                <span class="modal-eta-icon">🕒</span>
+                <div>
+                    <strong style="color: #222; font-size: 13px; display: block;">Estimated Delivery (Kab Tak Aayega)</strong>
+                    <div id="modal-eta-time" style="font-size: 17px; font-weight: 800; color: #a52d55;">Within 30 - 45 Minutes</div>
+                    <small style="color: #666;">Store dispatch is preparing your items right now.</small>
+                </div>
+            </div>
+
+            <!-- Ordered Items Details Section -->
+            <div class="modal-items-section">
+                <h4>🛍️ Ordered Items Details</h4>
+                <div id="modal-items-list" class="modal-items-list">
+                    <!-- Populated dynamically by JS -->
+                </div>
+                <div class="modal-total-row">
+                    <span>Total Amount to Pay (COD):</span>
+                    <strong id="modal-order-total" style="color: #a52d55; font-size: 17px;">₹0.00</strong>
+                </div>
+            </div>
+
+            <!-- Delivery Address -->
+            <div class="modal-address-section">
+                <h4>📍 Delivering To</h4>
+                <p id="modal-delivery-address" style="margin: 0; font-size: 13px; color: #333; line-height: 1.4;"></p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="modal-actions">
+                <a id="modal-track-btn" href="/dashboard/" class="btn-track-order">
+                    📦 Track in My Orders →
+                </a>
+                <a href="/shop/" class="btn-continue-shop">
+                    🛍️ Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/checkout.js' %}"></script>
+{% endblock %}

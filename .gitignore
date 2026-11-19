@@ -1,0 +1,48 @@
+# Environment & Secrets
+.env
+*.env
+backend/.env
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+backend/.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# SQLite Database
+*.sqlite3
+db.sqlite3
+backend/db.sqlite3
+
+# Static & Media files
+staticfiles/
+backend/staticfiles/
+media/
+backend/media/
+
+# Node & Frontend
+node_modules/
+tipsy-cart-app/node_modules/
+.expo/
+tipsy-cart-app/.expo/
+.expo-shared/
+tipsy-cart-app/.expo-shared/
+dist/
+tipsy-cart-app/dist/
+web-build/
+tipsy-cart-app/web-build/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

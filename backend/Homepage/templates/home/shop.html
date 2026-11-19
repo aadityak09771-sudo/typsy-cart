@@ -1,0 +1,137 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Shop Everyday Essentials | Tipsy Cart{% endblock %}
+
+{% block meta_description %}
+Shop groceries, daily essentials, personal care and safety products at Tipsy Cart. Care, comfort and confidence delivered with care.
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/shop.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="shop-page">
+
+    <section class="shop-hero">
+        <div class="shop-hero-content">
+            <span class="hero-label">CARE • COMFORT • CONFIDENCE</span>
+            <h1>Everything you need,<br><span>all in one cart.</span></h1>
+            <p>
+                From everyday groceries to personal care and safety essentials,
+                shop what matters with Tipsy Cart.
+            </p>
+
+            <a href="#shop-products" class="hero-shop-button">
+                Explore Products <span aria-hidden="true">→</span>
+            </a>
+        </div>
+
+        <div class="shop-hero-art" aria-hidden="true">
+            <div class="hero-circle">
+                <span class="hero-bag">🛍️</span>
+                <span class="hero-heart">♥</span>
+                <span class="hero-sparkle sparkle-one">✦</span>
+                <span class="hero-sparkle sparkle-two">✧</span>
+            </div>
+            <div class="hero-art-caption">Your everyday care basket</div>
+        </div>
+    </section>
+
+    <section class="shop-benefits" aria-label="Shopping benefits">
+        <div class="benefit-item">
+            <span class="benefit-icon">🛒</span>
+            <div>
+                <strong>Everyday Essentials</strong>
+                <small>Your daily needs in one place</small>
+            </div>
+        </div>
+
+        <div class="benefit-item">
+            <span class="benefit-icon">💗</span>
+            <div>
+                <strong>Care With Confidence</strong>
+                <small>Personal care and safety products</small>
+            </div>
+        </div>
+
+        <div class="benefit-item">
+            <span class="benefit-icon">📦</span>
+            <div>
+                <strong>Easy Shopping</strong>
+                <small>Simple cart and checkout</small>
+            </div>
+        </div>
+    </section>
+
+    <section class="shop-section" id="shop-products">
+
+        <div class="section-heading">
+            <div>
+                <span class="section-eyebrow">THE TIPSY CART COLLECTION</span>
+                <h2>Shop your essentials</h2>
+                <p>Find your favourites and add them to your cart.</p>
+            </div>
+        </div>
+
+        <div class="shop-toolbar">
+            <div class="search-wrap">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input
+                    id="search-input"
+                    type="search"
+                    placeholder="Search products, brands and essentials..."
+                    aria-label="Search products"
+                >
+            </div>
+
+            <div class="filter-wrap">
+                <label class="visually-hidden" for="category-filter">Category</label>
+                <select id="category-filter" aria-label="Filter products">
+                    <option value="all">All Categories</option>
+                    <option value="period-care">Period Care</option>
+                    <option value="personal-safety">Personal Safety</option>
+                    <option value="personal-care">Personal Care</option>
+                    <option value="daily-essentials">Daily Essentials</option>
+                    <option value="groceries">Groceries</option>
+                </select>
+
+                <label class="visually-hidden" for="sort-filter">Sort products</label>
+                <select id="sort-filter" aria-label="Sort products">
+                    <option value="default">Recommended</option>
+                    <option value="low">Price: Low to High</option>
+                    <option value="high">Price: High to Low</option>
+                    <option value="name">Name: A to Z</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="product-results-header">
+            <p id="results-count" class="results-count" aria-live="polite">
+                Loading products...
+            </p>
+            <span class="secure-shopping-note">♡ Shopping made simple</span>
+        </div>
+
+        <section id="product-grid" class="product-grid" aria-label="Available products">
+            <div class="loading-products">
+                <span class="loading-spinner"></span>
+                <p>Getting your essentials ready...</p>
+            </div>
+        </section>
+
+        <section id="empty-message" class="empty-message" hidden>
+            <div class="empty-icon">🛍️</div>
+            <h2>No products found</h2>
+            <p>Try another search or select a different category.</p>
+        </section>
+
+    </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/shop.js' %}?v=2.1"></script>
+{% endblock %}

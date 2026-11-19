@@ -1,0 +1,507 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Delivery Partner Dashboard | Tipsy Cart{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/dashboard.css' %}">
+<style>
+    .partner-banner {
+        background: linear-gradient(135deg, #a52d55, #4a152d);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        box-shadow: 0 12px 30px rgba(99, 33, 61, 0.15);
+    }
+    .partner-badge-pill {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .partner-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    .partner-stat-card {
+        background: white;
+        border: 1px solid #eee5eb;
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .partner-stat-card:hover, .partner-stat-card.active {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(165, 45, 85, 0.12);
+        border-color: #a52d55;
+    }
+    .partner-stat-card .num {
+        font-size: 24px;
+        font-weight: 800;
+        color: #a52d55;
+        line-height: 1.2;
+    }
+    .partner-stat-card .lbl {
+        font-size: 11px;
+        color: #77717d;
+        margin-top: 5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Tab Filter Pills */
+    .delivery-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        margin-bottom: 22px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .tab-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        background: white;
+        border: 1px solid #ebdbe3;
+        border-radius: 30px;
+        color: #555;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .tab-pill:hover, .tab-pill.active {
+        background: #a52d55;
+        color: white;
+        border-color: #a52d55;
+    }
+
+    /* Delivery Order Cards */
+    .delivery-order-card {
+        background: white;
+        border: 1px solid #eee5eb;
+        border-radius: 16px;
+        padding: 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+        transition: box-shadow 0.2s;
+    }
+    .delivery-order-card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+    .doc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f6edf2;
+        margin-bottom: 16px;
+    }
+    .doc-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .doc-info-block p {
+        margin: 3px 0;
+        font-size: 13px;
+        color: #493641;
+        line-height: 1.5;
+    }
+    .doc-info-block strong {
+        color: #302333;
+    }
+    .doc-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding-top: 14px;
+        border-top: 1px solid #f6edf2;
+    }
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 18px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+    .btn-accept {
+        background: #198754;
+        color: white;
+    }
+    .btn-pickup {
+        background: #0d6efd;
+        color: white;
+    }
+    .btn-out {
+        background: #fd7e14;
+        color: white;
+    }
+    .btn-deliver {
+        background: #198754;
+        color: white;
+        font-size: 14px;
+        padding: 10px 22px;
+    }
+    .btn-reject, .btn-fail {
+        background: #dc3545;
+        color: white;
+    }
+    .btn-view {
+        background: white;
+        color: #a52d55;
+        border: 1px solid #a52d55;
+    }
+
+    .empty-state {
+        background: white;
+        border: 1px dashed #d8cad3;
+        border-radius: 16px;
+        padding: 45px 20px;
+        text-align: center;
+        color: #777;
+    }
+
+    /* Inline Reason Form */
+    details.reason-box {
+        display: inline-block;
+    }
+    details.reason-box summary {
+        list-style: none;
+        cursor: pointer;
+    }
+    details.reason-box summary::-webkit-details-marker {
+        display: none;
+    }
+    .reason-popup {
+        background: #fff;
+        border: 1px solid #dc3545;
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 10px;
+        box-shadow: 0 8px 24px rgba(220, 53, 69, 0.15);
+    }
+
+    @media (max-width: 600px) {
+        .partner-banner {
+            padding: 20px;
+        }
+        .partner-stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .partner-stat-card {
+            padding: 10px 6px;
+        }
+        .partner-stat-card .num {
+            font-size: 18px;
+        }
+        .partner-stat-card .lbl {
+            font-size: 9px;
+        }
+        .doc-actions .btn-action {
+            flex: 1 1 calc(50% - 10px);
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="dashboard-messages" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="dashboard-message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Partner Banner -->
+    <section class="partner-banner">
+        <div>
+            <span class="partner-badge-pill">🛵 TIPSY CART DELIVERY PARTNER</span>
+            <h1 style="margin: 0 0 8px 0; font-size: clamp(22px, 3.5vw, 32px); color: white;">
+                Hello, {{ partner.get_display_name }}! 👋
+            </h1>
+            <p style="margin: 0; color: #f8dce7; font-size: 14px;">
+                Vehicle: <strong>{{ partner.get_vehicle_type_display }}</strong> {% if partner.vehicle_number %}({{ partner.vehicle_number }}){% endif %}
+                &nbsp;•&nbsp; Status: 
+                {% if partner.availability_status == 'available' %}
+                    <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 8px; font-weight: bold; font-size: 11px;">🟢 Available</span>
+                {% elif partner.availability_status == 'busy' %}
+                    <span style="background: #ffc107; color: #333; padding: 2px 8px; border-radius: 8px; font-weight: bold; font-size: 11px;">🟡 On Delivery</span>
+                {% else %}
+                    <span style="background: #6c757d; color: white; padding: 2px 8px; border-radius: 8px; font-weight: bold; font-size: 11px;">⚪ Offline</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'delivery:profile' %}" class="dashboard-btn btn-outline" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.4); margin: 0;">
+                ⚙️ My Profile
+            </a>
+            <a href="{% url 'delivery:logout' %}" class="dashboard-btn" style="background: rgba(0,0,0,0.25); color: white; margin: 0;">
+                Log Out
+            </a>
+        </div>
+    </section>
+
+    <!-- Overview Stats Cards -->
+    <section class="partner-stats-grid">
+        <a href="?tab=all" class="partner-stat-card {% if active_tab == 'all' %}active{% endif %}">
+            <div class="num">{{ counts.total }}</div>
+            <div class="lbl">Total Assigned</div>
+        </a>
+        <a href="?tab=new" class="partner-stat-card {% if active_tab == 'new' %}active{% endif %}">
+            <div class="num" style="color: #0d6efd;">{{ counts.new_requests }}</div>
+            <div class="lbl">New Requests</div>
+        </a>
+        <a href="?tab=accepted" class="partner-stat-card {% if active_tab == 'accepted' %}active{% endif %}">
+            <div class="num" style="color: #198754;">{{ counts.accepted }}</div>
+            <div class="lbl">Accepted</div>
+        </a>
+        <a href="?tab=picked_up" class="partner-stat-card {% if active_tab == 'picked_up' %}active{% endif %}">
+            <div class="num" style="color: #fd7e14;">{{ counts.picked_up }}</div>
+            <div class="lbl">Picked Up</div>
+        </a>
+        <a href="?tab=out_for_delivery" class="partner-stat-card {% if active_tab == 'out_for_delivery' %}active{% endif %}">
+            <div class="num" style="color: #dc3545;">{{ counts.out_for_delivery }}</div>
+            <div class="lbl">Out for Delivery</div>
+        </a>
+        <a href="?tab=completed" class="partner-stat-card {% if active_tab == 'completed' %}active{% endif %}">
+            <div class="num" style="color: #198754;">{{ counts.completed }}</div>
+            <div class="lbl">Delivered</div>
+        </a>
+        <a href="?tab=failed" class="partner-stat-card {% if active_tab == 'failed' %}active{% endif %}">
+            <div class="num" style="color: #6c757d;">{{ counts.failed }}</div>
+            <div class="lbl">Failed / Rejected</div>
+        </a>
+    </section>
+
+    <!-- Filter Tabs Navigation -->
+    <nav class="delivery-tabs" aria-label="Order stages">
+        <a href="?tab=all" class="tab-pill {% if active_tab == 'all' %}active{% endif %}">
+            All Deliveries ({{ counts.total }})
+        </a>
+        <a href="?tab=new" class="tab-pill {% if active_tab == 'new' %}active{% endif %}">
+            🔔 New Requests ({{ counts.new_requests }})
+        </a>
+        <a href="?tab=accepted" class="tab-pill {% if active_tab == 'accepted' %}active{% endif %}">
+            📋 Accepted ({{ counts.accepted }})
+        </a>
+        <a href="?tab=picked_up" class="tab-pill {% if active_tab == 'picked_up' %}active{% endif %}">
+            📦 Picked Up ({{ counts.picked_up }})
+        </a>
+        <a href="?tab=out_for_delivery" class="tab-pill {% if active_tab == 'out_for_delivery' %}active{% endif %}">
+            🛵 Out for Delivery ({{ counts.out_for_delivery }})
+        </a>
+        <a href="?tab=completed" class="tab-pill {% if active_tab == 'completed' %}active{% endif %}">
+            ✅ Completed ({{ counts.completed }})
+        </a>
+        <a href="?tab=failed" class="tab-pill {% if active_tab == 'failed' %}active{% endif %}">
+            ⚠️ Failed / Rejected ({{ counts.failed }})
+        </a>
+    </nav>
+
+    <!-- Assigned Orders List -->
+    <section>
+        {% for assignment in assignments %}
+        {% with order=assignment.order %}
+        <article class="delivery-order-card">
+            <div class="doc-header">
+                <div>
+                    <h3 style="margin: 0 0 4px 0; color: #a52d55; font-size: 18px;">
+                        Order #{{ order.id }}
+                    </h3>
+                    <span style="font-size: 12px; color: #777;">
+                        Assigned on {{ assignment.assigned_at|date:"d M Y, h:i A" }}
+                    </span>
+                </div>
+                <div>
+                    <span class="order-status status-{{ assignment.status|lower|cut:' ' }}" style="font-size: 12px; padding: 5px 12px;">
+                        {{ assignment.status }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="doc-body">
+                <!-- Customer Details -->
+                <div class="doc-info-block">
+                    <p style="font-size: 11px; font-weight: 800; color: #a52d55; text-transform: uppercase; margin-bottom: 4px;">CUSTOMER DETAILS</p>
+                    <p><strong>👤 Name:</strong> {{ order.full_name }}</p>
+                    <p><strong>📞 Contact:</strong> <a href="tel:{{ order.phone }}" style="color: #0d6efd; text-decoration: underline; font-weight: bold;">{{ order.phone }}</a></p>
+                    <p><strong>📍 Delivery Address:</strong><br>{{ order.address }}, {{ order.city }} - <strong>PIN: {{ order.pincode }}</strong></p>
+                </div>
+
+                <!-- Order Details -->
+                <div class="doc-info-block">
+                    <p style="font-size: 11px; font-weight: 800; color: #a52d55; text-transform: uppercase; margin-bottom: 4px;">PAYMENT &amp; ITEMS</p>
+                    <p>
+                        <strong>💰 Total / Collect:</strong> 
+                        <span style="color: #198754; font-weight: 800; font-size: 15px;">₹{{ order.total_amount }}</span>
+                        ({{ order.get_payment_method_display }})
+                    </p>
+                    <p><strong>🛍️ Items ({{ order.items.count }}):</strong></p>
+                    <ul style="margin: 2px 0 0 16px; padding: 0; font-size: 12px; color: #555;">
+                        {% for item in order.items.all|slice:":3" %}
+                            <li>{{ item.product_name }} &times; {{ item.quantity }}</li>
+                        {% endfor %}
+                        {% if order.items.count > 3 %}
+                            <li style="color: #888;">+ {{ order.items.count|add:"-3" }} more item(s)...</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Notes / History -->
+                <div class="doc-info-block">
+                    <p style="font-size: 11px; font-weight: 800; color: #a52d55; text-transform: uppercase; margin-bottom: 4px;">DELIVERY NOTES</p>
+                    {% if assignment.notes %}
+                        <p style="background: #fdf6fa; padding: 6px 10px; border-radius: 6px; border: 1px solid #f8e1ee; font-size: 12px;">
+                            📝 {{ assignment.notes }}
+                        </p>
+                    {% else %}
+                        <p style="color: #999; font-size: 12px;">No special notes attached.</p>
+                    {% endif %}
+
+                    {% if assignment.rejection_reason %}
+                        <p style="color: #dc3545; font-size: 12px;"><strong>Rejection reason:</strong> {{ assignment.rejection_reason }}</p>
+                    {% elif assignment.failure_reason %}
+                        <p style="color: #dc3545; font-size: 12px;"><strong>Failure reason:</strong> {{ assignment.failure_reason }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contextual Action Buttons -->
+            <div class="doc-actions">
+                <a href="{% url 'delivery:order_detail' order.id %}" class="btn-action btn-view">
+                    📄 View Full Details
+                </a>
+
+                {% if assignment.status == "Assigned" %}
+                    <!-- Accept -->
+                    <form method="post" action="{% url 'delivery:accept_order' assignment.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-accept">
+                            ✓ Accept Order
+                        </button>
+                    </form>
+
+                    <!-- Reject with reason modal/box -->
+                    <details class="reason-box">
+                        <summary class="btn-action btn-reject">✗ Reject Order</summary>
+                        <div class="reason-popup">
+                            <form method="post" action="{% url 'delivery:reject_order' assignment.id %}">
+                                {% csrf_token %}
+                                <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: bold; color: #333;">Why are you rejecting this assignment?</p>
+                                <input type="text" name="rejection_reason" placeholder="e.g. Too far, vehicle issue, emergency" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; margin-bottom: 8px;">
+                                <button type="submit" class="btn-action btn-reject" style="width: 100%;">Confirm Reject</button>
+                            </form>
+                        </div>
+                    </details>
+
+                {% elif assignment.status == "Accepted" %}
+                    <!-- Pick Up -->
+                    <form method="post" action="{% url 'delivery:pickup_order' assignment.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-pickup">
+                            📦 Mark as Picked Up from Store
+                        </button>
+                    </form>
+
+                {% elif assignment.status == "Picked Up" %}
+                    <!-- Start Delivery -->
+                    <form method="post" action="{% url 'delivery:out_for_delivery' assignment.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-out">
+                            🛵 Start Delivery / Out for Delivery
+                        </button>
+                    </form>
+
+                {% elif assignment.status == "Out for Delivery" %}
+                    <!-- Deliver (with confirmation) -->
+                    <form method="post" action="{% url 'delivery:deliver_order' assignment.id %}" style="display: inline;"
+                          onsubmit="return confirm('Confirm that Order #{{ order.id }} has been delivered to {{ order.full_name }} and ₹{{ order.total_amount }} collected (if COD)?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-deliver">
+                            ✅ Complete &amp; Mark as Delivered
+                        </button>
+                    </form>
+
+                    <!-- Delivery Failed with reason -->
+                    <details class="reason-box">
+                        <summary class="btn-action btn-fail">⚠️ Delivery Failed</summary>
+                        <div class="reason-popup">
+                            <form method="post" action="{% url 'delivery:fail_delivery' assignment.id %}">
+                                {% csrf_token %}
+                                <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: bold; color: #333;">Reason for failed delivery:</p>
+                                <input type="text" name="failure_reason" placeholder="e.g. Customer unreachable, wrong address, customer refused" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; margin-bottom: 8px;">
+                                <button type="submit" class="btn-action btn-fail" style="width: 100%;">Record Delivery Failed</button>
+                            </form>
+                        </div>
+                    </details>
+                {% endif %}
+            </div>
+        </article>
+        {% endwith %}
+        {% empty %}
+        <div class="empty-state">
+            <div style="font-size: 48px; margin-bottom: 12px;">📦</div>
+            <h3 style="margin: 0 0 8px 0; color: #302333;">No orders in this section</h3>
+            <p style="margin: 0; color: #777;">
+                {% if active_tab == 'new' %}
+                    You have no new pending requests right now.
+                {% elif active_tab == 'completed' %}
+                    No deliveries completed yet. Completed orders will appear here.
+                {% else %}
+                    No deliveries are currently in this stage. Check back soon!
+                {% endif %}
+            </p>
+        </div>
+        {% endfor %}
+    </section>
+
+</div>
+{% endblock %}

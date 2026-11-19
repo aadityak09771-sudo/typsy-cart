@@ -1,0 +1,256 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}My Profile & Availability | Delivery Partner Portal{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/dashboard.css' %}">
+<style>
+    .profile-container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 0 15px;
+    }
+    .profile-card {
+        background: white;
+        border: 1px solid #eee5eb;
+        border-radius: 18px;
+        padding: 30px;
+        margin-bottom: 24px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+    }
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        border-bottom: 2px solid #f6eff3;
+        padding-bottom: 20px;
+        margin-bottom: 24px;
+    }
+    .profile-avatar-circle {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a52d55, #4a152d);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(165,45,85,0.25);
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #555;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control-custom {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #a52d55;
+        box-shadow: 0 0 0 3px rgba(165,45,85,0.12);
+    }
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+    }
+    .status-badge-lg {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+    .status-available { background: #e6f4ea; color: #137333; }
+    .status-busy { background: #fef7e0; color: #b06000; }
+    .status-offline { background: #f1f3f4; color: #5f6368; }
+    .readonly-box {
+        background: #f8f9fa;
+        border: 1px dashed #ced4da;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #666;
+    }
+    .btn-save-profile {
+        background: #a52d55;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-save-profile:hover {
+        background: #842343;
+        transform: translateY(-1px);
+    }
+    .btn-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #a52d55;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+    .btn-back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+    <a href="{% url 'delivery:dashboard' %}" class="btn-back-link">
+        &larr; Back to Delivery Dashboard
+    </a>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" style="padding: 12px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: 600;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="profile-card">
+        <div class="profile-header">
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <div class="profile-avatar-circle">
+                    {{ partner.full_name|first|default:partner.user.username|first|upper }}
+                </div>
+                <div>
+                    <h2 style="margin: 0; color: #222; font-size: 22px;">{{ partner.get_display_name }}</h2>
+                    <p style="margin: 4px 0 0; color: #777; font-size: 13px;">
+                        Partner ID: <strong>{{ partner.partner_id }}</strong> | Username: <code>{{ partner.user.username }}</code>
+                    </p>
+                </div>
+            </div>
+            <div>
+                <span class="status-badge-lg status-{{ partner.availability_status }}">
+                    &bull; {{ partner.get_availability_status_display }}
+                </span>
+                {% if partner.is_active %}
+                    <span class="status-badge-lg" style="background:#e8f0fe; color:#1a73e8; margin-left: 6px;">
+                        Active Account
+                    </span>
+                {% else %}
+                    <span class="status-badge-lg" style="background:#fce8e6; color:#c5221f; margin-left: 6px;">
+                        Deactivated
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'delivery:profile' %}">
+            {% csrf_token %}
+
+            <h3 style="font-size: 16px; color: #a52d55; margin: 0 0 16px 0; border-left: 4px solid #a52d55; padding-left: 10px;">
+                Availability & Status
+            </h3>
+
+            <div class="form-group">
+                <label for="availability_status">Current Availability</label>
+                <select name="availability_status" id="availability_status" class="form-control-custom" style="max-width: 320px;">
+                    {% for key, val in availability_choices %}
+                        <option value="{{ key }}" {% if partner.availability_status == key %}selected{% endif %}>
+                            {{ val }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small style="display: block; color: #777; margin-top: 4px;">
+                    When set to <em>Available</em>, admin can assign new incoming orders to you.
+                </small>
+            </div>
+
+            <h3 style="font-size: 16px; color: #a52d55; margin: 26px 0 16px 0; border-left: 4px solid #a52d55; padding-left: 10px;">
+                Contact & Address
+            </h3>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="text" name="phone" id="phone" value="{{ partner.phone }}" class="form-control-custom" required>
+                </div>
+                <div class="form-group">
+                    <label for="email_display">Email (Registered)</label>
+                    <input type="email" id="email_display" value="{{ partner.get_email }}" class="form-control-custom" readonly style="background: #f8f9fa; color: #666;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Partner Base Address</label>
+                <textarea name="address" id="address" rows="2" class="form-control-custom">{{ partner.address }}</textarea>
+            </div>
+
+            <h3 style="font-size: 16px; color: #a52d55; margin: 26px 0 16px 0; border-left: 4px solid #a52d55; padding-left: 10px;">
+                Vehicle & Territory
+            </h3>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="vehicle_type">Vehicle Type</label>
+                    <select name="vehicle_type" id="vehicle_type" class="form-control-custom">
+                        {% for key, val in vehicle_choices %}
+                            <option value="{{ key }}" {% if partner.vehicle_type == key %}selected{% endif %}>
+                                {{ val }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vehicle_number">Vehicle Registration Number</label>
+                    <input type="text" name="vehicle_number" id="vehicle_number" value="{{ partner.vehicle_number|default:'' }}" placeholder="e.g. MH 01 AB 1234" class="form-control-custom">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Assigned Delivery PIN Codes (Managed by Administrator)</label>
+                <div class="readonly-box">
+                    {% if partner.service_pincodes %}
+                        <strong>{{ partner.service_pincodes }}</strong>
+                    {% else %}
+                        <em>All operational PIN codes (No specific restriction)</em>
+                    {% endif %}
+                </div>
+                <small style="color: #888;">To request additional PIN code areas, please contact the dispatch administrator.</small>
+            </div>
+
+            <div style="margin-top: 28px; display: flex; justify-content: flex-end; gap: 12px;">
+                <a href="{% url 'delivery:dashboard' %}" style="padding: 12px 20px; border: 1px solid #ddd; border-radius: 10px; color: #555; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-save-profile">
+                    Save Profile Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

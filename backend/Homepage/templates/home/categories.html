@@ -1,0 +1,64 @@
+
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Categories | Tipsy Cart{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/categories.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="intro">
+        <p class="eyebrow">CARE • COMFORT • CONFIDENCE</p>
+        <h1>Shop by Category</h1>
+        <p>
+            Everyday essentials, personal care and safety products,
+            delivered with care.
+        </p>
+    </section>
+
+    <section class="category-grid">
+        <article class="category-card">
+            <div class="category-icon">🌸</div>
+            <h2>Period Care</h2>
+            <p>Sanitary pads and menstrual hygiene essentials.</p>
+            <a href="/shop/?category=period-care">Explore Products →</a>
+        </article>
+
+        <article class="category-card">
+            <div class="category-icon">🛡️</div>
+            <h2>Personal Safety</h2>
+            <p>Everyday personal safety essentials.</p>
+            <a href="/shop/?category=personal-safety">Explore Products →</a>
+        </article>
+
+        <article class="category-card">
+            <div class="category-icon">🧴</div>
+            <h2>Personal Care</h2>
+            <p>Hygiene and personal care products.</p>
+            <a href="/shop/?category=personal-care">Explore Products →</a>
+        </article>
+
+        <article class="category-card">
+            <div class="category-icon">🛍️</div>
+            <h2>Daily Essentials</h2>
+            <p>Useful products for your daily routine.</p>
+            <a href="/shop/?category=daily-essentials">Explore Products →</a>
+        </article>
+
+        <!-- NEW: Groceries Category -->
+        <article class="category-card">
+            <div class="category-icon">🛒</div>
+            <h2>Groceries</h2>
+            <p>Atta, rice, pulses, cooking oil and everyday grocery essentials.</p>
+            <a href="/shop/?category=groceries">Explore Products →</a>
+        </article>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/categories.js' %}"></script>
+{% endblock %}

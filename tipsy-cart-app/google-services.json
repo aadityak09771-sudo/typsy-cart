@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "663378100956",
+    "project_id": "tipsy-cart",
+    "storage_bucket": "tipsy-cart.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663378100956:android:08fb1e83938662654caa19",
+        "android_client_info": {
+          "package_name": "com.akash1601steam.tipsycartapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6MWG-SpWb7WTD4ywILaExqDt4P3ZtgLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

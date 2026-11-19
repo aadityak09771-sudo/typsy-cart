@@ -1,0 +1,93 @@
+
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Contact Us | Tipsy Cart{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/contact.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="intro">
+        <p class="eyebrow">WE'RE HERE TO HELP</p>
+        <h1>Contact Tipsy Cart</h1>
+        <p>Have a question about products, orders or delivery? Send us a message.</p>
+    </section>
+
+    <section class="contact-layout">
+        <div class="contact-info">
+            <h2>Get in Touch</h2>
+            <p>We're happy to help with your everyday essentials and product queries.</p>
+
+            <div class="info-card">
+                <span>📦</span>
+                <div>
+                    <h3>Order Queries</h3>
+                    <p>Ask us about your order or products.</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <span>💬</span>
+                <div>
+                    <h3>WhatsApp</h3>
+                    <p>Contact us directly using WhatsApp.</p>
+                </div>
+            </div>
+
+            <a
+                class="whatsapp-button"
+                href="https://wa.me/91YOURNUMBER"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Chat on WhatsApp
+            </a>
+
+            <p class="small-note">
+                Replace 91YOURNUMBER with your WhatsApp number,
+                including country code.
+            </p>
+        </div>
+
+        <form id="contact-form" class="contact-form">
+            <h2>Send a Message</h2>
+
+            <label for="name">Your Name</label>
+            <input id="name" name="name" type="text"
+                   required maxlength="100">
+
+            <label for="email">Email Address</label>
+            <input id="email" name="email" type="email"
+                   required maxlength="254">
+
+            <label for="subject">Subject</label>
+            <select id="subject" name="subject" required>
+                <option value="">Select a topic</option>
+                <option value="product">Product enquiry</option>
+                <option value="order">Order enquiry</option>
+                <option value="delivery">Delivery enquiry</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="message">Your Message</label>
+            <textarea id="message" name="message" rows="5"
+                      required maxlength="2000"></textarea>
+
+            <button type="submit">Prepare Message</button>
+
+            <p id="form-status" role="status" aria-live="polite"></p>
+
+            <p class="small-note">
+                Demo form: messages are not sent to or stored on a server.
+            </p>
+        </form>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/contact.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,1019 @@
+
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}My Account | Tipsy Cart{% endblock %}
+
+{% block meta_description %}
+Manage your Tipsy Cart account and view your orders.
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/dashboard.css' %}">
+<style>
+    .delivery-tracking-box {
+        min-width: 250px;
+        padding: 4px 0;
+    }
+    .tracking-badge {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    .tracking-badge.assigned { background: #e8f0fe; color: #1a73e8; }
+    .tracking-badge.accepted { background: #e0f2fe; color: #0284c7; }
+    .tracking-badge.picked_up { background: #fef3c7; color: #b45309; }
+    .tracking-badge.out_for_delivery { background: #ffedd5; color: #c2410c; }
+    .tracking-badge.delivered { background: #dcfce7; color: #15803d; }
+    .tracking-badge.delivery_failed { background: #fee2e2; color: #b91c1c; }
+    .tracking-badge.cancelled { background: #f3f4f6; color: #6b7280; }
+    .tracking-badge.waiting { background: #f3f4f6; color: #6b7280; }
+
+    .tracking-timeline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 10px 0 6px;
+        position: relative;
+        padding: 0 4px;
+    }
+    .timeline-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        border: 2px solid #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    .timeline-step.completed .step-dot {
+        background: #a52d55;
+        border-color: #a52d55;
+    }
+    .timeline-step.active .step-dot {
+        background: #fff;
+        border-color: #a52d55;
+        box-shadow: 0 0 0 3px rgba(165,45,85,0.25);
+    }
+    .step-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-top: 4px;
+        text-transform: uppercase;
+    }
+    .timeline-step.completed .step-label,
+    .timeline-step.active .step-label {
+        color: #a52d55;
+    }
+    .timeline-bar {
+        position: absolute;
+        top: 6px;
+        left: 10px;
+        right: 10px;
+        height: 2px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+    .timeline-bar-fill {
+        height: 100%;
+        background: #a52d55;
+        transition: width 0.3s ease;
+    }
+    .partner-info-box {
+        background: #fdf6f8;
+        border: 1px solid #f5dbe5;
+        border-radius: 8px;
+        padding: 7px 10px;
+        margin-top: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+    .partner-call-btn {
+        display: inline-inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #198754;
+        color: white !important;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 10px;
+        margin-top: 4px;
+    }
+    .partner-call-btn:hover {
+        background: #157347;
+    }
+
+    /* Active Live Tracking Hero Card */
+    .active-tracking-hero {
+        background: #ffffff;
+        border: 2px solid #f2dbe5;
+        border-radius: 20px;
+        padding: 26px;
+        margin-bottom: 26px;
+        box-shadow: 0 10px 30px rgba(165, 45, 85, 0.08);
+        position: relative;
+        overflow: hidden;
+    }
+    .active-tracking-hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #a52d55, #e05d89, #a52d55);
+        background-size: 200% 100%;
+        animation: gradientMove 3s linear infinite;
+    }
+    @keyframes gradientMove {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 200% 0%; }
+    }
+    .tracking-hero-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #f6eff3;
+    }
+    .live-pulse-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: #fdf2f6;
+        color: #a52d55;
+        border: 1px solid #f8dce7;
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        animation: pulseAnimation 1.6s infinite;
+    }
+    @keyframes pulseAnimation {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .tracking-hero-title h2 {
+        margin: 4px 0 6px;
+        font-size: 24px;
+        color: #222;
+        font-weight: 800;
+    }
+    .order-placed-meta {
+        margin: 0;
+        font-size: 13px;
+        color: #777;
+    }
+    .eta-box {
+        background: linear-gradient(135deg, #fdf8fa, #fff0f5);
+        border: 1px solid #f5dbe5;
+        border-radius: 14px;
+        padding: 14px 18px;
+        text-align: right;
+        min-width: 220px;
+    }
+    .eta-label {
+        font-size: 10px;
+        font-weight: 800;
+        color: #a52d55;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .eta-time {
+        font-size: 20px;
+        font-weight: 800;
+        color: #30242c;
+        line-height: 1.2;
+    }
+    .eta-sub {
+        font-size: 11px;
+        color: #666;
+        margin-top: 3px;
+    }
+    .hero-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 28px 0 24px;
+        position: relative;
+        padding: 0 10px;
+    }
+    .hero-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+    .hero-step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: 3px solid #cbd5e1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        transition: all 0.3s;
+    }
+    .hero-step.completed .hero-step-circle {
+        background: #a52d55;
+        border-color: #a52d55;
+        color: white;
+    }
+    .hero-step.active .hero-step-circle {
+        background: white;
+        border-color: #a52d55;
+        box-shadow: 0 0 0 5px rgba(165, 45, 85, 0.2);
+    }
+    .hero-step-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .hero-step.completed .hero-step-title,
+    .hero-step.active .hero-step-title {
+        color: #a52d55;
+        font-weight: 800;
+    }
+    .hero-stepper-bar {
+        position: absolute;
+        top: 20px;
+        left: 25px;
+        right: 25px;
+        height: 4px;
+        background: #e2e8f0;
+        z-index: 1;
+        border-radius: 4px;
+    }
+    .hero-stepper-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #a52d55, #e05d89);
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+    .hero-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+    .hero-card-section {
+        background: #faf7f9;
+        border: 1px solid #f2e6ed;
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+    .hero-card-section h4 {
+        margin: 0 0 10px 0;
+        font-size: 12px;
+        font-weight: 800;
+        color: #a52d55;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .driver-pill-hero {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: white;
+        border: 1px solid #ebdbe2;
+        border-radius: 12px;
+        padding: 12px;
+    }
+    .driver-avatar-hero {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #a52d55;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+    .active-call-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #198754;
+        color: white !important;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        margin-top: 10px;
+        transition: background 0.2s;
+    }
+    .active-call-btn:hover {
+        background: #157347;
+    }
+
+    /* Step Progress Banner */
+    .step-summary-banner {
+        background: #fdf5f8;
+        border: 1px solid #f6dbe6;
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin: 18px 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .step-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        border: 1px solid #ebdbe2;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #30242c;
+    }
+    .remaining-highlight {
+        color: #a52d55;
+        font-weight: 800;
+    }
+    .step-next-hint {
+        font-size: 12px;
+        color: #666;
+    }
+    .hero-step-state {
+        font-size: 9px;
+        font-weight: 700;
+        margin-top: 3px;
+        text-transform: capitalize;
+    }
+    .hero-step.completed .hero-step-state {
+        color: #15803d;
+    }
+    .hero-step.active .hero-step-state {
+        color: #a52d55;
+        font-weight: 800;
+    }
+    .hero-step.pending .hero-step-state {
+        color: #94a3b8;
+    }
+
+    /* 6-Step Visual Checklist Grid */
+    .step-checklist-card {
+        background: #faf7f9;
+        border: 1px solid #f2e6ed;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-top: 18px;
+    }
+    .checklist-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .checklist-title h4 {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 800;
+        color: #a52d55;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .checklist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+    }
+    .checklist-item {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .checklist-item.done {
+        border-color: #c7eed5;
+        background: #f7fdf9;
+    }
+    .checklist-item.current {
+        border-color: #f2dbe5;
+        background: #fff8fb;
+        box-shadow: 0 2px 8px rgba(165, 45, 85, 0.08);
+    }
+    .checklist-badge {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+    .checklist-badge.done {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .checklist-badge.current {
+        background: #fce7f3;
+        color: #a52d55;
+    }
+    .checklist-badge.pending {
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    /* Item Card Details */
+    .hero-item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #eee;
+        gap: 10px;
+    }
+    .hero-item-thumb {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        background: white;
+        border: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .hero-item-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .hero-item-meta {
+        flex-grow: 1;
+        min-width: 0;
+    }
+    .hero-item-meta strong {
+        display: block;
+        font-size: 13px;
+        color: #222;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .hero-item-meta small {
+        color: #666;
+        font-size: 11px;
+    }
+    .hero-item-subtotal {
+        text-align: right;
+        flex-shrink: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #a52d55;
+    }
+    @media (max-width: 650px) {
+        .eta-box {
+            text-align: left;
+            width: 100%;
+        }
+        .hero-step-title {
+            font-size: 9px;
+        }
+        .hero-step-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+        .hero-stepper-bar {
+            top: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    {% if messages %}
+    <div class="dashboard-messages">
+        {% for message in messages %}
+        <div class="dashboard-message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <section class="dashboard-welcome">
+        <div class="welcome-content">
+            <span class="welcome-label">YOUR TIPSY CART ACCOUNT</span>
+            <h1>Welcome, {{ user.username }}! 👋</h1>
+            <p>
+                Your everyday essentials are just a click away.
+                Manage your account and track your orders here.
+            </p>
+            <a href="/shop/" class="dashboard-btn welcome-btn">
+                Explore Products <span>→</span>
+            </a>
+        </div>
+        <div class="welcome-emoji" aria-hidden="true">🛍️</div>
+    </section>
+
+    {% if request.GET.order_placed %}
+    <div style="background: #e6f4ea; border: 2px solid #34a853; border-radius: 16px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 14px rgba(52, 168, 83, 0.12);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <span style="font-size: 32px;">🎉</span>
+            <div>
+                <strong style="color: #137333; font-size: 17px; display: block;">Order #{{ request.GET.order_placed }} Placed Successfully!</strong>
+                <span style="color: #2e6930; font-size: 13px;">Your order has been received. Live tracking and estimated arrival are active below.</span>
+            </div>
+        </div>
+        <a href="#active-tracking" style="background: #137333; color: white; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; text-decoration: none;">Track Order Below ↓</a>
+    </div>
+    {% endif %}
+
+    {% if active_order %}
+    <!-- Active Order Live Tracking Hero Section -->
+    <section class="active-tracking-hero" id="active-tracking">
+        <div class="tracking-hero-header">
+            <div class="tracking-hero-title">
+                <span class="live-pulse-badge">
+                    <span class="pulse-dot"></span> LIVE DELIVERY TRACKING
+                </span>
+                <h2>Order #{{ active_order.id }}</h2>
+                <p class="order-placed-meta">
+                    Placed on {{ active_order.created_at|date:"d M Y, h:i A" }} &bull; 
+                    <strong>₹{{ active_order.total_amount }}</strong> 
+                    ({{ active_order.get_payment_method_display }})
+                </p>
+            </div>
+
+            <!-- "Kab Tak Aayega" ETA Box -->
+            <div class="eta-box">
+                <div class="eta-label">Estimated Delivery (Kab Tak Aayega)</div>
+                <div class="eta-time">{{ active_order.eta_display.time }}</div>
+                <div class="eta-sub">{{ active_order.eta_display.sub }}</div>
+            </div>
+        </div>
+
+        <!-- Prominent Step Status Banner -->
+        <div class="step-summary-banner">
+            <div class="step-summary-pill">
+                📍 Step {{ active_order.step_info.step_num }} of 6: 
+                <strong>{{ active_order.step_info.status_label }}</strong>
+                {% if active_order.step_info.remaining > 0 %}
+                    &bull; <span class="remaining-highlight">⏳ {{ active_order.step_info.remaining }} Step{{ active_order.step_info.remaining|pluralize }} Remaining</span>
+                {% else %}
+                    &bull; <span class="remaining-highlight" style="color: #137333;">🎉 Order Completed!</span>
+                {% endif %}
+            </div>
+            <div class="step-next-hint">
+                {% if active_order.step_info.remaining > 0 %}
+                    <strong>Next:</strong> {{ active_order.step_info.next_step_label }}
+                {% else %}
+                    Delivered safely to your location
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 6-Stage Visual Stepper -->
+        <div class="hero-stepper">
+            <div class="hero-stepper-bar">
+                <div class="hero-stepper-fill" style="width: {{ active_order.step_info.percent }}%;"></div>
+            </div>
+            {% for s in active_order.step_info.steps %}
+                <div class="hero-step {{ s.state }}">
+                    <span class="hero-step-circle">{{ s.icon }}</span>
+                    <span class="hero-step-title">{{ s.name }}</span>
+                    <span class="hero-step-state">
+                        {% if s.state == "completed" %}✓ Done
+                        {% elif s.state == "active" %}● Active
+                        {% else %}Pending{% endif %}
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- 6-Step Visual Checklist Grid -->
+        <div class="step-checklist-card">
+            <div class="checklist-title">
+                <h4>📋 Delivery Steps Checklist ({{ active_order.step_info.step_num }}/6 Completed)</h4>
+                {% if active_order.step_info.remaining > 0 %}
+                    <span style="font-size: 11px; font-weight: 700; color: #a52d55;">
+                        {{ active_order.step_info.remaining }} step{{ active_order.step_info.remaining|pluralize }} left
+                    </span>
+                {% else %}
+                    <span style="font-size: 11px; font-weight: 700; color: #15803d;">
+                        ✓ All Done
+                    </span>
+                {% endif %}
+            </div>
+            <div class="checklist-grid">
+                {% for s in active_order.step_info.steps %}
+                    <div class="checklist-item {% if s.state == 'completed' %}done{% elif s.state == 'active' %}current{% endif %}">
+                        <span style="font-size: 18px;">{{ s.icon }}</span>
+                        <div>
+                            <strong style="display: block; color: #222; font-size: 12px;">Step {{ s.num }}: {{ s.name }}</strong>
+                            <small style="color: #666; font-size: 10px; display: block;">{{ s.desc }}</small>
+                        </div>
+                        <span class="checklist-badge {% if s.state == 'completed' %}done{% elif s.state == 'active' %}current{% else %}pending{% endif %}">
+                            {% if s.state == "completed" %}Done ✓{% elif s.state == "active" %}Current ●{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3-Column Quick Details Grid -->
+        <div class="hero-details-grid">
+            <!-- 1. Delivery Driver Details -->
+            <div class="hero-card-section">
+                <h4>🛵 Assigned Delivery Partner</h4>
+                {% if active_order.delivery_assignment %}
+                    <div class="driver-pill-hero">
+                        <div class="driver-avatar-hero">
+                            {{ active_order.delivery_assignment.partner.full_name|first|default:"D"|upper }}
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <strong style="color: #222; font-size: 14px; display: block;">
+                                {{ active_order.delivery_assignment.partner.get_display_name }}
+                            </strong>
+                            <span style="color: #666; font-size: 12px; display: block;">
+                                {{ active_order.delivery_assignment.partner.get_vehicle_type_display }}
+                                {% if active_order.delivery_assignment.partner.vehicle_number %}
+                                    &bull; <code>{{ active_order.delivery_assignment.partner.vehicle_number }}</code>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% if active_order.delivery_assignment.partner.phone and active_order.delivery_assignment.status in "Accepted,Picked Up,Out for Delivery" %}
+                        <a href="tel:{{ active_order.delivery_assignment.partner.phone }}" class="active-call-btn">
+                            📞 Call Driver ({{ active_order.delivery_assignment.partner.phone }})
+                        </a>
+                    {% else %}
+                        <small style="color: #666; display: block; margin-top: 8px;">
+                            Status: <b style="color: #a52d55;">{{ active_order.delivery_assignment.get_status_display }}</b>
+                        </small>
+                    {% endif %}
+                {% else %}
+                    <div style="padding: 12px; background: white; border: 1px dashed #e0c8d4; border-radius: 10px; font-size: 13px; color: #666;">
+                        ⏳ <strong>Awaiting Driver Assignment:</strong> Store dispatch is currently assigning the nearest delivery partner for PIN code <strong>{{ active_order.pincode }}</strong>.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 2. Delivery Address -->
+            <div class="hero-card-section">
+                <h4>📍 Delivering To</h4>
+                <div style="font-size: 13px; color: #333; line-height: 1.5;">
+                    <strong style="color: #111;">{{ active_order.full_name }}</strong><br>
+                    {{ active_order.address }}<br>
+                    {{ active_order.city }}, {{ active_order.state }} - <strong>{{ active_order.pincode }}</strong><br>
+                    <span style="color: #666; margin-top: 4px; display: inline-block;">📞 Contact: {{ active_order.phone }}</span>
+                </div>
+            </div>
+
+            <!-- 3. Items & Payment -->
+            <div class="hero-card-section">
+                <h4>🛍️ Order Items ({{ active_order.items.count }})</h4>
+                <div style="max-height: 140px; overflow-y: auto; margin-bottom: 8px;">
+                    {% for item in active_order.items.all %}
+                        <div class="hero-item-row">
+                            <div class="hero-item-thumb">
+                                {% if item.image_url %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.product_name }}">
+                                {% else %}
+                                    🛍️
+                                {% endif %}
+                            </div>
+                            <div class="hero-item-meta">
+                                <strong>{{ item.product_name|default:item.product.name }}</strong>
+                                <small>Qty: {{ item.quantity }} &bull; ₹{{ item.price }} each</small>
+                            </div>
+                            <div class="hero-item-subtotal">
+                                ₹{{ item.subtotal }}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p style="margin: 0; color: #888;">Items details recorded</p>
+                    {% endfor %}
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; padding-top: 6px; border-top: 2px solid #eee;">
+                    <span>Total Amount (COD):</span>
+                    <strong style="color: #a52d55; font-size: 16px;">₹{{ active_order.total_amount }}</strong>
+                </div>
+                <small style="color: #198754; font-weight: bold; display: block; margin-top: 3px;">
+                    Payment: {{ active_order.get_payment_method_display }}
+                </small>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f6eff3; flex-wrap: wrap; gap: 10px;">
+            <a href="#all-orders" style="color: #a52d55; font-size: 13px; font-weight: 700; text-decoration: none;">
+                ↓ View All {{ total_orders }} Past Orders
+            </a>
+            {% if active_order.status == "Pending" or active_order.status == "Confirmed" %}
+                <form method="POST" action="{% url 'orders:cancel_order' active_order.id %}" onsubmit="return confirm('Are you sure you want to cancel Order #{{ active_order.id }}?');" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: 1px solid #dc3545; color: #dc3545; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer;">
+                        Cancel This Order
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="dashboard-stats">
+        <article class="dashboard-stat">
+            <div class="stat-icon">📦</div>
+            <div>
+                <p>Total Orders</p>
+                <h2>{{ total_orders|default:0 }}</h2>
+            </div>
+        </article>
+
+        <article class="dashboard-stat">
+            <div class="stat-icon">👤</div>
+            <div class="stat-details">
+                <p>My Account</p>
+                <h2 class="account-name">{{ user.username }}</h2>
+                <span>Member since {{ user.date_joined|date:"d M Y" }}</span>
+            </div>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+
+        <section class="dashboard-card profile-card">
+            <div class="card-heading">
+                <span class="card-icon">👤</span>
+                <h2>My Profile</h2>
+            </div>
+
+            <div class="profile-detail">
+                <span>Username</span>
+                <strong>{{ user.username }}</strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>Email Address</span>
+                <strong class="break-text">
+                    {{ user.email|default:"Not added" }}
+                </strong>
+            </div>
+
+            <div class="profile-detail">
+                <span>Member Since</span>
+                <strong>{{ user.date_joined|date:"d M Y" }}</strong>
+            </div>
+        </section>
+
+        <section class="dashboard-card shopping-card">
+            <div class="card-heading">
+                <span class="card-icon">🛍️</span>
+                <h2>Continue Shopping</h2>
+            </div>
+            <p>
+                Discover daily essentials, personal care items
+                and women's safety products.
+            </p>
+            <a href="/shop/" class="dashboard-btn">
+                Visit Shop →
+            </a>
+        </section>
+
+        <section class="dashboard-card help-card">
+            <div class="card-heading">
+                <span class="card-icon">💗</span>
+                <h2>Need Help?</h2>
+            </div>
+            <p>
+                Have a question about your order or Tipsy Cart?
+                Our contact page is here to help.
+            </p>
+            <a href="/contact/" class="dashboard-btn btn-outline">
+                Contact Us →
+            </a>
+        </section>
+
+    </div>
+
+    <section class="dashboard-card orders-card" id="all-orders">
+        <div class="orders-heading">
+            <div>
+                <span class="section-label">YOUR PURCHASES</span>
+                <h2>📦 My Orders</h2>
+                <p>View your orders and track your deliveries.</p>
+            </div>
+            <a href="/shop/" class="dashboard-btn btn-outline">
+                Shop More +
+            </a>
+        </div>
+
+        {% if customer_orders %}
+        <div class="orders-table-wrapper">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Order Date</th>
+                        <th>Total Amount</th>
+                        <th>Payment</th>
+                        <th>Order Status</th>
+                        <th>Delivery Tracking</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for order in customer_orders %}
+                    <tr>
+                        <td class="order-number">
+                            <strong>#{{ order.id }}</strong>
+                            <div style="margin-top: 6px; font-size: 11px; color: #555;">
+                                {% for item in order.items.all %}
+                                    <div style="line-height: 1.35; padding: 1px 0;">
+                                        &bull; {{ item.product_name|default:item.product.name }} <strong>(×{{ item.quantity }})</strong>
+                                    </div>
+                                {% empty %}
+                                    <div>{{ order.items.count }} items</div>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <td>{{ order.created_at|date:"d M Y" }}</td>
+
+                        <td class="order-amount">
+                            ₹{{ order.total_amount }}
+                        </td>
+
+                        <td>{{ order.get_payment_method_display }}</td>
+
+                        <td>
+                            <span class="order-status status-{{ order.status|lower }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+
+                        <td class="delivery-tracking">
+                            <div class="delivery-tracking-box">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                                    {% if order.delivery_assignment %}
+                                        <span class="tracking-badge {% if order.delivery_assignment.status == 'Assigned' %}assigned{% elif order.delivery_assignment.status == 'Accepted' %}accepted{% elif order.delivery_assignment.status == 'Picked Up' %}picked_up{% elif order.delivery_assignment.status == 'Out for Delivery' %}out_for_delivery{% elif order.delivery_assignment.status == 'Delivered' %}delivered{% elif order.delivery_assignment.status == 'Delivery Failed' %}delivery_failed{% elif order.delivery_assignment.status == 'Cancelled' %}cancelled{% else %}waiting{% endif %}">
+                                            &bull; {{ order.delivery_assignment.get_status_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="tracking-badge waiting">
+                                            &bull; Awaiting Assignment
+                                        </span>
+                                    {% endif %}
+
+                                    <span style="font-size: 11px; font-weight: 700; color: #a52d55;">
+                                        Step {{ order.step_info.step_num }}/6
+                                        {% if order.step_info.remaining > 0 %}
+                                            ({{ order.step_info.remaining }} left)
+                                        {% else %}
+                                            (✓ Done)
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                {% if not order.step_info.is_cancelled %}
+                                    <!-- Visual 6-Step Delivery Timeline -->
+                                    <div class="tracking-timeline">
+                                        <div class="timeline-bar"><div class="timeline-bar-fill" style="width: {{ order.step_info.percent }}%;"></div></div>
+                                        {% for s in order.step_info.steps %}
+                                            <div class="timeline-step {{ s.state }}">
+                                                <span class="step-dot"></span>
+                                                <span class="step-label">{{ s.name|slice:":4" }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                {% if order.delivery_assignment %}
+                                    <div class="partner-info-box">
+                                        <div><strong>Driver:</strong> {{ order.delivery_assignment.partner.get_display_name }} ({{ order.delivery_assignment.partner.get_vehicle_type_display }}{% if order.delivery_assignment.partner.vehicle_number %}, {{ order.delivery_assignment.partner.vehicle_number }}{% endif %})</div>
+                                        {% if order.delivery_assignment.status == "Assigned" %}
+                                            <div style="color: #1a73e8; margin-top: 2px;">Driver assigned to dispatch</div>
+                                        {% elif order.delivery_assignment.status == "Accepted" %}
+                                            <div style="color: #0284c7; margin-top: 2px;">Driver accepted & heading to store</div>
+                                        {% elif order.delivery_assignment.status == "Picked Up" %}
+                                            <div style="color: #b45309; margin-top: 2px;">📦 Order picked up from hub</div>
+                                        {% elif order.delivery_assignment.status == "Out for Delivery" %}
+                                            <div style="color: #c2410c; margin-top: 2px;">🛵 Driver is on the way to you!</div>
+                                        {% elif order.delivery_assignment.status == "Delivered" %}
+                                            <div style="color: #15803d; margin-top: 2px;">✅ Delivered on {{ order.delivery_assignment.delivered_at|date:"d M, H:i"|default:"recently" }}</div>
+                                        {% elif order.delivery_assignment.status == "Delivery Failed" %}
+                                            <div style="color: #b91c1c; margin-top: 2px;">⚠️ Failed: {{ order.delivery_assignment.failure_reason|default:"Unable to deliver" }}</div>
+                                        {% endif %}
+
+                                        {% if order.delivery_assignment.partner.phone and order.delivery_assignment.status in "Accepted,Picked Up,Out for Delivery" %}
+                                            <div style="margin-top: 4px;">
+                                                <a href="tel:{{ order.delivery_assignment.partner.phone }}" class="partner-call-btn">
+                                                    📞 Call Driver ({{ order.delivery_assignment.partner.phone }})
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <small style="color: #777; display: block; margin-top: 4px;">Store will assign a delivery partner shortly.</small>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td class="order-actions">
+                            {% if order.status == "Pending" or order.status == "Confirmed" %}
+                                <form method="POST"
+                                      action="{% url 'orders:cancel_order' order.id %}"
+                                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="cancel-order-btn">
+                                        Cancel Order
+                                    </button>
+                                </form>
+                            {% elif order.status == "Cancelled" %}
+                                <span class="order-status status-cancelled">
+                                    Cancelled
+                                </span>
+                            {% else %}
+                                <span>Not Available</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="empty-orders">
+            <div class="empty-orders-icon">🛍️</div>
+            <h3>No orders yet</h3>
+            <p>
+                You haven't placed an order yet.
+                Once you order something, it will appear here.
+            </p>
+            <a href="/shop/" class="dashboard-btn">
+                Start Shopping →
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="dashboard-note">
+        <span class="privacy-icon">🔒</span>
+        <div>
+            <strong>Your privacy matters.</strong>
+            <p>
+                Keep your account credentials private.
+                Never share your password.
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

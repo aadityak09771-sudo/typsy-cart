@@ -1,0 +1,163 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='orders' %}">Orders</a>
+&rsaquo; <a href="{% url 'admin:orders_order_changelist' %}">Orders</a>
+&rsaquo; <a href="{% url 'admin:orders_order_change' order.id %}">Order #{{ order.id }}</a>
+&rsaquo; {% translate 'Assign Delivery Partner' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" style="max-width: 1100px;">
+
+    <!-- Order Summary Card -->
+    <div style="background: #fff; padding: 22px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h2 style="margin: 0 0 10px 0; color: #222;">📦 Order #{{ order.id }} - Customer Details</h2>
+                <p style="margin: 4px 0; color: #555;">
+                    <strong>Customer:</strong> {{ order.full_name }} &nbsp;|&nbsp;
+                    <strong>Phone:</strong> 📞 <a href="tel:{{ order.phone }}">{{ order.phone }}</a>
+                </p>
+                <p style="margin: 4px 0; color: #555;">
+                    <strong>Delivery Address:</strong> {{ order.address }}, {{ order.city }}, {{ order.state }} - 
+                    <strong style="color: #a52d55; font-size: 14px;">PIN: {{ order.pincode }}</strong>
+                </p>
+                <p style="margin: 4px 0; color: #555;">
+                    <strong>Total Amount:</strong> ₹{{ order.total_amount }} &nbsp;|&nbsp;
+                    <strong>Payment:</strong> {{ order.get_payment_method_display }} &nbsp;|&nbsp;
+                    <strong>Order Status:</strong> <span style="font-weight: bold; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 10px;">{{ order.status }}</span>
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'admin:orders_order_change' order.id %}" class="button" style="padding: 6px 14px;">← Back to Order</a>
+            </div>
+        </div>
+
+        {% if current_assignment %}
+        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px; color: #856404;">
+            ⚠️ <strong>Currently Assigned To:</strong> {{ current_assignment.partner.get_display_name }} ({{ current_assignment.partner.phone }}) - 
+            Status: <strong>{{ current_assignment.status }}</strong>. Selecting a new partner will reassign this order.
+        </div>
+        {% endif %}
+
+        <!-- Order Items -->
+        <div style="margin-top: 15px;">
+            <h4 style="margin: 0 0 6px 0; font-size: 13px; color: #666; text-transform: uppercase;">Items in this order:</h4>
+            <ul style="margin: 0; padding-left: 20px; color: #444;">
+                {% for item in order.items.all %}
+                    <li><strong>{{ item.product_name }}</strong> &times; {{ item.quantity }} (₹{{ item.price }} each)</li>
+                {% empty %}
+                    <li>No items recorded</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Assignment Form -->
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="module" style="background: #fff; border-radius: 8px; border: 1px solid #dee2e6; overflow: hidden; margin-bottom: 22px;">
+            <h2 style="background: #79aec8; color: #fff; padding: 12px 18px; margin: 0; font-size: 15px;">
+                Select an Active Delivery Partner
+            </h2>
+
+            {% if partner_list %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                        <th style="padding: 12px; width: 40px; text-align: center;">Select</th>
+                        <th style="padding: 12px;">Partner Name</th>
+                        <th style="padding: 12px;">Contact</th>
+                        <th style="padding: 12px;">Vehicle</th>
+                        <th style="padding: 12px;">Service Area (PIN Match)</th>
+                        <th style="padding: 12px;">Availability</th>
+                        <th style="padding: 12px; text-align: center;">Current Workload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in partner_list %}
+                    {% with p=item.partner %}
+                    <tr style="border-bottom: 1px solid #eee; {% if current_assignment and current_assignment.partner.id == p.id %}background: #f0f7ff;{% endif %}">
+                        <td style="padding: 12px; text-align: center;">
+                            <input type="radio" name="partner_id" value="{{ p.id }}" id="partner_{{ p.id }}" 
+                                   {% if current_assignment and current_assignment.partner.id == p.id %}checked{% elif forloop.first and not current_assignment %}checked{% endif %}
+                                   style="width: 18px; height: 18px; cursor: pointer;">
+                        </td>
+                        <td style="padding: 12px;">
+                            <label for="partner_{{ p.id }}" style="cursor: pointer; display: block;">
+                                <strong>{{ p.get_display_name }}</strong><br>
+                                <small style="color: #666;">User: @{{ p.user.username }}</small>
+                            </label>
+                        </td>
+                        <td style="padding: 12px;">
+                            📞 {{ p.phone }}<br>
+                            {% if p.email %}<small style="color: #666;">✉️ {{ p.email }}</small>{% endif %}
+                        </td>
+                        <td style="padding: 12px;">
+                            {{ p.get_vehicle_type_display }}
+                            {% if p.vehicle_number %}<br><small style="color:#666;">Plate: {{ p.vehicle_number }}</small>{% endif %}
+                        </td>
+                        <td style="padding: 12px;">
+                            {% if item.serves_pin %}
+                                <span style="background: #e6f4ea; color: #137333; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                                    ✅ Serves {{ order.pincode }}
+                                </span>
+                            {% else %}
+                                <span style="background: #fef7e0; color: #b06000; padding: 3px 8px; border-radius: 10px; font-size: 11px;">
+                                    ⚠️ Area Mismatch (PIN {{ p.service_pincodes }})
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px;">
+                            {% if p.availability_status == 'available' %}
+                                <span style="background: #e6f4ea; color: #137333; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">🟢 Available</span>
+                            {% elif p.availability_status == 'busy' %}
+                                <span style="background: #fef7e0; color: #b06000; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">🟡 Busy</span>
+                            {% else %}
+                                <span style="background: #f1f3f4; color: #5f6368; padding: 3px 8px; border-radius: 10px; font-size: 11px;">⚪ Offline</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="font-weight: bold; font-size: 14px;">{{ item.active_count }}</span> active<br>
+                            <small style="color: #666;">({{ item.completed_count }} completed)</small>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 24px; text-align: center; color: #c5221f;">
+                <p><strong>No active delivery partners found!</strong></p>
+                <p>Please create or activate a delivery partner in <a href="{% url 'admin:delivery_deliverypartner_add' %}">Delivery Partner Management</a> first.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if partner_list %}
+        <div style="background: #fff; padding: 18px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 22px;">
+            <label for="id_notes" style="display: block; font-weight: bold; margin-bottom: 6px;">Special Instructions / Delivery Notes (Optional):</label>
+            <input type="text" name="notes" id="id_notes" placeholder="e.g. Call customer before arrival, handle with care" 
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;"
+                   value="{{ current_assignment.notes|default:'' }}">
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="button" style="background: #a52d55; color: white; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none;">
+                ✓ Confirm &amp; Assign Delivery Partner
+            </button>
+            <a href="{% url 'admin:orders_order_change' order.id %}" class="button" style="padding: 10px 18px; font-size: 14px; background: #6c757d; color: white; text-decoration: none; border-radius: 6px;">
+                Cancel
+            </a>
+        </div>
+        {% endif %}
+    </form>
+
+</div>
+{% endblock %}

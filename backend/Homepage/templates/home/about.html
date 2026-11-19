@@ -1,0 +1,71 @@
+
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}About Us | Tipsy Cart{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/about.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <p class="eyebrow">OUR STORY</p>
+
+    <h1>Everyday Care, Delivered with Confidence.</h1>
+
+    <p>
+        We aim to make everyday essentials and personal care products
+        easier to access, with a focus on comfort, convenience and dignity.
+    </p>
+
+    <a class="button" href="/shop/">Explore Products</a>
+</section>
+
+<section class="content">
+    <h2>Who We Are</h2>
+    <p>
+        Tipsy Cart is an e-commerce initiative focused on daily essentials,
+        menstrual hygiene products, personal care and everyday safety products.
+    </p>
+
+    <h2>Our Mission</h2>
+    <p>
+        Our mission is to make essential products easier to discover and order,
+        while building a customer experience based on privacy, respect and convenience.
+    </p>
+
+    <h2>Women-Led Delivery Vision</h2>
+    <p>
+        We aim to build a delivery service led by women, creating opportunities
+        for women delivery partners and helping customers feel comfortable
+        ordering personal care essentials.
+    </p>
+
+    <h2>Our Values</h2>
+
+    <div class="values">
+        <article>
+            <span>💗</span>
+            <h3>Care</h3>
+            <p>Respectful service for everyday needs.</p>
+        </article>
+
+        <article>
+            <span>🔒</span>
+            <h3>Privacy</h3>
+            <p>A customer experience that respects personal choices.</p>
+        </article>
+
+        <article>
+            <span>🌸</span>
+            <h3>Empowerment</h3>
+            <p>Working towards more opportunities for women.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'home/js/about.js' %}"></script>
+{% endblock %}

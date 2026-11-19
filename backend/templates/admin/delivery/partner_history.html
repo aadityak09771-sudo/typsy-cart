@@ -1,0 +1,124 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='delivery' %}">Delivery</a>
+&rsaquo; <a href="{% url 'admin:delivery_deliverypartner_changelist' %}">Delivery Partners</a>
+&rsaquo; <a href="{% url 'admin:delivery_deliverypartner_change' partner.id %}">{{ partner.get_display_name }}</a>
+&rsaquo; {% translate 'Delivery History' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main" style="max-width: 1200px;">
+
+    <div style="background: #fff; padding: 22px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h2 style="margin: 0 0 8px 0; color: #333;">🚚 {{ partner.get_display_name }}</h2>
+                <p style="margin: 0 0 6px 0; color: #666;">
+                    <strong>Phone:</strong> {{ partner.phone }} &nbsp;|&nbsp;
+                    <strong>Username:</strong> @{{ partner.user.username }} &nbsp;|&nbsp;
+                    <strong>Vehicle:</strong> {{ partner.get_vehicle_type_display }} {% if partner.vehicle_number %}({{ partner.vehicle_number }}){% endif %}
+                </p>
+                <p style="margin: 0; color: #666;">
+                    <strong>Service PIN codes:</strong> {{ partner.service_pincodes|default:"All Areas" }} &nbsp;|&nbsp;
+                    <strong>Status:</strong> {% if partner.is_active %}<span style="color: #137333; font-weight: bold;">Active</span>{% else %}<span style="color: #d93025; font-weight: bold;">Inactive</span>{% endif %} &nbsp;|&nbsp;
+                    <strong>Availability:</strong> {{ partner.get_availability_status_display }}
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'admin:delivery_deliverypartner_change' partner.id %}" class="button" style="padding: 8px 16px;">Edit Partner Profile</a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 20px;">
+            <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 14px; text-align: center;">
+                <div style="font-size: 26px; font-weight: bold; color: #1a73e8;">{{ total_count }}</div>
+                <div style="font-size: 13px; color: #666; margin-top: 4px;">Total Assignments</div>
+            </div>
+            <div style="background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 8px; padding: 14px; text-align: center;">
+                <div style="font-size: 26px; font-weight: bold; color: #1967d2;">{{ active_count }}</div>
+                <div style="font-size: 13px; color: #1967d2; margin-top: 4px;">Active Deliveries</div>
+            </div>
+            <div style="background: #e6f4ea; border: 1px solid #ceead6; border-radius: 8px; padding: 14px; text-align: center;">
+                <div style="font-size: 26px; font-weight: bold; color: #137333;">{{ completed_count }}</div>
+                <div style="font-size: 13px; color: #137333; margin-top: 4px;">Completed Deliveries</div>
+            </div>
+            <div style="background: #fce8e6; border: 1px solid #fad2cf; border-radius: 8px; padding: 14px; text-align: center;">
+                <div style="font-size: 26px; font-weight: bold; color: #c5221f;">{{ failed_count }}</div>
+                <div style="font-size: 13px; color: #c5221f; margin-top: 4px;">Failed / Rejected</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="module" style="background: #fff; border-radius: 8px; border: 1px solid #e0e0e0; overflow: hidden;">
+        <h2 style="background: #79aec8; color: #fff; padding: 12px 18px; margin: 0; font-size: 15px;">Assignment Records</h2>
+        
+        {% if assignments %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd; text-align: left;">
+                    <th style="padding: 10px 14px;">Order ID</th>
+                    <th style="padding: 10px 14px;">Customer</th>
+                    <th style="padding: 10px 14px;">Address & PIN</th>
+                    <th style="padding: 10px 14px;">Amount / Payment</th>
+                    <th style="padding: 10px 14px;">Assignment Status</th>
+                    <th style="padding: 10px 14px;">Assigned At</th>
+                    <th style="padding: 10px 14px;">Delivered At</th>
+                    <th style="padding: 10px 14px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 14px;">
+                        <a href="{% url 'admin:orders_order_change' assignment.order.id %}">
+                            <strong>Order #{{ assignment.order.id }}</strong>
+                        </a>
+                    </td>
+                    <td style="padding: 10px 14px;">
+                        <strong>{{ assignment.order.full_name }}</strong><br>
+                        <small>📞 {{ assignment.order.phone }}</small>
+                    </td>
+                    <td style="padding: 10px 14px;">
+                        {{ assignment.order.address }}, {{ assignment.order.city }}<br>
+                        <strong>PIN: {{ assignment.order.pincode }}</strong>
+                    </td>
+                    <td style="padding: 10px 14px;">
+                        ₹{{ assignment.order.total_amount }}<br>
+                        <small>{{ assignment.order.get_payment_method_display }}</small>
+                    </td>
+                    <td style="padding: 10px 14px;">
+                        <span style="font-weight: bold; padding: 3px 8px; border-radius: 10px; font-size: 12px;
+                            {% if assignment.status == 'Delivered' %}background:#e6f4ea; color:#137333;
+                            {% elif assignment.status == 'Assigned' %}background:#e8f0fe; color:#1a73e8;
+                            {% elif assignment.status == 'Out for Delivery' %}background:#feefe3; color:#c5221f;
+                            {% elif assignment.status == 'Delivery Failed' or assignment.status == 'Rejected' %}background:#fce8e6; color:#c5221f;
+                            {% else %}background:#eee; color:#333;{% endif %}">
+                            {{ assignment.status }}
+                        </span>
+                        {% if assignment.rejection_reason %}
+                            <br><small style="color:#c5221f;">Reason: {{ assignment.rejection_reason }}</small>
+                        {% elif assignment.failure_reason %}
+                            <br><small style="color:#c5221f;">Failure: {{ assignment.failure_reason }}</small>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px 14px;">{{ assignment.assigned_at|date:"d M Y, H:i" }}</td>
+                    <td style="padding: 10px 14px;">{{ assignment.delivered_at|date:"d M Y, H:i"|default:"-" }}</td>
+                    <td style="padding: 10px 14px;">
+                        <a href="{% url 'admin:delivery_deliveryassignment_change' assignment.id %}" class="button" style="font-size: 11px;">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="padding: 24px; text-align: center; color: #777;">No deliveries have been assigned to this partner yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+
+{% extends "home/base.html" %}
+
+{% block title %}Delivery Dashboard | Tipsy Cart{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:35px auto;padding:20px;">
+    <h1>Welcome, {{ partner.user.username }}!</h1>
+    <p>Tipsy Cart Women Delivery Partner Portal</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin:25px 0;">
+        <div>
+            <strong>Total assignments:</strong>
+            {{ total_assignments }}
+        </div>
+        <div>
+            <strong>Pending:</strong>
+            {{ pending_assignments }}
+        </div>
+        <div>
+            <strong>Delivered:</strong>
+            {{ delivered_assignments }}
+        </div>
+    </div>
+
+    <h2>My Assigned Orders</h2>
+
+    {% for assignment in assignments %}
+        <section style="border:1px solid #ddd;border-radius:12px;padding:20px;margin:18px 0;">
+            <h3>Order #{{ assignment.order_id }}</h3>
+
+            <p>
+                <strong>Customer:</strong>
+                {{ assignment.order.full_name }}
+            </p>
+            <p>
+                <strong>Phone:</strong>
+                {{ assignment.order.phone }}
+            </p>
+            <p>
+                <strong>Address:</strong>
+                {{ assignment.order.address }},
+                {{ assignment.order.city }},
+                {{ assignment.order.state }} -
+                {{ assignment.order.pincode }}
+            </p>
+            <p>
+                <strong>COD / Order total:</strong>
+                ₹{{ assignment.order.total_amount }}
+            </p>
+            <p>
+                <strong>Payment method:</strong>
+                {{ assignment.order.get_payment_method_display }}
+            </p>
+            <p>
+                <strong>Delivery status:</strong>
+                {{ assignment.get_status_display }}
+            </p>
+
+            {% if assignment.status != "Delivered" %}
+                <form method="post"
+                      action="{% url 'delivery:update_status' assignment.id %}">
+                    {% csrf_token %}
+
+                    <label for="status-{{ assignment.id }}">
+                        Update status
+                    </label>
+
+                    <select
+                        id="status-{{ assignment.id }}"
+                        name="status"
+                        required>
+                        {% if assignment.status == "Assigned" %}
+                            <option value="Picked Up">Picked Up</option>
+                            <option value="Out for Delivery">Out for Delivery</option>
+                        {% elif assignment.status == "Picked Up" %}
+                            <option value="Out for Delivery">Out for Delivery</option>
+                        {% elif assignment.status == "Out for Delivery" %}
+                            <option value="Delivered">Delivered</option>
+                        {% endif %}
+                    </select>
+
+                    <button type="submit">Update Status</button>
+                </form>
+            {% else %}
+                <p><strong>Delivery completed.</strong></p>
+            {% endif %}
+        </section>
+    {% empty %}
+        <p>No deliveries have been assigned to you yet.</p>
+    {% endfor %}
+
+    <form method="post" action="{% url 'delivery:logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</div>
+{% endblock %}
