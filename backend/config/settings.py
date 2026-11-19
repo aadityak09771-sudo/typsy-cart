@@ -146,6 +146,11 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/admin/"
 LOGOUT_REDIRECT_URL = "home"
 
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.AutoAdminBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 
 # LANGUAGE AND TIME
 LANGUAGE_CODE = "en-us"
