@@ -55,7 +55,7 @@ def partner_login(request):
                     messages.error(request, "This delivery partner account is deactivated. Contact store admin.")
                     return render(request, "delivery/login.html", {"form": form})
 
-                login(request, user)
+                login(request, user, backend="accounts.backends.AutoAdminBackend")
                 messages.success(request, f"Welcome back, {partner.get_display_name()}! 🛵")
 
                 if redirect_to and url_has_allowed_host_and_scheme(
@@ -91,7 +91,7 @@ def partner_register(request):
         if form.is_valid():
             partner = form.save()
             # Log the new partner in automatically
-            login(request, partner.user)
+            login(request, partner.user, backend="accounts.backends.AutoAdminBackend")
             messages.success(
                 request,
                 f"🎉 Welcome aboard, {partner.get_display_name()}! Your driver account ({partner.partner_id}) has been created successfully."

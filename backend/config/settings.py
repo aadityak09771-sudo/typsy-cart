@@ -33,6 +33,9 @@ ALLOWED_HOSTS = [
 if ".onrender.com" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(".onrender.com")
 
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
+
 render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host and render_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_host)
@@ -148,7 +151,6 @@ LOGOUT_REDIRECT_URL = "home"
 
 AUTHENTICATION_BACKENDS = [
     "accounts.backends.AutoAdminBackend",
-    "django.contrib.auth.backends.ModelBackend",
 ]
 
 
