@@ -361,18 +361,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         productGrid.innerHTML = filtered.map(product => {
-            const image = product.image_url
-                ? `
-                    <img
-                        class="product-image"
-                        src="${escapeHTML(product.image_url)}"
-                        alt="${escapeHTML(product.name)}"
-                        loading="lazy"
-                    >
-                `
-                : `
-                    <div class="product-icon" aria-hidden="true">🛍️</div>
-                `;
+            const fallbackUrl = "/static/home/images/cat-groceries.jpg";
+            const imgSrc = product.image_url && product.image_url.trim() ? product.image_url : fallbackUrl;
+            const altText = `${escapeHTML(product.name)} - Tipsy Cart Essentials`;
+
+            const image = `
+                <img
+                    class="product-image"
+                    src="${escapeHTML(imgSrc)}"
+                    alt="${altText}"
+                    loading="lazy"
+                    onerror="if (this.getAttribute('data-fallback') !== '1') { this.setAttribute('data-fallback', '1'); this.src = '${fallbackUrl}'; this.classList.add('tc-img-fallback'); }"
+                >
+            `;
 
             const inStock = product.stock > 0;
 

@@ -401,21 +401,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --------------------------------
-    // Product card
+    // Product card & category fallback
     // --------------------------------
 
+    function getCategoryFallbackImage(category) {
+        const cat = (category || "").toLowerCase();
+        if (cat.includes("grocer")) {
+            return "/static/home/images/cat-groceries.jpg";
+        }
+        if (cat.includes("period")) {
+            return "/static/home/images/cat-period-care.jpg";
+        }
+        if (cat.includes("safety")) {
+            return "/static/home/images/cat-personal-safety.jpg";
+        }
+        if (cat.includes("personal")) {
+            return "/static/home/images/cat-personal-care.jpg";
+        }
+        return "/static/home/images/cat-daily-essentials.jpg";
+    }
+
     function productCard(product) {
-        const image = product.image_url
-            ? `
-                <img
-                    src="${escapeHTML(product.image_url)}"
-                    alt="${escapeHTML(product.name)}"
-                    loading="lazy"
-                >
-            `
-            : `
-                <span class="tc-product-placeholder">🛍️</span>
-            `;
+        const fallbackUrl = getCategoryFallbackImage(product.category);
+        const imgSrc = product.image_url && product.image_url.trim() ? product.image_url : fallbackUrl;
+        const altText = `${escapeHTML(product.name)} - Tipsy Cart Fresh Essentials`;
+
+        const image = `
+            <img
+                src="${escapeHTML(imgSrc)}"
+                alt="${altText}"
+                loading="lazy"
+                onerror="if (this.getAttribute('data-fallback') !== '1') { this.setAttribute('data-fallback', '1'); this.src = '${fallbackUrl}'; this.classList.add('tc-img-fallback'); }"
+            >
+        `;
 
         const outOfStock = product.stock <= 0;
 

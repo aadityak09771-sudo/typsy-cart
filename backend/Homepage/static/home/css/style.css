@@ -226,7 +226,12 @@ button:hover,
     width: 100%;
     height: 100%;
     object-fit: contain;
-    padding: 14px;
+    padding: 10px;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tc-product-card:hover .tc-product-image img {
+    transform: scale(1.06);
 }
 
 .tc-product-placeholder {
@@ -991,7 +996,7 @@ footer {
 }
 
 .tc-shelf-grid .tc-product-image {
-    height: 155px;
+    height: 175px;
 }
 
 .tc-shelf-grid .tc-product-info {
@@ -1234,7 +1239,29 @@ footer {
     }
 
     .tc-shelf-grid .tc-product-image {
-        height: 145px;
+        height: 148px;
+    }
+
+    .tc-shelf-grid .tc-product-image img {
+        padding: 8px;
+    }
+
+    .tc-shelf-grid .tc-product-info {
+        padding: 12px;
+    }
+
+    .tc-shelf-grid .tc-product-info h3 {
+        font-size: 13.5px;
+        min-height: 38px;
+    }
+
+    .tc-shelf-grid .tc-product-bottom strong {
+        font-size: 15.5px;
+    }
+
+    .tc-shelf-grid .tc-product-bottom button {
+        padding: 7px 11px;
+        font-size: 11.5px;
     }
 
     .tc-product-shelf-heading {
@@ -1251,7 +1278,7 @@ footer {
     }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 340px) {
     .tc-shelf-grid {
         grid-template-columns: 1fr;
     }
