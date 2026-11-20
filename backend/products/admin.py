@@ -25,6 +25,18 @@ GROCERY_SUBCATEGORIES = [
     ("Household Essentials", "Household Essentials"),
 ]
 
+DAILY_ESSENTIALS_SUBCATEGORIES = [
+    ("Home Cleaning", "Home Cleaning"),
+    ("Personal Care & Bath", "Personal Care & Bath"),
+    ("Oral Care & Grooming", "Oral Care & Grooming"),
+    ("Utilities & Protection", "Utilities & Protection"),
+]
+
+PERSONAL_CARE_SUBCATEGORIES = [
+    ("Personal Care & Bath", "Personal Care & Bath"),
+    ("Hygiene & Sanitization", "Hygiene & Sanitization"),
+]
+
 
 class ProductAdminForm(forms.ModelForm):
 
@@ -62,9 +74,21 @@ class ProductAdminForm(forms.ModelForm):
 
         added = set()
 
+        # Grocery subcategories
         for value, label in GROCERY_SUBCATEGORIES:
-            choices.append((value, label))
+            choices.append((value, f"Groceries — {label}"))
             added.add(value)
+
+        # Daily Essentials subcategories
+        for value, label in DAILY_ESSENTIALS_SUBCATEGORIES:
+            choices.append((value, f"Daily Essentials — {label}"))
+            added.add(value)
+
+        # Personal Care subcategories
+        for value, label in PERSONAL_CARE_SUBCATEGORIES:
+            if value not in added:
+                choices.append((value, f"Personal Care — {label}"))
+                added.add(value)
 
         for value in sorted(existing_subcategories, key=str.casefold):
             if value not in added:
@@ -82,6 +106,7 @@ class ProductAdmin(admin.ModelAdmin):
         "id",
         "name",
         "category",
+        "subcategory",
         "price",
         "stock",
         "is_active",
@@ -90,6 +115,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     list_filter = (
         "category",
+        "subcategory",
         "is_active",
         "created_at",
     )

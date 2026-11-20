@@ -8,34 +8,44 @@ Shop groceries, daily essentials, personal care and safety products at Tipsy Car
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/shop.css' %}">
+<link rel="stylesheet" href="{% static 'home/css/shop.css' %}?v=3.0">
 {% endblock %}
 
 {% block content %}
 <div class="shop-page">
 
-    <section class="shop-hero">
+    <section class="shop-hero" id="shop-hero">
+        <!-- Responsive Picture Element for Device-Specific Image Loading -->
+        <picture class="shop-hero-picture">
+            <!-- Mobile Screens (up to 767px): Vertical 9:16 mobile banner -->
+            <source media="(max-width: 767px)" srcset="{% static 'home/images/shop-banner-mobile.png' %}">
+            <!-- Tablet & Desktop Screens (768px and above): Wide landscape banner -->
+            <source media="(min-width: 768px)" srcset="{% static 'home/images/shop-banner-desktop.png' %}">
+            <!-- Fallback Image -->
+            <img
+                src="{% static 'home/images/shop-banner-desktop.png' %}"
+                alt="TipsyCart - Kanpur's Hyperlocal Lifestyle Store"
+                class="shop-hero-img"
+                loading="eager"
+                fetchpriority="high"
+            >
+        </picture>
+
+        <!-- Gradient Scrim for Guaranteed Text Contrast on Wide Screens -->
+        <div class="shop-hero-scrim" aria-hidden="true"></div>
+
+        <!-- Code-based Text Content -->
         <div class="shop-hero-content">
-            <span class="hero-label">CARE • COMFORT • CONFIDENCE</span>
-            <h1>Everything you need,<br><span>all in one cart.</span></h1>
-            <p>
-                From everyday groceries to personal care and safety essentials,
-                shop what matters with Tipsy Cart.
+            <span class="hero-label">KANPUR'S HYPERLOCAL LIFESTYLE STORE</span>
+            <h1 class="hero-title">Everything you need,<br><span>all in one cart.</span></h1>
+            <p class="hero-desc">
+                From fresh groceries to personal care and safety essentials, shop what matters with TipsyCart.
             </p>
 
-            <a href="#shop-products" class="hero-shop-button">
-                Explore Products <span aria-hidden="true">→</span>
+            <a href="#shop-products" class="hero-shop-button" id="hero-explore-btn">
+                <span>Explore Products</span>
+                <span class="hero-btn-arrow" aria-hidden="true">→</span>
             </a>
-        </div>
-
-        <div class="shop-hero-art" aria-hidden="true">
-            <div class="hero-circle">
-                <span class="hero-bag">🛍️</span>
-                <span class="hero-heart">♥</span>
-                <span class="hero-sparkle sparkle-one">✦</span>
-                <span class="hero-sparkle sparkle-two">✧</span>
-            </div>
-            <div class="hero-art-caption">Your everyday care basket</div>
         </div>
     </section>
 
@@ -105,6 +115,14 @@ Shop groceries, daily essentials, personal care and safety products at Tipsy Car
                     <option value="name">Name: A to Z</option>
                 </select>
             </div>
+        </div>
+
+        <!-- Dynamic Subcategory Filter Pills (Linked from Admin Panel) -->
+        <div id="subcategory-filter-container" class="subcategory-filter-container" hidden>
+            <div class="subcat-filter-header">
+                <span class="subcat-filter-label" id="subcat-filter-label">Explore Subcategories:</span>
+            </div>
+            <div id="subcategory-filter-bar" class="subcategory-filter-bar" role="tablist" aria-label="Subcategory filters"></div>
         </div>
 
         <div class="product-results-header">

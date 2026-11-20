@@ -1,0 +1,142 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Returns & Refunds Policy | TipsyCart Kanpur{% endblock %}
+
+{% block extra_css %}
+<style>
+.tc-policy-page {
+    max-width: 900px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    font-family: inherit;
+}
+.tc-policy-hero {
+    text-align: center;
+    padding: 44px 24px;
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 50%, #fce7f3 100%);
+    border-radius: 24px;
+    border: 1px solid #fbcfe8;
+    margin-bottom: 36px;
+    box-shadow: 0 10px 30px rgba(165, 44, 105, 0.06);
+}
+.tc-policy-eyebrow {
+    color: #9d174d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+.tc-policy-hero h1 {
+    font-size: clamp(26px, 3.8vw, 38px);
+    color: #2b1f30;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.tc-policy-hero h1 span {
+    color: #be185d;
+}
+.tc-policy-hero p {
+    color: #5b4655;
+    font-size: 15px;
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+.tc-policy-content {
+    background: #ffffff;
+    border: 1px solid #f5d5e5;
+    border-radius: 22px;
+    padding: 36px 32px;
+    box-shadow: 0 6px 20px rgba(165, 45, 85, 0.04);
+}
+.tc-policy-section {
+    margin-bottom: 30px;
+}
+.tc-policy-section:last-child {
+    margin-bottom: 0;
+}
+.tc-policy-section h2 {
+    font-size: 20px;
+    color: #2b1f30;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tc-policy-section p {
+    color: #5b4655;
+    line-height: 1.7;
+    margin: 0 0 12px;
+    font-size: 14.5px;
+}
+.tc-policy-section ul {
+    margin: 0 0 16px 20px;
+    color: #5b4655;
+    line-height: 1.7;
+    font-size: 14.5px;
+}
+.tc-policy-highlight {
+    background: #fff0f6;
+    border-left: 4px solid #be185d;
+    padding: 16px 20px;
+    border-radius: 0 14px 14px 0;
+    margin: 20px 0;
+}
+.tc-policy-highlight p {
+    margin: 0;
+    color: #831843;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-policy-page">
+    <div class="tc-policy-hero">
+        <span class="tc-policy-eyebrow">CUSTOMER PROTECTION</span>
+        <h1>Returns & <span>Refunds Policy</span></h1>
+        <p>Simple, honest doorstep return and replacement terms for Kanpur shoppers.</p>
+    </div>
+
+    <div class="tc-policy-content">
+        <div class="tc-policy-section">
+            <h2>📦 Doorstep Returns & Replacements</h2>
+            <p>At TipsyCart, we strive to deliver 100% genuine, fresh, and pristine essentials right to your doorstep in Kanpur. If you receive an item that is damaged, defective, or incorrect, you are eligible for an immediate replacement or full refund.</p>
+            <ul>
+                <li><strong>Damaged or Expired Products:</strong> Inform us within 24 hours of delivery with a quick photo. Our delivery partner will pick up the item and hand you a replacement.</li>
+                <li><strong>Incorrect Item Delivered:</strong> Immediate replacement dispatched at zero extra delivery cost.</li>
+                <li><strong>Missing Items from Pack:</strong> Instant refund processed for missing quantities or redelivery.</li>
+            </ul>
+        </div>
+
+        <div class="tc-policy-highlight">
+            <p>💡 Tip: For rapid resolution, you can WhatsApp our Kanpur dispatch desk or email <a href="mailto:support@tipsycart.in" style="color:#be185d; text-decoration: underline;">support@tipsycart.in</a> with your Order ID.</p>
+        </div>
+
+        <div class="tc-policy-section">
+            <h2>🌸 Personal Care & Hygiene Products</h2>
+            <p>Due to health, sanitation, and safety regulations, intimate hygiene items (such as sanitary pads, tampons, menstrual cups) and opened personal care cosmetics cannot be returned once the protective seal has been broken or tampered with, unless the product arrived damaged or defective.</p>
+        </div>
+
+        <div class="tc-policy-section">
+            <h2>💳 Refund Timelines & Methods</h2>
+            <p>Once your return is verified, your refund will be processed promptly:</p>
+            <ul>
+                <li><strong>UPI / Online Payments:</strong> Credited back to the original bank account or UPI ID within 24 to 48 hours.</li>
+                <li><strong>Cash on Delivery (COD):</strong> Instant UPI transfer or store credit upon pickup verification.</li>
+            </ul>
+        </div>
+
+        <div class="tc-policy-section">
+            <h2>❓ Need Help With a Return?</h2>
+            <p>Visit our <a href="/contact/" style="color:#be185d; font-weight:700;">Contact Us</a> page or email us directly at <a href="mailto:support@tipsycart.in" style="color:#be185d; font-weight:700;">support@tipsycart.in</a> with your Order ID.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

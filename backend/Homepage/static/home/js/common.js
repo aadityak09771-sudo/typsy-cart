@@ -278,6 +278,83 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial badge update on page load
     updateGlobalCartBadges();
 
+    // ========================================================
+    // FOOTER NEWSLETTER SUBSCRIPTION HANDLER
+    // ========================================================
+    const newsletterForm = document.getElementById("tc-newsletter-form");
+    const newsletterEmail = document.getElementById("tc-newsletter-email");
+    const newsletterMsg = document.getElementById("tc-newsletter-msg");
+    const newsletterBtn = document.getElementById("tc-newsletter-btn");
+
+    if (newsletterForm && newsletterEmail && newsletterMsg) {
+        newsletterForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = newsletterEmail.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!email || !emailRegex.test(email)) {
+                newsletterMsg.textContent = "Please enter a valid email address.";
+                newsletterMsg.className = "tc-newsletter-msg error";
+                newsletterEmail.focus();
+                return;
+            }
+
+            const csrfTokenInput = newsletterForm.querySelector('input[name="csrfmiddlewaretoken"]');
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : "";
+
+            if (newsletterBtn) {
+                newsletterBtn.disabled = true;
+                newsletterBtn.textContent = "Subscribing...";
+            }
+            newsletterMsg.textContent = "";
+
+            try {
+                const response = await fetch("/newsletter/subscribe/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    newsletterMsg.textContent = data.message || "Thank you for subscribing!";
+                    newsletterMsg.className = "tc-newsletter-msg success";
+                    newsletterEmail.value = "";
+                } else {
+                    newsletterMsg.textContent = data.message || "Subscription failed. Please check the email and try again.";
+                    newsletterMsg.className = "tc-newsletter-msg error";
+                }
+            } catch (err) {
+                newsletterMsg.textContent = "Connection error. Please try again.";
+                newsletterMsg.className = "tc-newsletter-msg error";
+            } finally {
+                if (newsletterBtn) {
+                    newsletterBtn.disabled = false;
+                    newsletterBtn.textContent = "Subscribe";
+                }
+            }
+        });
+    }
+
+    // ========================================================
+    // APP STORE BADGES COMING SOON TOAST
+    // ========================================================
+    document.querySelectorAll(".tc-app-badge").forEach(badge => {
+        badge.addEventListener("click", (e) => {
+            e.preventDefault();
+            const store = badge.getAttribute("data-store") || "App Store";
+            if (typeof showCartToast === "function") {
+                showCartToast(`TipsyCart on ${store} is launching soon in Kanpur! 🚀`);
+            } else {
+                alert(`TipsyCart on ${store} is launching soon for Kanpur! Stay tuned for fast deliveries.`);
+            }
+        });
+    });
+
     // Export helpers globally so shop.js and script.js can call them
     window.updateGlobalCart = updateGlobalCartBadges;
     window.showCartToast = showCartToast;

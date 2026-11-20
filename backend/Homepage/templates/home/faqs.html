@@ -1,0 +1,194 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}FAQs | Frequently Asked Questions | TipsyCart{% endblock %}
+
+{% block extra_css %}
+<style>
+.tc-faq-page {
+    max-width: 900px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    font-family: inherit;
+}
+.tc-faq-hero {
+    text-align: center;
+    padding: 44px 24px;
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 50%, #fce7f3 100%);
+    border-radius: 24px;
+    border: 1px solid #fbcfe8;
+    margin-bottom: 36px;
+    box-shadow: 0 10px 30px rgba(165, 44, 105, 0.06);
+}
+.tc-faq-eyebrow {
+    color: #9d174d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+.tc-faq-hero h1 {
+    font-size: clamp(26px, 3.8vw, 38px);
+    color: #2b1f30;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.tc-faq-hero h1 span {
+    color: #be185d;
+}
+.tc-faq-hero p {
+    color: #5b4655;
+    font-size: 15px;
+    max-width: 580px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+.tc-faq-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.tc-faq-item {
+    background: #ffffff;
+    border: 1px solid #f5d5e5;
+    border-radius: 18px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tc-faq-item:hover {
+    border-color: #be185d;
+    box-shadow: 0 6px 18px rgba(165, 45, 85, 0.06);
+}
+.tc-faq-question {
+    width: 100%;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2b1f30;
+    cursor: pointer;
+    font-family: inherit;
+}
+.tc-faq-toggle-icon {
+    font-size: 20px;
+    color: #be185d;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+.tc-faq-item.open .tc-faq-toggle-icon {
+    transform: rotate(45deg);
+}
+.tc-faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0, 1, 0, 1), padding 0.3s ease;
+    padding: 0 24px;
+    color: #5b4655;
+    font-size: 14.5px;
+    line-height: 1.6;
+}
+.tc-faq-item.open .tc-faq-answer {
+    max-height: 400px;
+    padding: 0 24px 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-faq-page">
+    <div class="tc-faq-hero">
+        <span class="tc-faq-eyebrow">HELP & CLARITY</span>
+        <h1>Frequently Asked <span>Questions</span></h1>
+        <p>Everything you need to know about shopping, delivery, and payments on TipsyCart Kanpur.</p>
+    </div>
+
+    <div class="tc-faq-accordion">
+        <div class="tc-faq-item open">
+            <button class="tc-faq-question" type="button">
+                <span>Where does TipsyCart deliver?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>TipsyCart currently operates hyperlocally across Kanpur City, Uttar Pradesh, covering major areas including Dabauli, Govind Nagar, Kakadeo, Swaroop Nagar, Civil Lines, Kidwai Nagar, Kalyanpur, and surrounding neighborhoods.</p>
+            </div>
+        </div>
+
+        <div class="tc-faq-item">
+            <button class="tc-faq-question" type="button">
+                <span>How fast will my order arrive?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>We pride ourselves on speedy local delivery. Essentials are dispatched promptly from nearby micro-hubs in Kanpur, with typical doorstep delivery within 30 to 60 minutes during operating hours (8:00 AM – 10:00 PM).</p>
+            </div>
+        </div>
+
+        <div class="tc-faq-item">
+            <button class="tc-faq-question" type="button">
+                <span>What payment methods are supported?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>We support Cash on Delivery (COD), UPI (Google Pay, PhonePe, Paytm), and major credit/debit cards. You can pay securely upon delivery or during checkout.</p>
+            </div>
+        </div>
+
+        <div class="tc-faq-item">
+            <button class="tc-faq-question" type="button">
+                <span>Is personal care and period care packaging discreet?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>Yes, absolutely. Customer privacy and comfort are our top priorities. All personal hygiene and care essentials are packaged in plain, discreet, opaque bags with zero exterior product labels.</p>
+            </div>
+        </div>
+
+        <div class="tc-faq-item">
+            <button class="tc-faq-question" type="button">
+                <span>Who delivers my order?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>TipsyCart is proud to operate a dedicated women-led delivery partner network, empowering local delivery professionals while ensuring comfortable, discreet, and respectful customer service.</p>
+            </div>
+        </div>
+
+        <div class="tc-faq-item">
+            <button class="tc-faq-question" type="button">
+                <span>How can I contact customer support?</span>
+                <span class="tc-faq-toggle-icon">+</span>
+            </button>
+            <div class="tc-faq-answer">
+                <p>You can email our customer support team directly at <a href="mailto:support@tipsycart.in" style="color:#be185d; font-weight:700;">support@tipsycart.in</a> or visit our <a href="/contact/" style="color:#be185d; font-weight:700;">Contact Us</a> page for WhatsApp assistance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const items = document.querySelectorAll(".tc-faq-item");
+    items.forEach(item => {
+        const btn = item.querySelector(".tc-faq-question");
+        btn.addEventListener("click", () => {
+            const isOpen = item.classList.contains("open");
+            items.forEach(i => i.classList.remove("open"));
+            if (!isOpen) {
+                item.classList.add("open");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

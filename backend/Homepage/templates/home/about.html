@@ -1,71 +1,146 @@
-
 {% extends "home/base.html" %}
 {% load static %}
 
 {% block title %}About Us | Tipsy Cart{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/about.css' %}">
+<link rel="stylesheet" href="{% static 'home/css/about.css' %}?v=3.0">
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-    <p class="eyebrow">OUR STORY</p>
+<div class="tc-about-wrapper">
 
-    <h1>Everyday Care, Delivered with Confidence.</h1>
+    <!-- 1. HERO SECTION -->
+    <section class="tc-about-hero">
+        <div class="tc-about-container tc-about-hero-grid">
+            <div class="tc-about-hero-content">
+                <div class="tc-about-badge">
+                    <span class="tc-about-badge-icon" aria-hidden="true">ℹ</span>
+                    <span>About Us</span>
+                </div>
 
-    <p>
-        We aim to make everyday essentials and personal care products
-        easier to access, with a focus on comfort, convenience and dignity.
-    </p>
+                <h1>Everyday Care,<br>Delivered with<br><span class="tc-about-highlight">Confidence.</span></h1>
 
-    <a class="button" href="/shop/">Explore Products</a>
-</section>
+                <p class="tc-about-hero-desc">
+                    We aim to make everyday essentials and personal care products
+                    easier to access, with a focus on comfort, convenience and dignity.
+                </p>
 
-<section class="content">
-    <h2>Who We Are</h2>
-    <p>
-        Tipsy Cart is an e-commerce initiative focused on daily essentials,
-        menstrual hygiene products, personal care and everyday safety products.
-    </p>
+                <a class="tc-about-cta" href="/shop/">Explore Products →</a>
+            </div>
 
-    <h2>Our Mission</h2>
-    <p>
-        Our mission is to make essential products easier to discover and order,
-        while building a customer experience based on privacy, respect and convenience.
-    </p>
+            <div class="tc-about-hero-visual">
+                <img
+                    src="{% static 'home/images/about-hero-bag.png' %}"
+                    alt="TipsyCart Essentials and Branded Shopping Bag"
+                    class="tc-about-hero-img"
+                    loading="eager"
+                >
+            </div>
+        </div>
+    </section>
 
-    <h2>Women-Led Delivery Vision</h2>
-    <p>
-        We aim to build a delivery service led by women, creating opportunities
-        for women delivery partners and helping customers feel comfortable
-        ordering personal care essentials.
-    </p>
+    <!-- 2. WHO WE ARE & MISSION / VISION SECTION -->
+    <section class="tc-about-who">
+        <div class="tc-about-container tc-about-who-grid">
+            <div class="tc-about-who-visual">
+                <img
+                    src="{% static 'home/images/about-delivery-partner.png' %}"
+                    alt="TipsyCart Women Delivery Partner Network"
+                    class="tc-about-rider-img"
+                    loading="lazy"
+                >
+            </div>
 
-    <h2>Our Values</h2>
+            <div class="tc-about-who-content">
+                <h2 class="tc-about-section-title">Who <span class="tc-about-highlight">We Are</span></h2>
+                <p class="tc-about-intro-text">
+                    TipsyCart is an e-commerce initiative focused on daily essentials,
+                    menstrual hygiene products, personal care and everyday safety products.
+                </p>
 
-    <div class="values">
-        <article>
-            <span>💗</span>
-            <h3>Care</h3>
-            <p>Respectful service for everyday needs.</p>
-        </article>
+                <div class="tc-about-mission-grid">
+                    <!-- Our Mission Card -->
+                    <article class="tc-about-info-card">
+                        <div class="tc-info-card-icon tc-icon-mission" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                            </svg>
+                        </div>
+                        <h3>Our Mission</h3>
+                        <p>
+                            Our mission is to make essential products easier to discover and order,
+                            while building a customer experience based on privacy, respect and convenience.
+                        </p>
+                    </article>
 
-        <article>
-            <span>🔒</span>
-            <h3>Privacy</h3>
-            <p>A customer experience that respects personal choices.</p>
-        </article>
+                    <!-- Women-Led Delivery Vision Card -->
+                    <article class="tc-about-info-card">
+                        <div class="tc-info-card-icon tc-icon-vision" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                                <path d="M9 12H4s.55-3.03 2-4.5c1.62-1.63 5-2.5 5-2.5"></path>
+                                <path d="M12 15v5s3.03-.55 4.5-2c1.63-1.62 2.5-5 2.5-5"></path>
+                            </svg>
+                        </div>
+                        <h3>Women-Led Delivery Vision</h3>
+                        <p>
+                            We aim to build a delivery service led by women, creating opportunities
+                            for women delivery partners and helping customers feel comfortable ordering personal care essentials.
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <article>
-            <span>🌸</span>
-            <h3>Empowerment</h3>
-            <p>Working towards more opportunities for women.</p>
-        </article>
-    </div>
-</section>
-{% endblock %}
+    <!-- 3. OUR VALUES SECTION -->
+    <section class="tc-about-values">
+        <div class="tc-about-container">
+            <div class="tc-values-header">
+                <h2 class="tc-values-title"><span class="tc-title-dash">—</span> Our Values <span class="tc-title-dash">—</span></h2>
+                <p class="tc-values-subtitle">The principles that guide everything we do at TipsyCart.</p>
+            </div>
 
-{% block extra_js %}
-<script src="{% static 'home/js/about.js' %}"></script>
+            <div class="tc-values-grid">
+                <!-- Value 1: Care -->
+                <article class="tc-value-card">
+                    <div class="tc-value-icon-wrap tc-value-care" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="#e11d48">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </div>
+                    <h3>Care</h3>
+                    <p>Respectful service for everyday needs.</p>
+                </article>
+
+                <!-- Value 2: Privacy -->
+                <article class="tc-value-card">
+                    <div class="tc-value-icon-wrap tc-value-privacy" aria-hidden="true">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="#d97706">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                        </svg>
+                    </div>
+                    <h3>Privacy</h3>
+                    <p>A customer experience that respects personal choices.</p>
+                </article>
+
+                <!-- Value 3: Empowerment -->
+                <article class="tc-value-card">
+                    <div class="tc-value-icon-wrap tc-value-empowerment" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="#db2777">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                    </div>
+                    <h3>Empowerment</h3>
+                    <p>Working towards more opportunities for women.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+</div>
 {% endblock %}

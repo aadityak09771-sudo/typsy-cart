@@ -446,7 +446,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="tc-product-info">
                     <p class="tc-product-category">
-                        ${escapeHTML(product.category || "Essentials")}
+                        <span>${escapeHTML(product.category || "Essentials")}</span>
+                        ${product.subcategory ? `<span class="tc-product-subcat-badge"> • ${escapeHTML(product.subcategory)}</span>` : ""}
                     </p>
 
                     <h3>${escapeHTML(product.name)}</h3>
@@ -491,6 +492,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 return "";
             }
 
+            let subcatsHTML = "";
+            if (category.slug === "groceries") {
+                subcatsHTML = `
+                    <div class="tc-shelf-subcats">
+                        <a href="/shop/?category=groceries&subcategory=fruits-and-vegetables" class="tc-shelf-subcat-chip">Fruits & Veg</a>
+                        <a href="/shop/?category=groceries&subcategory=atta-rice-and-pulses" class="tc-shelf-subcat-chip">Atta & Rice</a>
+                        <a href="/shop/?category=groceries&subcategory=dairy-and-bakery" class="tc-shelf-subcat-chip">Dairy & Bakery</a>
+                        <a href="/shop/?category=groceries&subcategory=snacks-and-beverages" class="tc-shelf-subcat-chip">Snacks</a>
+                        <a href="/shop/?category=groceries&subcategory=household-essentials" class="tc-shelf-subcat-chip">Household</a>
+                    </div>
+                `;
+            } else if (category.slug === "daily-essentials") {
+                subcatsHTML = `
+                    <div class="tc-shelf-subcats">
+                        <a href="/shop/?category=daily-essentials&subcategory=home-cleaning" class="tc-shelf-subcat-chip">Home Cleaning</a>
+                        <a href="/shop/?category=daily-essentials&subcategory=personal-care-and-bath" class="tc-shelf-subcat-chip">Personal Care & Bath</a>
+                        <a href="/shop/?category=daily-essentials&subcategory=oral-care-and-grooming" class="tc-shelf-subcat-chip">Oral Care</a>
+                        <a href="/shop/?category=daily-essentials&subcategory=utilities-and-protection" class="tc-shelf-subcat-chip">Utilities</a>
+                    </div>
+                `;
+            } else if (category.slug === "personal-care") {
+                subcatsHTML = `
+                    <div class="tc-shelf-subcats">
+                        <a href="/shop/?category=personal-care&subcategory=personal-care-and-bath" class="tc-shelf-subcat-chip">Personal Care & Bath</a>
+                        <a href="/shop/?category=personal-care&subcategory=hygiene-and-sanitization" class="tc-shelf-subcat-chip">Hygiene & Wipes</a>
+                    </div>
+                `;
+            }
+
             return `
                 <section class="tc-product-shelf">
                     <div class="tc-product-shelf-heading">
@@ -500,6 +530,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <h2>${escapeHTML(category.title)}</h2>
 
                             <p>${escapeHTML(category.description)}</p>
+
+                            ${subcatsHTML}
                         </div>
 
                         <a

@@ -1,0 +1,307 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Track Your Order | TipsyCart Kanpur Delivery{% endblock %}
+
+{% block extra_css %}
+<style>
+.tc-track-page {
+    max-width: 860px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    font-family: inherit;
+}
+.tc-track-hero {
+    text-align: center;
+    padding: 42px 24px 36px;
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 50%, #fce7f3 100%);
+    border-radius: 24px;
+    border: 1px solid #fbcfe8;
+    margin-bottom: 34px;
+    box-shadow: 0 10px 30px rgba(165, 44, 105, 0.06);
+}
+.tc-track-eyebrow {
+    color: #9d174d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+.tc-track-hero h1 {
+    font-size: clamp(26px, 3.8vw, 38px);
+    color: #2b1f30;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.tc-track-hero h1 span {
+    color: #be185d;
+}
+.tc-track-hero p {
+    color: #5b4655;
+    font-size: 15px;
+    max-width: 540px;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+}
+.tc-track-form {
+    display: flex;
+    max-width: 500px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 2px solid #f472b6;
+    border-radius: 30px;
+    padding: 4px 5px 4px 18px;
+    box-shadow: 0 6px 20px rgba(190, 24, 93, 0.12);
+}
+.tc-track-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: #2b1f30;
+    background: transparent;
+}
+.tc-track-btn {
+    background: linear-gradient(135deg, #be185d, #9d174d);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 26px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tc-track-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(157, 23, 77, 0.35);
+}
+.tc-track-result {
+    background: #ffffff;
+    border: 1px solid #f5d5e5;
+    border-radius: 22px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(165, 45, 85, 0.06);
+}
+.tc-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #fce7f3;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.tc-result-order-id {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2b1f30;
+}
+.tc-status-pill {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: #fdf2f8;
+    color: #be185d;
+    border: 1px solid #fbcfe8;
+}
+.tc-status-pill.delivered {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+.tc-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.tc-step {
+    position: relative;
+    padding-top: 36px;
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 600;
+}
+.tc-step::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    z-index: 2;
+}
+.tc-step.active {
+    color: #be185d;
+    font-weight: 700;
+}
+.tc-step.active::before {
+    background: #be185d;
+    box-shadow: 0 0 0 3px #fbcfe8;
+}
+.tc-step.completed {
+    color: #047857;
+}
+.tc-step.completed::before {
+    background: #10b981;
+}
+.tc-order-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    background: #faf5f8;
+    border-radius: 16px;
+    padding: 20px;
+}
+.tc-detail-col h4 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: #831843;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.tc-detail-col p {
+    margin: 0;
+    font-size: 14px;
+    color: #2b1f30;
+    font-weight: 600;
+}
+.tc-recent-orders-card {
+    background: #ffffff;
+    border: 1px solid #f5d5e5;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(165, 45, 85, 0.04);
+}
+.tc-recent-orders-card h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    color: #2b1f30;
+}
+.tc-recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #fce7f3;
+}
+.tc-recent-item:last-child {
+    border-bottom: none;
+}
+.tc-error-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    padding: 16px 20px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    font-size: 14.5px;
+}
+@media (max-width: 600px) {
+    .tc-stepper {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-track-page">
+    <div class="tc-track-hero">
+        <span class="tc-track-eyebrow">LIVE DELIVERY TRACKING</span>
+        <h1>Track Your <span>TipsyCart</span> Order</h1>
+        <p>Enter your numeric Order ID to see real-time dispatch and delivery progress.</p>
+
+        <form method="get" action="/track-order/" class="tc-track-form">
+            <input type="text" name="order_id" value="{{ order_query }}" placeholder="e.g. 1 or #1042" class="tc-track-input" required aria-label="Order ID">
+            <button type="submit" class="tc-track-btn">Track Order</button>
+        </form>
+    </div>
+
+    {% if error_message %}
+        <div class="tc-error-box">
+            ⚠️ {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if found_order %}
+        <div class="tc-track-result">
+            <div class="tc-result-header">
+                <div>
+                    <span class="tc-result-order-id">Order #{{ found_order.id }}</span>
+                    <span style="display: block; font-size: 13px; color: #6a5363; margin-top: 4px;">Placed on {{ found_order.created_at|date:"d M Y, h:i A" }}</span>
+                </div>
+                <span class="tc-status-pill {% if found_order.status == 'Delivered' %}delivered{% endif %}">
+                    ● {{ found_order.status }}
+                </span>
+            </div>
+
+            <div class="tc-stepper">
+                <div class="tc-step {% if found_order.status in 'Pending Confirmed Packed Accepted Picked Up Out for Delivery Delivered' %}completed{% endif %}">
+                    1. Placed
+                </div>
+                <div class="tc-step {% if found_order.status in 'Confirmed Packed Accepted Picked Up Out for Delivery Delivered' %}completed{% elif found_order.status == 'Pending' %}active{% endif %}">
+                    2. Confirmed
+                </div>
+                <div class="tc-step {% if found_order.status in 'Picked Up Out for Delivery Delivered' %}completed{% elif found_order.status in 'Accepted Packed' %}active{% endif %}">
+                    3. Out for Delivery
+                </div>
+                <div class="tc-step {% if found_order.status == 'Delivered' %}completed active{% endif %}">
+                    4. Delivered
+                </div>
+            </div>
+
+            <div class="tc-order-details-grid">
+                <div class="tc-detail-col">
+                    <h4>Customer</h4>
+                    <p>{{ found_order.full_name|default:found_order.user.username }}</p>
+                </div>
+                <div class="tc-detail-col">
+                    <h4>Delivery Location</h4>
+                    <p>{{ found_order.address|default:"Kanpur City" }} (PIN: {{ found_order.pincode|default:"208001" }})</p>
+                </div>
+                <div class="tc-detail-col">
+                    <h4>Payment</h4>
+                    <p>₹{{ found_order.total_amount }} ({{ found_order.get_payment_method_display|default:found_order.payment_method }})</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if user_orders %}
+        <div class="tc-recent-orders-card">
+            <h3>Your Recent Orders</h3>
+            {% for o in user_orders %}
+                <div class="tc-recent-item">
+                    <div>
+                        <strong style="color: #2b1f30;">Order #{{ o.id }}</strong>
+                        <span style="font-size: 13px; color: #6a5363; margin-left: 10px;">{{ o.created_at|date:"d M Y" }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="tc-status-pill" style="font-size: 12px; padding: 4px 12px;">{{ o.status }}</span>
+                        <a href="/track-order/?order_id={{ o.id }}" style="color: #be185d; font-weight: 700; text-decoration: none; font-size: 13px;">Track →</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

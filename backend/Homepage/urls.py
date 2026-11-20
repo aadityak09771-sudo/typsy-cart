@@ -11,4 +11,13 @@ urlpatterns = [
 
     # Checkout page
     path("checkout/", views.checkout, name="checkout"),
+
+    # Customer Support & Footer Pages
+    path("help-center/", views.help_center, name="help_center"),
+    path("track-order/", views.track_order, name="track_order"),
+    path("returns-refunds/", views.returns_refunds, name="returns_refunds"),
+    path("faqs/", views.faqs, name="faqs"),
+
+    # Newsletter Subscription Endpoint
+    path("newsletter/subscribe/", views.subscribe_newsletter, name="newsletter_subscribe"),
 ]

@@ -10,7 +10,7 @@
     <meta name="description" content="{% block meta_description %}Tipsy Cart - everyday essentials, personal care and safety products.{% endblock %}">
     <meta name="theme-color" content="#fff7fa">
 
-    <link rel="stylesheet" href="{% static 'home/css/common.css' %}?v=2.1">
+    <link rel="stylesheet" href="{% static 'home/css/common.css' %}?v=5.2">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -24,9 +24,11 @@
     </div>
 
     <header class="site-header">
-        <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo" aria-label="Tipsy Cart home">
-            <span class="logo-mark">T</span>
-            <span class="logo-name">Tipsy<span>Cart</span>{% if user.is_authenticated and user.delivery_profile %}&nbsp;<span style="font-size: 11px; background: #a52d55; color: white; padding: 2px 8px; border-radius: 10px; font-weight: 800; letter-spacing: 0.8px; vertical-align: middle;">DRIVER</span>{% endif %}</span>
+        <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo" aria-label="TipsyCart home">
+            <img src="{% static 'home/images/tipsycart-logo.png' %}" alt="TipsyCart" class="site-logo-img">
+            {% if user.is_authenticated and user.delivery_profile %}
+                <span class="driver-nav-badge">DRIVER</span>
+            {% endif %}
         </a>
 
         {% if user.is_authenticated and user.delivery_profile %}
@@ -53,18 +55,20 @@
             {% if user.is_authenticated and user.delivery_profile %}
                 <!-- Delivery Partner Action Links (NO Cart, NO Customer Orders, NO Customer Account) -->
                 <a href="{% url 'delivery:dashboard' %}" class="account-btn account-outline" style="font-weight: 700; background: #fff0f5; border-color: #a52d55; color: #a52d55;">
-                    🛵 Driver Portal
+                    <span class="btn-text-full">🛵 Driver Portal</span>
+                    <span class="btn-text-short">🛵 Portal</span>
                 </a>
                 <a href="{% url 'delivery:profile' %}" class="account-btn account-outline" style="font-weight: 600;">
-                    ⚙️ Driver Profile
+                    <span class="btn-text-full">⚙️ Driver Profile</span>
+                    <span class="btn-text-short">⚙️ Profile</span>
                 </a>
                 <a href="{% url 'delivery:logout' %}" class="account-btn account-primary" style="background: #a52d55; color: white; text-decoration: none;">
                     Logout
                 </a>
             {% elif user.is_authenticated %}
                 <!-- Regular Authenticated Customer -->
-                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;">
-                    🛒 Cart <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
+                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 700;">
+                    🛒 <span class="cart-label-text">Cart</span> <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 6px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
                 </button>
 
                 {% if user.is_staff %}
@@ -74,10 +78,12 @@
                 {% endif %}
 
                 <a href="{% url 'dashboard' %}#all-orders" class="account-btn account-outline" style="font-weight: 700; background: #fff0f5; border-color: #a52d55; color: #a52d55;">
-                    📦 My Orders
+                    <span class="btn-text-full">📦 My Orders</span>
+                    <span class="btn-text-short">📦 Orders</span>
                 </a>
                 <a href="{% url 'dashboard' %}" class="account-btn account-outline">
-                    My Account
+                    <span class="btn-text-full">My Account</span>
+                    <span class="btn-text-short">Account</span>
                 </a>
 
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
@@ -88,11 +94,12 @@
                 </form>
             {% else %}
                 <!-- Guest / Public Visitor -->
-                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;">
-                    🛒 Cart <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
+                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 700;">
+                    🛒 <span class="cart-label-text">Cart</span> <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 6px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
                 </button>
                 <a href="{% url 'delivery:login' %}" class="account-btn account-outline" style="border-style: dashed;">
-                    Driver Login
+                    <span class="btn-text-full">Driver Login</span>
+                    <span class="btn-text-short">Driver</span>
                 </a>
                 <a href="{% url 'login' %}" class="account-btn account-primary">
                     Login
@@ -111,38 +118,166 @@
 
     <footer class="site-footer">
         <div class="footer-inner">
-            <div class="footer-brand">
-                <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo">
-                    <span class="logo-mark">T</span>
-                    <span class="logo-name">Tipsy<span>Cart</span></span>
+            <!-- COLUMN 1 – BRAND SECTION -->
+            <div class="tc-footer-col tc-footer-brand">
+                <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="tc-footer-logo" aria-label="TipsyCart Home">
+                    <img src="{% static 'home/images/tipsycart-logo.png' %}" alt="TipsyCart" class="tc-footer-logo-img">
                 </a>
-                {% if user.is_authenticated and user.delivery_profile %}
-                    <p>Tipsy Cart Delivery Partner Network.</p>
-                    <p class="footer-tagline">Safe • Fast • Reliable Deliveries</p>
-                {% else %}
-                    <p>Everyday essentials, delivered with care.</p>
-                    <p class="footer-tagline">Care • Comfort • Confidence</p>
-                {% endif %}
+                <p class="tc-footer-tagline">Your everyday essentials, delivered faster in Kanpur.</p>
+                <div class="tc-footer-badges">
+                    <div class="tc-fbadge">
+                        <svg class="tc-fbadge-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <span>Fast Delivery</span>
+                    </div>
+                    <div class="tc-fbadge">
+                        <svg class="tc-fbadge-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <polyline points="9 12 11 14 15 10"></polyline>
+                        </svg>
+                        <span>Secure Payment</span>
+                    </div>
+                    <div class="tc-fbadge">
+                        <svg class="tc-fbadge-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <span>Easy Returns</span>
+                    </div>
+                    <div class="tc-fbadge">
+                        <svg class="tc-fbadge-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                        </svg>
+                        <span>24×7 Support</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="footer-links">
-                {% if user.is_authenticated and user.delivery_profile %}
-                    <a href="{% url 'delivery:dashboard' %}">Driver Dashboard</a>
-                    <a href="{% url 'delivery:dashboard' %}?tab=all">My Deliveries</a>
-                    <a href="{% url 'delivery:profile' %}">Driver Profile</a>
-                    <a href="{% url 'delivery:logout' %}">Logout</a>
-                {% else %}
-                    <a href="/">Home</a>
-                    <a href="/categories/">Categories</a>
-                    <a href="/shop/">Shop</a>
-                    <a href="/about/">About Us</a>
-                    <a href="/contact/">Contact</a>
-                    <a href="{% url 'delivery:login' %}">Delivery Partner Portal</a>
-                {% endif %}
+            <!-- COLUMN 2 – QUICK LINKS -->
+            <div class="tc-footer-col">
+                <h4 class="tc-footer-heading">Quick Links</h4>
+                <ul class="tc-footer-list">
+                    <li>
+                        <a href="/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                            <span>Home</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/categories/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            <span>Categories</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/shop/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                            <span>Shop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/about/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span>About Us</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/contact/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            <span>Contact Us</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
 
-            <div class="footer-copy">
-                <p>&copy; 2026 Tipsy Cart{% if user.is_authenticated and user.delivery_profile %} Delivery Partner Network{% endif %}. All rights reserved.</p>
+            <!-- COLUMN 3 – CUSTOMER SUPPORT -->
+            <div class="tc-footer-col">
+                <h4 class="tc-footer-heading">Customer Support</h4>
+                <ul class="tc-footer-list">
+                    <li>
+                        <a href="/help-center/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                            <span>Help Center</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/track-order/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            <span>Track Your Order</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/returns-refunds/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                            <span>Returns & Refunds</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/faqs/">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span>FAQs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="mailto:support@tipsycart.in">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <span>support@tipsycart.in</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- COLUMN 4 – STAY CONNECTED -->
+            <div class="tc-footer-col">
+                <h4 class="tc-footer-heading">Stay Connected</h4>
+                <p class="tc-footer-desc">Get offers, updates and new arrivals from TipsyCart.</p>
+                <form id="tc-newsletter-form" class="tc-newsletter-form" method="post" action="/newsletter/subscribe/">
+                    {% csrf_token %}
+                    <div class="tc-newsletter-input-wrap">
+                        <svg class="tc-newsletter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <input type="email" id="tc-newsletter-email" name="email" placeholder="Enter your email" required aria-label="Email address for newsletter">
+                        <button type="submit" id="tc-newsletter-btn" class="tc-newsletter-btn">Subscribe</button>
+                    </div>
+                    <div id="tc-newsletter-msg" class="tc-newsletter-msg" aria-live="polite"></div>
+                </form>
+                <div class="tc-footer-socials">
+                    <a href="https://www.instagram.com/tipsycart7/" target="_blank" rel="noopener noreferrer" class="tc-social-btn" aria-label="TipsyCart on Instagram" title="TipsyCart Instagram">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    </a>
+                    <a href="javascript:void(0)" onclick="return false;" class="tc-social-btn tc-social-disabled" aria-label="TipsyCart on Facebook" title="Facebook Page Coming Soon" style="cursor: default;">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM FOOTER BAR -->
+        <div class="tc-footer-bottom">
+            <div class="tc-footer-bottom-inner">
+                <p class="tc-footer-copyright">&copy; 2026 TipsyCart. All Rights Reserved.</p>
+                <div class="tc-footer-app-badges">
+                    <span class="tc-app-label">Download Our App</span>
+                    <span class="tc-app-divider" aria-hidden="true">|</span>
+                    <div class="tc-app-badge-group">
+                        <a href="#app-coming-soon" class="tc-app-badge" data-store="Google Play" aria-label="Get it on Google Play">
+                            <svg class="tc-app-badge-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3.6 1.8L14.2 12 3.6 22.2C3.2 21.8 3 21.1 3 20.3V3.7C3 2.9 3.2 2.2 3.6 1.8Z" fill="#2196F3"/><path d="M17.8 8.6L14.2 12 17.8 15.4 20.6 13.8C21.4 13.3 21.4 12.5 20.6 12.1L17.8 8.6Z" fill="#FFC107"/><path d="M3.6 1.8L14.2 12 17.8 8.6 5.8 1.7C4.8 1.1 4.1 1.2 3.6 1.8Z" fill="#4CAF50"/><path d="M14.2 12L3.6 22.2C4.1 22.8 4.8 22.9 5.8 22.3L17.8 15.4 14.2 12Z" fill="#F44336"/></svg>
+                            <div class="tc-app-badge-text">
+                                <span class="tc-app-badge-sub">GET IT ON</span>
+                                <span class="tc-app-badge-main">Google Play</span>
+                            </div>
+                        </a>
+                        <a href="#app-coming-soon" class="tc-app-badge" data-store="App Store" aria-label="Download on the App Store">
+                            <svg class="tc-app-badge-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2.02.6-2.66 1.34-.56.64-1.06 1.69-.92 2.71 1.01.08 2.05-.45 2.66-1.2"/></svg>
+                            <div class="tc-app-badge-text">
+                                <span class="tc-app-badge-sub">Download on the</span>
+                                <span class="tc-app-badge-main">App Store</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
@@ -209,7 +344,7 @@
         </div>
     {% endif %}
 
-    <script src="{% static 'home/js/common.js' %}?v=2.1"></script>
+    <script src="{% static 'home/js/common.js' %}?v=5.0"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const productGrid = get("product-grid");
     const emptyMessage = get("empty-message");
     const resultsCount = get("results-count");
+    const subcategoryFilterContainer = get("subcategory-filter-container");
+    const subcategoryFilterBar = get("subcategory-filter-bar");
+    const subcategoryFilterLabel = get("subcat-filter-label");
 
     // Cart elements
     const cartPanel = get("cart-panel");
@@ -44,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let products = [];
     let cart = loadSavedCart();
     let busy = false;
+    let currentSubcategory = "all";
 
     // --------------------------------
     // Safe helpers
@@ -224,6 +228,29 @@ document.addEventListener("DOMContentLoaded", () => {
         return category === selectedCategory;
     }
 
+    function subcategorySlug(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, "and")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+    }
+
+    function normalizeSubcat(val) {
+        return String(val || "")
+            .toLowerCase()
+            .replace(/and/g, "")
+            .replace(/[^a-z0-9]/g, "");
+    }
+
+    function matchesSubcategory(product, selectedSubcategory) {
+        if (!selectedSubcategory || selectedSubcategory === "all") return true;
+        const normSelected = normalizeSubcat(selectedSubcategory);
+        const normProduct = normalizeSubcat(product.subcategory);
+        return normProduct === normSelected;
+    }
+
     // --------------------------------
     // Floating cart button
     // --------------------------------
@@ -276,7 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 subcategory: String(product.subcategory || ""),
                 brand: String(product.brand || ""),
                 image_url: safeImageURL(product.image_url),
-                categorySlug: categorySlug(product.category)
+                categorySlug: categorySlug(product.category),
+                subcategorySlug: subcategorySlug(product.subcategory)
             })).filter(product =>
                 Number.isInteger(product.id) && product.id > 0
             );
@@ -300,6 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
             saveCart();
+            renderSubcategories();
             renderProducts();
             renderCart();
 
@@ -330,6 +359,103 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --------------------------------
+    // Subcategory Filtering (Admin Linked)
+    // --------------------------------
+
+    function renderSubcategories() {
+        if (!subcategoryFilterContainer || !subcategoryFilterBar) return;
+
+        const selectedCategory = categoryFilter.value;
+
+        // Find products matching current category (without subcategory filter)
+        const categoryProducts = products.filter(product =>
+            matchesCategory(product, selectedCategory)
+        );
+
+        // Collect unique subcategories with counts
+        const subcatMap = new Map();
+        categoryProducts.forEach(product => {
+            const sub = String(product.subcategory || "").trim();
+            if (sub) {
+                subcatMap.set(sub, (subcatMap.get(sub) || 0) + 1);
+            }
+        });
+
+        if (subcatMap.size === 0) {
+            subcategoryFilterContainer.hidden = true;
+            currentSubcategory = "all";
+            return;
+        }
+
+        subcategoryFilterContainer.hidden = false;
+
+        let labelText = "Explore Subcategories:";
+        if (selectedCategory === "groceries") {
+            labelText = "Groceries Subcategories:";
+        } else if (selectedCategory === "daily-essentials") {
+            labelText = "Daily Essentials Subcategories:";
+        }
+        if (subcategoryFilterLabel) {
+            subcategoryFilterLabel.textContent = labelText;
+        }
+
+        const isAllActive = (currentSubcategory === "all");
+        let categoryDisplayTitle = "Items";
+        if (selectedCategory === "groceries") categoryDisplayTitle = "Groceries";
+        else if (selectedCategory === "daily-essentials") categoryDisplayTitle = "Daily Essentials";
+        else if (selectedCategory === "period-care") categoryDisplayTitle = "Period Care";
+        else if (selectedCategory === "personal-safety") categoryDisplayTitle = "Safety";
+        else if (selectedCategory === "personal-care") categoryDisplayTitle = "Personal Care";
+
+        let pillsHTML = `
+            <button
+                type="button"
+                class="subcat-pill ${isAllActive ? 'active' : ''}"
+                data-subcat="all"
+                role="tab"
+                aria-selected="${isAllActive}"
+            >
+                All ${escapeHTML(categoryDisplayTitle)} (${categoryProducts.length})
+            </button>
+        `;
+
+        subcatMap.forEach((count, subcatName) => {
+            const slug = subcategorySlug(subcatName);
+            const isActive = (currentSubcategory === slug || currentSubcategory.toLowerCase() === subcatName.toLowerCase());
+            pillsHTML += `
+                <button
+                    type="button"
+                    class="subcat-pill ${isActive ? 'active' : ''}"
+                    data-subcat="${escapeHTML(slug)}"
+                    role="tab"
+                    aria-selected="${isActive}"
+                >
+                    ${escapeHTML(subcatName)} (${count})
+                </button>
+            `;
+        });
+
+        subcategoryFilterBar.innerHTML = pillsHTML;
+
+        subcategoryFilterBar.querySelectorAll(".subcat-pill").forEach(button => {
+            button.addEventListener("click", () => {
+                currentSubcategory = button.getAttribute("data-subcat") || "all";
+
+                const url = new URL(window.location.href);
+                if (currentSubcategory !== "all") {
+                    url.searchParams.set("subcategory", currentSubcategory);
+                } else {
+                    url.searchParams.delete("subcategory");
+                }
+                window.history.replaceState({}, "", url.toString());
+
+                renderSubcategories();
+                renderProducts();
+            });
+        });
+    }
+
+    // --------------------------------
     // Render products
     // --------------------------------
 
@@ -348,9 +474,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return (
                 searchableText.includes(query) &&
-                matchesCategory(product, selectedCategory)
+                matchesCategory(product, selectedCategory) &&
+                matchesSubcategory(product, currentSubcategory)
             );
         });
+
+        // When browsing 'all' categories, deduplicate identical cross-category items so customers see unique products
+        if (selectedCategory === "all") {
+            const seen = new Set();
+            filtered = filtered.filter(product => {
+                const key = `${product.name.trim().toLowerCase()}|${product.brand.trim().toLowerCase()}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
 
         if (sortFilter.value === "low") {
             filtered.sort((a, b) => a.price - b.price);
@@ -379,7 +517,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return `
                 <article class="product-card">
-                    ${image}
+                    <div class="product-card-media">
+                        ${image}
+                        <div class="product-tag-row">
+                            <span class="product-tag-cat">${escapeHTML(product.category || "Essentials")}</span>
+                            ${product.subcategory ? `<span class="product-tag-subcat">${escapeHTML(product.subcategory)}</span>` : ""}
+                        </div>
+                    </div>
 
                     <h2>${escapeHTML(product.name)}</h2>
 
@@ -834,7 +978,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     searchInput.addEventListener("input", renderProducts);
-    categoryFilter.addEventListener("change", renderProducts);
+
+    categoryFilter.addEventListener("change", () => {
+        currentSubcategory = "all";
+        const url = new URL(window.location.href);
+        if (categoryFilter.value !== "all") {
+            url.searchParams.set("category", categoryFilter.value);
+        } else {
+            url.searchParams.delete("category");
+        }
+        url.searchParams.delete("subcategory");
+        window.history.replaceState({}, "", url.toString());
+
+        renderSubcategories();
+        renderProducts();
+    });
+
     sortFilter.addEventListener("change", renderProducts);
 
     document.addEventListener("click", event => {
@@ -860,11 +1019,12 @@ document.addEventListener("DOMContentLoaded", () => {
     continueShoppingButton?.addEventListener("click", continueShopping);
 
     // --------------------------------
-    // Category links from other pages
+    // Category & Subcategory links from URL
     // --------------------------------
 
     const params = new URLSearchParams(window.location.search);
     const requestedCategory = params.get("category");
+    const requestedSubcategory = params.get("subcategory");
 
     if (
         requestedCategory &&
@@ -873,6 +1033,10 @@ document.addEventListener("DOMContentLoaded", () => {
         )
     ) {
         categoryFilter.value = requestedCategory;
+    }
+
+    if (requestedSubcategory) {
+        currentSubcategory = subcategorySlug(requestedSubcategory);
     }
 
     // --------------------------------
