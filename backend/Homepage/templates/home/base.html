@@ -16,41 +16,63 @@
 
 <body>
     <div class="announcement-bar">
-        <p>Care • Comfort • Confidence — Everyday essentials, delivered with care.</p>
+        {% if user.is_authenticated and user.delivery_profile %}
+            <p>🛵 Tipsy Cart Delivery Partner Network — Order Dispatch & Real-Time Delivery Management</p>
+        {% else %}
+            <p>Care • Comfort • Confidence — Everyday essentials, delivered with care.</p>
+        {% endif %}
     </div>
 
     <header class="site-header">
-        <a href="/" class="site-logo" aria-label="Tipsy Cart home">
+        <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo" aria-label="Tipsy Cart home">
             <span class="logo-mark">T</span>
-            <span class="logo-name">Tipsy<span>Cart</span></span>
+            <span class="logo-name">Tipsy<span>Cart</span>{% if user.is_authenticated and user.delivery_profile %}&nbsp;<span style="font-size: 11px; background: #a52d55; color: white; padding: 2px 8px; border-radius: 10px; font-weight: 800; letter-spacing: 0.8px; vertical-align: middle;">DRIVER</span>{% endif %}</span>
         </a>
 
-        <nav class="site-nav" aria-label="Main navigation">
-            <a href="/">Home</a>
-            <a href="/categories/">Categories</a>
-            <a href="/shop/">Shop</a>
-            <a href="/about/">About Us</a>
-            <a href="/contact/">Contact</a>
-        </nav>
+        {% if user.is_authenticated and user.delivery_profile %}
+            <!-- Delivery Partner Navigation (NO consumer shop/category links) -->
+            <nav class="site-nav" aria-label="Driver navigation">
+                <a href="{% url 'delivery:dashboard' %}">🛵 Dashboard</a>
+                <a href="{% url 'delivery:dashboard' %}?tab=all">📦 All Deliveries</a>
+                <a href="{% url 'delivery:dashboard' %}?tab=new">⚡ New Requests</a>
+                <a href="{% url 'delivery:profile' %}">⚙️ Driver Profile</a>
+            </nav>
+        {% else %}
+            <!-- Customer / Public Navigation -->
+            <nav class="site-nav" aria-label="Main navigation">
+                <a href="/">Home</a>
+                <a href="/categories/">Categories</a>
+                <a href="/shop/">Shop</a>
+                <a href="/about/">About Us</a>
+                <a href="/contact/">Contact</a>
+            </nav>
+        {% endif %}
 
         <div class="account-links">
 
-            <!-- Global Cart Button in Navbar -->
-            <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;">
-                🛒 Cart <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
-            </button>
+            {% if user.is_authenticated and user.delivery_profile %}
+                <!-- Delivery Partner Action Links (NO Cart, NO Customer Orders, NO Customer Account) -->
+                <a href="{% url 'delivery:dashboard' %}" class="account-btn account-outline" style="font-weight: 700; background: #fff0f5; border-color: #a52d55; color: #a52d55;">
+                    🛵 Driver Portal
+                </a>
+                <a href="{% url 'delivery:profile' %}" class="account-btn account-outline" style="font-weight: 600;">
+                    ⚙️ Driver Profile
+                </a>
+                <a href="{% url 'delivery:logout' %}" class="account-btn account-primary" style="background: #a52d55; color: white; text-decoration: none;">
+                    Logout
+                </a>
+            {% elif user.is_authenticated %}
+                <!-- Regular Authenticated Customer -->
+                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;">
+                    🛒 Cart <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
+                </button>
 
-            {% if user.is_authenticated %}
                 {% if user.is_staff %}
                     <a href="/admin/" class="account-btn account-outline">
                         Admin
                     </a>
                 {% endif %}
-                {% if user.delivery_profile %}
-                    <a href="{% url 'delivery:dashboard' %}" class="account-btn account-outline">
-                        🛵 Driver Portal
-                    </a>
-                {% endif %}
+
                 <a href="{% url 'dashboard' %}#all-orders" class="account-btn account-outline" style="font-weight: 700; background: #fff0f5; border-color: #a52d55; color: #a52d55;">
                     📦 My Orders
                 </a>
@@ -65,6 +87,10 @@
                     </button>
                 </form>
             {% else %}
+                <!-- Guest / Public Visitor -->
+                <button id="nav-cart-btn" class="account-btn account-outline" type="button" aria-label="Shopping Cart" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700;">
+                    🛒 Cart <span id="nav-cart-badge" style="background: #a52d55; color: white; padding: 1px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
+                </button>
                 <a href="{% url 'delivery:login' %}" class="account-btn account-outline" style="border-style: dashed;">
                     Driver Login
                 </a>
@@ -86,88 +112,102 @@
     <footer class="site-footer">
         <div class="footer-inner">
             <div class="footer-brand">
-                <a href="/" class="site-logo">
+                <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo">
                     <span class="logo-mark">T</span>
                     <span class="logo-name">Tipsy<span>Cart</span></span>
                 </a>
-                <p>Everyday essentials, delivered with care.</p>
-                <p class="footer-tagline">Care • Comfort • Confidence</p>
+                {% if user.is_authenticated and user.delivery_profile %}
+                    <p>Tipsy Cart Delivery Partner Network.</p>
+                    <p class="footer-tagline">Safe • Fast • Reliable Deliveries</p>
+                {% else %}
+                    <p>Everyday essentials, delivered with care.</p>
+                    <p class="footer-tagline">Care • Comfort • Confidence</p>
+                {% endif %}
             </div>
 
             <div class="footer-links">
-                <a href="/">Home</a>
-                <a href="/categories/">Categories</a>
-                <a href="/shop/">Shop</a>
-                <a href="/about/">About Us</a>
-                <a href="/contact/">Contact</a>
-                <a href="{% url 'delivery:login' %}">Delivery Partner Portal</a>
+                {% if user.is_authenticated and user.delivery_profile %}
+                    <a href="{% url 'delivery:dashboard' %}">Driver Dashboard</a>
+                    <a href="{% url 'delivery:dashboard' %}?tab=all">My Deliveries</a>
+                    <a href="{% url 'delivery:profile' %}">Driver Profile</a>
+                    <a href="{% url 'delivery:logout' %}">Logout</a>
+                {% else %}
+                    <a href="/">Home</a>
+                    <a href="/categories/">Categories</a>
+                    <a href="/shop/">Shop</a>
+                    <a href="/about/">About Us</a>
+                    <a href="/contact/">Contact</a>
+                    <a href="{% url 'delivery:login' %}">Delivery Partner Portal</a>
+                {% endif %}
             </div>
 
             <div class="footer-copy">
-                <p>&copy; 2026 Tipsy Cart. All rights reserved.</p>
+                <p>&copy; 2026 Tipsy Cart{% if user.is_authenticated and user.delivery_profile %} Delivery Partner Network{% endif %}. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Global Slide-Over Cart Drawer (Amazon / Flipkart Style) -->
-    <div id="side-cart-overlay" class="side-cart-overlay"></div>
-    <aside id="side-cart-drawer" class="side-cart-drawer" aria-label="Shopping Cart Drawer" aria-hidden="true">
-        <div class="drawer-header">
-            <div class="drawer-header-title">
-                <span class="drawer-cart-icon">🛒</span>
-                <h3>My Cart (<span id="drawer-items-count">0</span>)</h3>
-            </div>
-            <button id="close-drawer-btn" type="button" class="drawer-close-btn" aria-label="Close cart drawer">✕</button>
-        </div>
-
-        <div class="drawer-shipping-badge">
-            <span>⚡ <strong>TipsyExpress:</strong> Free Instant Delivery On All Orders!</span>
-        </div>
-
-        <div id="drawer-items-container" class="drawer-items-container">
-            <!-- Dynamic items rendered via JS -->
-        </div>
-
-        <div id="drawer-footer" class="drawer-footer">
-            <div class="drawer-price-details">
-                <div class="price-row">
-                    <span>Items Total:</span>
-                    <strong id="drawer-items-subtotal">₹0.00</strong>
+    {% if not user.is_authenticated or not user.delivery_profile %}
+        <!-- Global Slide-Over Cart Drawer (Amazon / Flipkart Style) -->
+        <div id="side-cart-overlay" class="side-cart-overlay"></div>
+        <aside id="side-cart-drawer" class="side-cart-drawer" aria-label="Shopping Cart Drawer" aria-hidden="true">
+            <div class="drawer-header">
+                <div class="drawer-header-title">
+                    <span class="drawer-cart-icon">🛒</span>
+                    <h3>My Cart (<span id="drawer-items-count">0</span>)</h3>
                 </div>
-                <div class="price-row">
-                    <span>Delivery Charges:</span>
-                    <span style="color: #198754; font-weight: 700;">FREE</span>
-                </div>
-                <div class="price-row total-row">
-                    <span>Total Amount:</span>
-                    <strong id="drawer-total-amount" style="color: #a52d55; font-size: 18px;">₹0.00</strong>
-                </div>
+                <button id="close-drawer-btn" type="button" class="drawer-close-btn" aria-label="Close cart drawer">✕</button>
             </div>
 
-            <div class="drawer-actions">
-                <a href="{% url 'checkout' %}" class="drawer-checkout-btn">
-                    Place Order (Proceed to Checkout) →
-                </a>
-                <div class="drawer-sub-actions">
-                    <button id="drawer-clear-btn" type="button" class="drawer-clear-link">Clear Cart</button>
-                    <button id="drawer-continue-btn" type="button" class="drawer-continue-link">Continue Shopping</button>
+            <div class="drawer-shipping-badge">
+                <span>⚡ <strong>TipsyExpress:</strong> Free Instant Delivery On All Orders!</span>
+            </div>
+
+            <div id="drawer-items-container" class="drawer-items-container">
+                <!-- Dynamic items rendered via JS -->
+            </div>
+
+            <div id="drawer-footer" class="drawer-footer">
+                <div class="drawer-price-details">
+                    <div class="price-row">
+                        <span>Items Total:</span>
+                        <strong id="drawer-items-subtotal">₹0.00</strong>
+                    </div>
+                    <div class="price-row">
+                        <span>Delivery Charges:</span>
+                        <span style="color: #198754; font-weight: 700;">FREE</span>
+                    </div>
+                    <div class="price-row total-row">
+                        <span>Total Amount:</span>
+                        <strong id="drawer-total-amount" style="color: #a52d55; font-size: 18px;">₹0.00</strong>
+                    </div>
+                </div>
+
+                <div class="drawer-actions">
+                    <a href="{% url 'checkout' %}" class="drawer-checkout-btn">
+                        Place Order (Proceed to Checkout) →
+                    </a>
+                    <div class="drawer-sub-actions">
+                        <button id="drawer-clear-btn" type="button" class="drawer-clear-link">Clear Cart</button>
+                        <button id="drawer-continue-btn" type="button" class="drawer-continue-link">Continue Shopping</button>
+                    </div>
                 </div>
             </div>
+        </aside>
+
+        <!-- Floating Side Cart Button (Visible on Right Edge) -->
+        <button id="floating-side-cart" class="floating-side-cart" type="button" aria-label="Open Shopping Cart">
+            <span class="side-cart-icon">🛒</span>
+            <span class="side-cart-text">Cart</span>
+            <span id="side-cart-badge" class="side-cart-badge">0</span>
+        </button>
+
+        <!-- Toast Notification when item is added -->
+        <div id="cart-floating-toast" class="cart-floating-toast" aria-live="polite">
+            <span class="toast-icon">✓</span>
+            <span id="cart-toast-text">Added to cart!</span>
         </div>
-    </aside>
-
-    <!-- Floating Side Cart Button (Visible on Right Edge) -->
-    <button id="floating-side-cart" class="floating-side-cart" type="button" aria-label="Open Shopping Cart">
-        <span class="side-cart-icon">🛒</span>
-        <span class="side-cart-text">Cart</span>
-        <span id="side-cart-badge" class="side-cart-badge">0</span>
-    </button>
-
-    <!-- Toast Notification when item is added -->
-    <div id="cart-floating-toast" class="cart-floating-toast" aria-live="polite">
-        <span class="toast-icon">✓</span>
-        <span id="cart-toast-text">Added to cart!</span>
-    </div>
+    {% endif %}
 
     <script src="{% static 'home/js/common.js' %}?v=2.1"></script>
     {% block extra_js %}{% endblock %}

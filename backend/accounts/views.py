@@ -157,6 +157,10 @@ def admin_logout_view(request):
 
 @login_required(login_url="login")
 def dashboard_view(request):
+    # If authenticated user is a delivery partner, redirect to driver dashboard
+    if hasattr(request.user, "delivery_profile"):
+        return redirect("delivery:dashboard")
+
     customer_orders = (
         Order.objects
         .filter(user=request.user)

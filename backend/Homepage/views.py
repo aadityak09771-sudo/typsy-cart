@@ -1,6 +1,6 @@
 
 import logging
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from products.models import Product
@@ -74,4 +74,6 @@ def contact(request):
 
 @login_required
 def checkout(request):
+    if hasattr(request.user, "delivery_profile"):
+        return redirect("delivery:dashboard")
     return render(request, "home/checkout.html")
