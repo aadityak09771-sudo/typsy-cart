@@ -1,0 +1,112 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Terms &amp; Conditions | TipsyCart Kanpur{% endblock %}
+
+{% block meta_description %}
+TipsyCart Terms & Conditions: Read the guidelines and conditions for shopping everyday essentials with TipsyCart in Kanpur.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.tc-policy-page {
+    max-width: 900px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    font-family: inherit;
+}
+.tc-policy-hero {
+    text-align: center;
+    padding: 44px 24px;
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 50%, #fce7f3 100%);
+    border-radius: 24px;
+    border: 1px solid #fbcfe8;
+    margin-bottom: 36px;
+    box-shadow: 0 10px 30px rgba(165, 44, 105, 0.06);
+}
+.tc-policy-eyebrow {
+    color: #9d174d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+.tc-policy-hero h1 {
+    font-size: clamp(26px, 3.8vw, 38px);
+    color: #2b1f30;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.tc-policy-hero h1 span {
+    color: #be185d;
+}
+.tc-policy-card {
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    border-radius: 20px;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+.tc-policy-card h2 {
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tc-policy-card p, .tc-policy-card li {
+    color: #475569;
+    font-size: 14.5px;
+    line-height: 1.7;
+}
+.tc-policy-card ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="tc-policy-page">
+    <header class="tc-policy-hero">
+        <span class="tc-policy-eyebrow">Customer Agreement</span>
+        <h1>Terms &amp; <span>Conditions</span></h1>
+        <p>Please review our terms of service governing purchases, deliveries, and accounts on TipsyCart.</p>
+    </header>
+
+    <section class="tc-policy-card">
+        <h2>📜 1. Platform Use &amp; Eligibility</h2>
+        <p>By accessing TipsyCart or placing an order, you agree to comply with these terms. You must provide accurate delivery information to ensure timely fulfillment.</p>
+    </section>
+
+    <section class="tc-policy-card">
+        <h2>🛍️ 2. Orders &amp; Pricing</h2>
+        <ul>
+            <li>All prices are in Indian Rupees (INR) and inclusive of applicable taxes.</li>
+            <li>We make every effort to display accurate product images, prices, and stock quantities.</li>
+            <li>In the event of an out-of-stock item, our customer support will contact you immediately for substitution or full refund.</li>
+        </ul>
+    </section>
+
+    <section class="tc-policy-card">
+        <h2>🛵 3. Hyperlocal Delivery in Kanpur</h2>
+        <ul>
+            <li>Deliveries are carried out across designated service pin codes in Kanpur by our trained delivery team.</li>
+            <li>Customers should inspect products upon arrival. Damaged or defective items are eligible for immediate replacement under our Returns Policy.</li>
+        </ul>
+    </section>
+
+    <section class="tc-policy-card">
+        <h2>⚖️ 4. Governing Law</h2>
+        <p>These terms shall be governed by and construed in accordance with the laws of India. Any disputes are subject to the jurisdiction of courts in Kanpur, Uttar Pradesh.</p>
+    </section>
+</main>
+{% endblock %}

@@ -10,6 +10,11 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("dashboard/", views.dashboard_view, name="dashboard"),
 
+    # Email OTP Authentication & Password Reset endpoints
+    path("auth/send-otp/", views.send_otp_view, name="send_otp"),
+    path("auth/verify-otp/", views.verify_otp_view, name="verify_otp"),
+    path("auth/reset-password/", views.reset_password_view, name="reset_password"),
+
     # Mobile app authentication APIs
     path("api/register/", api_views.RegisterAPIView.as_view(), name="api_register"),
     path("api/login/", api_views.LoginAPIView.as_view(), name="api_login"),

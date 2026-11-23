@@ -17,10 +17,15 @@ __pycache__/
 *$py.class
 *.so
 
-# SQLite Database
+# SQLite Database & Backups
 *.sqlite3
+*.sqlite3*
+*.bak*
+*.bak
 db.sqlite3
 backend/db.sqlite3
+backend/db.sqlite3*
+backend/*.bak*
 
 # Static & Media files
 staticfiles/

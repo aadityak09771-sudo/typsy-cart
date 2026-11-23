@@ -1,0 +1,174 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .tc-cart-container {
+    max-width: 1250px;
+    margin: 20px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .tc-cart-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .tc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tc-table th {
+    background: #f9fafb;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .tc-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  .tc-item-pill {
+    display: inline-block;
+    background: #fdf2f8;
+    color: #a51655;
+    border: 1px solid #fce7f3;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin: 2px 4px 2px 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-cart-container">
+
+  <!-- Header -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <a href="{% url 'admin:index' %}" style="color: #6b7280; font-size: 13px; text-decoration: none;">← Back to Admin Overview</a>
+      <h1 style="margin: 4px 0 0; color: #111827; font-size: 24px; font-weight: 800;">
+        🛒 Customer Cart Overview
+      </h1>
+      <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">
+        Monitor customer shopping activity, unpurchased items, and abandoned carts.
+      </p>
+    </div>
+  </div>
+
+  <!-- Stat summary -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 4px solid #0284c7; border-radius: 10px; padding: 18px 20px;">
+      <small style="color: #6b7280; font-weight: 700; text-transform: uppercase;">Active Carts (Last 24h)</small>
+      <div style="font-size: 26px; font-weight: 800; color: #0369a1; margin-top: 4px;">{{ total_active_count }}</div>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 4px solid #ea580c; border-radius: 10px; padding: 18px 20px;">
+      <small style="color: #6b7280; font-weight: 700; text-transform: uppercase;">Abandoned Carts (&gt;24h)</small>
+      <div style="font-size: 26px; font-weight: 800; color: #c2410c; margin-top: 4px;">{{ total_abandoned_count }}</div>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-left: 4px solid #16a34a; border-radius: 10px; padding: 18px 20px;">
+      <small style="color: #6b7280; font-weight: 700; text-transform: uppercase;">Total Cart Value Sitting in Carts</small>
+      <div style="font-size: 26px; font-weight: 800; color: #15803d; margin-top: 4px;">₹{{ total_cart_value }}</div>
+    </div>
+  </div>
+
+  <!-- Active Carts Table -->
+  <div class="tc-cart-card">
+    <h2 style="margin: 0 0 16px; font-size: 17px; color: #111827;">
+      ⚡ Active Customer Carts ({{ total_active_count }})
+    </h2>
+
+    {% if active_carts %}
+      <div style="overflow-x: auto;">
+        <table class="tc-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Items Count</th>
+              <th>Cart Products</th>
+              <th>Cart Value</th>
+              <th>Last Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in active_carts %}
+              <tr>
+                <td>
+                  <strong>{{ c.user.get_full_name|default:c.user.username }}</strong>
+                  <br><small style="color: #6b7280;">{{ c.user.email }}</small>
+                </td>
+                <td><strong style="color: #0369a1;">{{ c.items_count }} items</strong></td>
+                <td>
+                  {% for item in c.items %}
+                    <span class="tc-item-pill">
+                      {{ item.product.name }} &times; <strong>{{ item.quantity }}</strong>
+                    </span>
+                  {% endfor %}
+                </td>
+                <td style="color: #a51655; font-weight: 800; font-size: 14px;">₹{{ c.subtotal }}</td>
+                <td style="color: #6b7280;">{{ c.updated_at|date:"d M Y, H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: #6b7280; font-size: 13px;">No active shopping carts right now.</p>
+    {% endif %}
+  </div>
+
+  <!-- Abandoned Carts Table -->
+  <div class="tc-cart-card">
+    <h2 style="margin: 0 0 16px; font-size: 17px; color: #c2410c;">
+      ⏱️ Abandoned Carts (Inactive &gt; 24 Hours) ({{ total_abandoned_count }})
+    </h2>
+
+    {% if abandoned_carts %}
+      <div style="overflow-x: auto;">
+        <table class="tc-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Items Count</th>
+              <th>Cart Products</th>
+              <th>Potential Value</th>
+              <th>Last Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in abandoned_carts %}
+              <tr>
+                <td>
+                  <strong>{{ c.user.get_full_name|default:c.user.username }}</strong>
+                  <br><small style="color: #6b7280;">{{ c.user.email }}</small>
+                </td>
+                <td><strong style="color: #6b7280;">{{ c.items_count }} items</strong></td>
+                <td>
+                  {% for item in c.items %}
+                    <span class="tc-item-pill" style="background: #fef2f2; color: #991b1b; border-color: #fecaca;">
+                      {{ item.product.name }} &times; {{ item.quantity }}
+                    </span>
+                  {% endfor %}
+                </td>
+                <td style="color: #6b7280; font-weight: 800;">₹{{ c.subtotal }}</td>
+                <td style="color: #9ca3af;">{{ c.updated_at|date:"d M Y, H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: #6b7280; font-size: 13px;">No abandoned carts found.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

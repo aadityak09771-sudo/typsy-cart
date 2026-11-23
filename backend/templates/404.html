@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | TipsyCart</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#fff7fa">
+    <link rel="stylesheet" href="{% static 'home/css/common.css' %}?v=5.2">
+    <style>
+        .tc-error-wrap {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .tc-error-card {
+            max-width: 500px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #f7e3ec;
+            border-radius: 20px;
+            padding: 45px 30px;
+            box-shadow: 0 15px 45px rgba(165, 22, 85, 0.08);
+        }
+        .tc-error-code {
+            font-size: 80px;
+            font-weight: 900;
+            line-height: 1;
+            margin: 0 0 10px;
+            background: linear-gradient(135deg, #be185d, #a51655);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tc-error-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #30242c;
+            margin: 0 0 12px;
+        }
+        .tc-error-desc {
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0 0 25px;
+        }
+        .tc-error-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .tc-btn-primary {
+            background: linear-gradient(135deg, #be185d, #9d174d);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tc-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(190, 24, 93, 0.3);
+        }
+        .tc-btn-outline {
+            background: #fff0f5;
+            color: #a51655;
+            border: 1px solid #f8dce7;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .tc-btn-outline:hover {
+            background: #fce7f3;
+        }
+    </style>
+</head>
+<body style="background: #fff7fa; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+    <div class="tc-error-wrap">
+        <div class="tc-error-card">
+            <a href="/" style="display: inline-block; margin-bottom: 20px;">
+                <img src="{% static 'home/images/tipsycart-logo.png' %}" alt="TipsyCart" style="height: 54px; width: auto;">
+            </a>
+            <div class="tc-error-code">404</div>
+            <h1 class="tc-error-title">Page Not Found</h1>
+            <p class="tc-error-desc">We couldn't find the page you're looking for. It might have been moved, renamed, or is temporarily unavailable.</p>
+            <div class="tc-error-actions">
+                <a href="/" class="tc-btn-primary">🏠 Back to Home</a>
+                <a href="/shop/" class="tc-btn-outline">🛍️ Browse Shop</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

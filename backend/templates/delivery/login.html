@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#fff7fa">
-    <title>Delivery Partner Login | Tipsy Cart</title>
+    <title>Delivery Partner Login | TipsyCart</title>
+    <meta name="robots" content="noindex, nofollow">
 
     <style>
         * {
@@ -34,10 +35,11 @@
             border: 1px solid #f7e3ec;
             border-radius: 22px;
             box-shadow: 0 18px 55px rgba(111, 28, 64, .10);
+            transition: all 0.3s ease;
         }
 
         .brand {
-            margin-bottom: 26px;
+            margin-bottom: 22px;
             text-align: center;
         }
 
@@ -95,33 +97,38 @@
             line-height: 1.5;
         }
 
-        .message {
-            margin-bottom: 14px;
+        .alert-box {
+            display: none;
+            margin-bottom: 16px;
             padding: 12px 14px;
             border-radius: 10px;
             font-size: 13px;
             line-height: 1.5;
-        }
-        .message.error {
-            background: #fff1f2;
-            color: #a61b38;
-            border-left: 4px solid #a61b38;
-        }
-        .message.success {
-            background: #e6f4ea;
-            color: #137333;
-            border-left: 4px solid #137333;
-        }
-        .message.info {
-            background: #e8f0fe;
-            color: #1a73e8;
-            border-left: 4px solid #1a73e8;
+            animation: fadeIn 0.25s ease;
         }
 
-        .errors {
-            margin-top: 6px;
-            color: #b42318;
-            font-size: 12px;
+        .alert-box.error {
+            display: block;
+            background: #fff1f2;
+            color: #a61b38;
+            border: 1px solid #f8d0d7;
+            border-left: 4px solid #a61b38;
+        }
+
+        .alert-box.success {
+            display: block;
+            background: #e6f4ea;
+            color: #137333;
+            border: 1px solid #c8e6c9;
+            border-left: 4px solid #137333;
+        }
+
+        .alert-box.info {
+            display: block;
+            background: #fdf2f8;
+            color: #9d174d;
+            border: 1px solid #fbcfe8;
+            border-left: 4px solid #db2777;
         }
 
         .form-group {
@@ -136,11 +143,11 @@
             font-weight: 700;
         }
 
-        .form-group input {
+        .form-input {
             display: block;
             width: 100%;
-            min-height: 46px;
-            padding: 11px 14px;
+            min-height: 48px;
+            padding: 12px 14px;
             border: 1px solid #ead9e1;
             border-radius: 10px;
             outline: none;
@@ -150,46 +157,49 @@
             transition: border-color .2s, box-shadow .2s;
         }
 
-        .form-group input:focus {
+        .form-input:focus {
             border-color: #be185d;
             box-shadow: 0 0 0 3px #be185d16;
         }
 
-        .password-field-wrapper {
+        .otp-input-field {
+            letter-spacing: 10px;
+            font-size: 22px;
+            font-weight: 800;
+            text-align: center;
+            font-family: monospace;
+            color: #a51655;
+            background: #fff8fb;
+        }
+
+        .password-wrapper {
             position: relative;
-            width: 100%;
         }
 
-        .password-field-wrapper input {
-            padding-right: 46px !important;
+        .password-wrapper input {
+            padding-right: 72px;
         }
 
-        .toggle-password-btn {
+        .toggle-password {
             position: absolute;
-            right: 10px;
             top: 50%;
+            right: 12px;
             transform: translateY(-50%);
+            width: auto;
+            margin: 0;
+            padding: 5px;
+            border: 0;
             background: transparent;
-            border: none;
+            color: #a51655;
+            font-size: 12px;
+            font-weight: bold;
             cursor: pointer;
-            padding: 6px;
-            color: #a52d55;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            transition: background .2s, color .2s;
-            z-index: 5;
-        }
-
-        .toggle-password-btn:hover {
-            background: rgba(165, 45, 85, 0.08);
         }
 
         .submit-btn {
             width: 100%;
-            min-height: 48px;
-            margin-top: 8px;
+            min-height: 49px;
+            margin-top: 6px;
             border: 0;
             border-radius: 11px;
             background: linear-gradient(135deg, #a52d55, #63213d);
@@ -198,12 +208,68 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 7px 17px rgba(165, 45, 85, 0.28);
-            transition: transform .2s, box-shadow .2s;
+            transition: transform .2s, box-shadow .2s, background .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 22px rgba(165, 45, 85, 0.38);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .helper-text {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #786b73;
+            line-height: 1.4;
+        }
+
+        .timer-badge {
+            display: inline-block;
+            background: #fff0f5;
+            color: #a51655;
+            border: 1px solid #f8dce7;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+
+        .action-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            font-size: 13px;
         }
 
         .footer {
@@ -214,13 +280,19 @@
             line-height: 1.7;
         }
 
-        a {
+        a, .link-btn {
             color: #b01858;
             font-weight: 700;
             text-decoration: none;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
         }
 
-        a:hover {
+        a:hover, .link-btn:hover {
             text-decoration: underline;
         }
 
@@ -232,6 +304,29 @@
             color: #9b8791;
             font-size: 11px;
         }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 18px 12px;
+            }
+
+            .login-card {
+                padding: 28px 20px;
+                border-radius: 18px;
+            }
+
+            .brand h1 {
+                font-size: 24px;
+            }
+
+            .heading h2 {
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 
@@ -241,87 +336,231 @@
 
         <header class="brand">
             <div class="brand-icon">🛵</div>
-            <h1>Tipsy Cart</h1>
+            <h1>TipsyCart</h1>
             <span class="portal-badge">Delivery Partner Portal</span>
         </header>
 
-        <section class="heading">
-            <h2>Partner Login</h2>
-            <p>Access your delivery dashboard and assigned orders.</p>
-        </section>
-
+        <!-- Current Login Warning (if logged in as non-driver) -->
         {% if request.user.is_authenticated and not request.user.delivery_profile %}
-            <div class="message info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="alert-box info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="font-size: 12px; line-height: 1.4;">
                     Currently logged in as <strong>@{{ request.user.username }}</strong> {% if request.user.is_staff %}(Admin){% else %}(Customer){% endif %}.
                 </div>
                 <form method="post" action="{% url 'logout' %}?next={% url 'delivery:login' %}" style="margin: 0;">
                     {% csrf_token %}
-                    <button type="submit" style="background: white; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
-                        Logout & Switch
+                    <button type="submit" style="background: white; border: 1px solid #db2777; color: #db2777; padding: 3px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                        Switch Account
                     </button>
                 </form>
             </div>
         {% endif %}
 
+        <!-- Dynamic Status Alert Box -->
+        <div id="status-alert" class="alert-box" role="status"></div>
+
         {% if messages %}
             {% for message in messages %}
-                <div class="message {{ message.tags }}" role="status">
+                <div class="alert-box {% if message.tags == 'error' %}error{% else %}success{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-            {% if next %}
+        <!-- ========================================== -->
+        <!-- VIEW 1: DRIVER EMAIL OTP LOGIN FLOW        -->
+        <!-- ========================================== -->
+        <section id="view-otp-login">
+            <div class="heading">
+                <h2>Partner Login</h2>
+                <p id="otp-heading-desc">Access your delivery dashboard with your registered email.</p>
+            </div>
+
+            <!-- Step 1: Request OTP -->
+            <form id="form-send-otp" onsubmit="handleSendOtp(event)">
+                {% csrf_token %}
+                <input type="hidden" name="purpose" value="delivery_login">
                 <input type="hidden" name="next" value="{{ next }}">
-            {% endif %}
 
-            {% if form.non_field_errors %}
-                <div class="errors">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
-
-            {% for field in form %}
                 <div class="form-group">
-                    <label for="{{ field.id_for_label }}">
-                        {{ field.label }}
-                    </label>
-                    {% if "password" in field.name %}
-                        <div class="password-field-wrapper">
-                            {{ field }}
-                            <button type="button" class="toggle-password-btn" aria-label="Show password" onclick="togglePasswordVisibility('{{ field.id_for_label }}', this)" title="Show/Hide password">
-                                <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                                <svg class="eye-closed" style="display: none;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
-                    {% if field.errors %}
-                        <div class="errors">
-                            {{ field.errors }}
-                        </div>
-                    {% endif %}
+                    <label for="otp-email">Registered Partner Email</label>
+                    <input type="email" id="otp-email" name="email" class="form-input" placeholder="e.g. driver@tipsycart.com" required autocomplete="email">
+                    <p class="helper-text">Enter the email registered with your delivery partner profile.</p>
                 </div>
-            {% endfor %}
 
-            <button type="submit" class="submit-btn">
-                Log In to Delivery Portal
-            </button>
-        </form>
+                <button type="submit" id="btn-send-otp" class="submit-btn">
+                    <span>Send Verification Code</span> ✉️
+                </button>
+            </form>
 
+            <!-- Step 2: Verify OTP (Initially Hidden) -->
+            <form id="form-verify-otp" class="hidden" onsubmit="handleVerifyOtp(event)">
+                {% csrf_token %}
+                <input type="hidden" name="purpose" value="delivery_login">
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div style="background: #fff8fb; border: 1px solid #f7e1eb; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px;">
+                    Driver code sent to <strong id="sent-email-display" style="color: #a51655;"></strong>.
+                    <button type="button" class="link-btn" onclick="switchToSendStep()" style="margin-left: 6px;">(Edit)</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="otp-code">Enter 6-Digit Code</label>
+                    <input type="text" id="otp-code" name="otp" class="form-input otp-input-field" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="••••••" required autocomplete="one-time-code">
+                    <p class="helper-text" style="text-align: center;">Code expires in 5 minutes. Never share this code.</p>
+                </div>
+
+                <button type="submit" id="btn-verify-otp" class="submit-btn">
+                    <span>Verify &amp; Open Portal</span> 🛵
+                </button>
+
+                <div style="text-align: center; margin-top: 12px;">
+                    <span id="countdown-wrapper" class="timer-badge">
+                        ⏱️ Resend code in <span id="countdown-timer">60</span>s
+                    </span>
+                    <button type="button" id="btn-resend-otp" class="link-btn hidden" onclick="handleResendOtp()" style="margin-top: 10px; font-size: 13px;">
+                        🔄 Didn't receive code? <strong>Resend OTP</strong>
+                    </button>
+                </div>
+            </form>
+
+            <div class="action-links">
+                <button type="button" class="link-btn" onclick="switchToForgotPassword()">Forgot Password?</button>
+                <button type="button" class="link-btn" onclick="switchToPasswordLogin()">Password Login →</button>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: FORGOT PASSWORD FLOW               -->
+        <!-- ========================================== -->
+        <section id="view-forgot-password" class="hidden">
+            <div class="heading">
+                <h2>Reset Partner Password</h2>
+                <p id="forgot-heading-desc">Verify your email address to set a new password.</p>
+            </div>
+
+            <!-- Forgot Step 1: Send Reset OTP -->
+            <form id="form-forgot-send" onsubmit="handleForgotSendOtp(event)">
+                {% csrf_token %}
+                <input type="hidden" name="purpose" value="forgot_password">
+
+                <div class="form-group">
+                    <label for="forgot-email">Registered Partner Email</label>
+                    <input type="email" id="forgot-email" name="email" class="form-input" placeholder="e.g. driver@tipsycart.com" required autocomplete="email">
+                    <p class="helper-text">We'll send a 6-digit password reset code to this email.</p>
+                </div>
+
+                <button type="submit" id="btn-forgot-send" class="submit-btn">
+                    <span>Send Password Reset Code</span> 🔐
+                </button>
+            </form>
+
+            <!-- Forgot Step 2: Verify Reset OTP -->
+            <form id="form-forgot-verify" class="hidden" onsubmit="handleForgotVerifyOtp(event)">
+                {% csrf_token %}
+                <input type="hidden" name="purpose" value="forgot_password">
+
+                <div style="background: #fff8fb; border: 1px solid #f7e1eb; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px;">
+                    Reset code sent to <strong id="forgot-sent-email-display" style="color: #a51655;"></strong>.
+                    <button type="button" class="link-btn" onclick="switchToForgotSendStep()" style="margin-left: 6px;">(Edit)</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="forgot-otp-code">Enter 6-Digit Reset Code</label>
+                    <input type="text" id="forgot-otp-code" name="otp" class="form-input otp-input-field" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="••••••" required autocomplete="one-time-code">
+                </div>
+
+                <button type="submit" id="btn-forgot-verify" class="submit-btn">
+                    <span>Verify Code</span> 🔑
+                </button>
+
+                <div style="text-align: center; margin-top: 12px;">
+                    <span id="forgot-countdown-wrapper" class="timer-badge">
+                        ⏱️ Resend code in <span id="forgot-countdown-timer">60</span>s
+                    </span>
+                    <button type="button" id="btn-forgot-resend" class="link-btn hidden" onclick="handleForgotResendOtp()" style="margin-top: 10px; font-size: 13px;">
+                        🔄 Didn't receive code? <strong>Resend Reset Code</strong>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Forgot Step 3: Set New Password -->
+            <form id="form-forgot-reset" class="hidden" onsubmit="handleApplyPasswordReset(event)">
+                {% csrf_token %}
+                <input type="hidden" id="reset-token-field" name="reset_token" value="">
+
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="new-password" name="new_password" class="form-input" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password">
+                        <button type="button" class="toggle-password toggle-password-btn" onclick="togglePasswordVisibility('new-password', this)">Show</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm-password" name="confirm_password" class="form-input" minlength="8" placeholder="Re-type new password" required autocomplete="new-password">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirm-password', this)">Show</button>
+                    </div>
+                    <p class="helper-text">Make sure both passwords match.</p>
+                </div>
+
+                <button type="submit" id="btn-forgot-reset-submit" class="submit-btn">
+                    <span>Update Password &amp; Continue</span> ✅
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 16px;">
+                <button type="button" class="link-btn" onclick="switchToOtpLogin()">← Back to OTP Login</button>
+            </div>
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: LEGACY PASSWORD LOGIN (FALLBACK)   -->
+        <!-- ========================================== -->
+        <section id="view-password-login" class="hidden">
+            <div class="heading">
+                <h2>Driver Credentials</h2>
+                <p>Login with your partner username or phone and password.</p>
+            </div>
+
+            <form method="post" action="{% url 'delivery:login' %}">
+                {% csrf_token %}
+                <input type="hidden" name="login_type" value="password">
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="legacy-username">Driver Username / Phone</label>
+                    <input type="text" id="legacy-username" name="username" class="form-input" placeholder="e.g. rahul_delivery or phone" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="legacy-password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="legacy-password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="toggle-password toggle-password-btn" onclick="togglePasswordVisibility('legacy-password', this)">Show</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Log In with Password
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 16px;">
+                <button type="button" class="link-btn" onclick="switchToOtpLogin()">← Back to Email OTP Login</button>
+            </div>
+        </section>
+
+
+        <!-- Registration Box -->
         <div style="background: #fdf5f8; border: 1px dashed #f1cfde; border-radius: 12px; padding: 14px 16px; margin-top: 22px; text-align: center;">
             <p style="margin: 0 0 8px 0; color: #555; font-size: 13px; font-weight: 600;">
-                Want to deliver with Tipsy Cart?
+                Want to deliver with TipsyCart?
             </p>
             <a href="{% url 'delivery:register' %}" style="display: inline-flex; align-items: center; gap: 6px; background: #a52d55; color: white; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; transition: background 0.2s;">
                 <span>🛵</span> Register as Delivery Partner
@@ -338,28 +577,498 @@
         </p>
 
         <div class="security-note">
-            Protected area. For registered Tipsy Cart delivery partners only.
+            Protected area. For registered TipsyCart delivery partners only.
         </div>
 
     </main>
 
+
     <script>
+        // Global State & Countdown Timers
+        let countdownInterval = null;
+        let forgotCountdownInterval = null;
+        let activeEmail = "";
+        let forgotActiveEmail = "";
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken') || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '');
+
+        function showAlert(message, type = "error") {
+            const box = document.getElementById("status-alert");
+            if (!box) return;
+            box.className = `alert-box ${type}`;
+            box.textContent = message;
+            box.style.display = "block";
+            box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function clearAlert() {
+            const box = document.getElementById("status-alert");
+            if (box) {
+                box.style.display = "none";
+                box.textContent = "";
+            }
+        }
+
+        function setButtonLoading(btn, isLoading, loadingText = "Processing...") {
+            if (!btn) return;
+            btn.disabled = isLoading;
+            if (isLoading) {
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.innerHTML = `<span class="spinner"></span> <span>${loadingText}</span>`;
+            } else {
+                if (btn.dataset.originalHtml) {
+                    btn.innerHTML = btn.dataset.originalHtml;
+                }
+            }
+        }
+
+        // View Switchers
+        function switchToOtpLogin() {
+            clearAlert();
+            document.getElementById("view-otp-login").classList.remove("hidden");
+            document.getElementById("view-forgot-password").classList.add("hidden");
+            document.getElementById("view-password-login").classList.add("hidden");
+        }
+
+        function switchToForgotPassword() {
+            clearAlert();
+            document.getElementById("view-otp-login").classList.add("hidden");
+            document.getElementById("view-forgot-password").classList.remove("hidden");
+            document.getElementById("view-password-login").classList.add("hidden");
+            switchToForgotSendStep();
+        }
+
+        function switchToPasswordLogin() {
+            clearAlert();
+            document.getElementById("view-otp-login").classList.add("hidden");
+            document.getElementById("view-forgot-password").classList.add("hidden");
+            document.getElementById("view-password-login").classList.remove("hidden");
+        }
+
+        function switchToSendStep() {
+            clearAlert();
+            document.getElementById("form-send-otp").classList.remove("hidden");
+            document.getElementById("form-verify-otp").classList.add("hidden");
+            document.getElementById("otp-heading-desc").textContent = "Access your delivery dashboard with your registered email.";
+        }
+
+        function switchToVerifyStep(email) {
+            clearAlert();
+            activeEmail = email;
+            document.getElementById("sent-email-display").textContent = email;
+            document.getElementById("form-send-otp").classList.add("hidden");
+            document.getElementById("form-verify-otp").classList.remove("hidden");
+            document.getElementById("otp-heading-desc").textContent = "Enter the 6-digit code sent to your email.";
+            document.getElementById("otp-code").value = "";
+            document.getElementById("otp-code").focus();
+            startResendCountdown(60);
+        }
+
+        function switchToForgotSendStep() {
+            clearAlert();
+            document.getElementById("form-forgot-send").classList.remove("hidden");
+            document.getElementById("form-forgot-verify").classList.add("hidden");
+            document.getElementById("form-forgot-reset").classList.add("hidden");
+            document.getElementById("forgot-heading-desc").textContent = "Verify your email address to set a new password.";
+        }
+
+        function switchToForgotVerifyStep(email) {
+            clearAlert();
+            forgotActiveEmail = email;
+            document.getElementById("forgot-sent-email-display").textContent = email;
+            document.getElementById("form-forgot-send").classList.add("hidden");
+            document.getElementById("form-forgot-verify").classList.remove("hidden");
+            document.getElementById("form-forgot-reset").classList.add("hidden");
+            document.getElementById("forgot-heading-desc").textContent = "Enter the 6-digit password reset code sent to your email.";
+            document.getElementById("forgot-otp-code").value = "";
+            document.getElementById("forgot-otp-code").focus();
+            startForgotResendCountdown(60);
+        }
+
+        function switchToForgotResetStep(token) {
+            clearAlert();
+            document.getElementById("reset-token-field").value = token;
+            document.getElementById("form-forgot-send").classList.add("hidden");
+            document.getElementById("form-forgot-verify").classList.add("hidden");
+            document.getElementById("form-forgot-reset").classList.remove("hidden");
+            document.getElementById("forgot-heading-desc").textContent = "Create a strong new password for your account.";
+            document.getElementById("new-password").value = "";
+            document.getElementById("confirm-password").value = "";
+            document.getElementById("new-password").focus();
+        }
+
+        // Timer Helpers
+        function startResendCountdown(seconds) {
+            clearInterval(countdownInterval);
+            let remaining = seconds;
+            const timerSpan = document.getElementById("countdown-timer");
+            const wrapper = document.getElementById("countdown-wrapper");
+            const resendBtn = document.getElementById("btn-resend-otp");
+
+            wrapper.classList.remove("hidden");
+            resendBtn.classList.add("hidden");
+            timerSpan.textContent = remaining;
+
+            countdownInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    wrapper.classList.add("hidden");
+                    resendBtn.classList.remove("hidden");
+                } else {
+                    timerSpan.textContent = remaining;
+                }
+            }, 1000);
+        }
+
+        function startForgotResendCountdown(seconds) {
+            clearInterval(forgotCountdownInterval);
+            let remaining = seconds;
+            const timerSpan = document.getElementById("forgot-countdown-timer");
+            const wrapper = document.getElementById("forgot-countdown-wrapper");
+            const resendBtn = document.getElementById("btn-forgot-resend");
+
+            wrapper.classList.remove("hidden");
+            resendBtn.classList.add("hidden");
+            timerSpan.textContent = remaining;
+
+            forgotCountdownInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(forgotCountdownInterval);
+                    wrapper.classList.add("hidden");
+                    resendBtn.classList.remove("hidden");
+                } else {
+                    timerSpan.textContent = remaining;
+                }
+            }, 1000);
+        }
+
+        // API Actions: Delivery Partner Login
+        async function handleSendOtp(event) {
+            event.preventDefault();
+            clearAlert();
+            const emailInput = document.getElementById("otp-email");
+            const email = (emailInput.value || "").trim().toLowerCase();
+            const btn = document.getElementById("btn-send-otp");
+
+            if (!email) {
+                showAlert("Please enter your registered partner email address.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Sending Code...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        purpose: "delivery_login"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`Verification code sent to ${email}! Please check your inbox.`, "success");
+                    switchToVerifyStep(email);
+                } else {
+                    showAlert(data.error || "Failed to send verification code. Please check your credentials.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please check your internet connection.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        async function handleResendOtp() {
+            clearAlert();
+            if (!activeEmail) return;
+            const resendBtn = document.getElementById("btn-resend-otp");
+            setButtonLoading(resendBtn, true, "Resending...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: activeEmail,
+                        purpose: "delivery_login"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`A new verification code was sent to ${activeEmail}.`, "success");
+                    startResendCountdown(data.cooldown || 60);
+                } else {
+                    showAlert(data.error || "Unable to resend verification code right now.");
+                    startResendCountdown(data.cooldown_remaining || 30);
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please try again.");
+            } finally {
+                setButtonLoading(resendBtn, false);
+            }
+        }
+
+        async function handleVerifyOtp(event) {
+            event.preventDefault();
+            clearAlert();
+            const otpInput = document.getElementById("otp-code");
+            const otp = (otpInput.value || "").trim();
+            const btn = document.getElementById("btn-verify-otp");
+
+            if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
+                showAlert("Please enter a valid 6-digit numerical code.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Verifying...");
+
+            try {
+                const nextParam = new URLSearchParams(window.location.search).get("next") || "{{ next }}";
+                const response = await fetch("{% url 'verify_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: activeEmail,
+                        otp: otp,
+                        purpose: "delivery_login",
+                        next: nextParam
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert("Verification successful! Opening delivery portal...", "success");
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || "{% url 'delivery:dashboard' %}";
+                    }, 500);
+                } else {
+                    showAlert(data.error || "Invalid verification code. Please check and try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred during verification. Please try again.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        // API Actions: Forgot Password
+        async function handleForgotSendOtp(event) {
+            event.preventDefault();
+            clearAlert();
+            const emailInput = document.getElementById("forgot-email");
+            const email = (emailInput.value || "").trim().toLowerCase();
+            const btn = document.getElementById("btn-forgot-send");
+
+            if (!email) {
+                showAlert("Please enter your registered email address.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Sending Code...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        purpose: "forgot_password"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(data.message || `If an account exists with ${email}, a reset code has been sent.`, "success");
+                    switchToForgotVerifyStep(email);
+                } else {
+                    showAlert(data.error || "Unable to send password reset code. Please try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please try again.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        async function handleForgotResendOtp() {
+            clearAlert();
+            if (!forgotActiveEmail) return;
+            const resendBtn = document.getElementById("btn-forgot-resend");
+            setButtonLoading(resendBtn, true, "Resending...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: forgotActiveEmail,
+                        purpose: "forgot_password"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`A new password reset code was sent to ${forgotActiveEmail}.`, "success");
+                    startForgotResendCountdown(data.cooldown || 60);
+                } else {
+                    showAlert(data.error || "Unable to resend code right now.");
+                    startForgotResendCountdown(data.cooldown_remaining || 30);
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please try again.");
+            } finally {
+                setButtonLoading(resendBtn, false);
+            }
+        }
+
+        async function handleForgotVerifyOtp(event) {
+            event.preventDefault();
+            clearAlert();
+            const otpInput = document.getElementById("forgot-otp-code");
+            const otp = (otpInput.value || "").trim();
+            const btn = document.getElementById("btn-forgot-verify");
+
+            if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
+                showAlert("Please enter a valid 6-digit numerical code.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Verifying Code...");
+
+            try {
+                const response = await fetch("{% url 'verify_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: forgotActiveEmail,
+                        otp: otp,
+                        purpose: "forgot_password"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success && data.reset_token) {
+                    showAlert("Identity verified! Please choose your new password below.", "success");
+                    switchToForgotResetStep(data.reset_token);
+                } else {
+                    showAlert(data.error || "Invalid password reset code. Please try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred during code verification.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        async function handleApplyPasswordReset(event) {
+            event.preventDefault();
+            clearAlert();
+            const token = document.getElementById("reset-token-field").value;
+            const newPwd = document.getElementById("new-password").value;
+            const confirmPwd = document.getElementById("confirm-password").value;
+            const btn = document.getElementById("btn-forgot-reset-submit");
+
+            if (!newPwd || !confirmPwd) {
+                showAlert("Please enter and confirm your new password.");
+                return;
+            }
+
+            if (newPwd !== confirmPwd) {
+                showAlert("Passwords do not match. Please re-enter carefully.");
+                return;
+            }
+
+            if (newPwd.length < 8) {
+                showAlert("Password must be at least 8 characters long.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Updating Password...");
+
+            try {
+                const response = await fetch("{% url 'reset_password' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        reset_token: token,
+                        new_password: newPwd,
+                        confirm_password: confirmPwd
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert("🎉 " + data.message, "success");
+                    setTimeout(() => {
+                        switchToOtpLogin();
+                        showAlert("Password successfully updated! You can now log in.", "success");
+                    }, 1200);
+                } else {
+                    showAlert(data.error || "Failed to update password. Please try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred while updating your password.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        // Toggle Password Show/Hide
         function togglePasswordVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             if (!input) return;
-            const eyeOpen = btn.querySelector('.eye-open');
-            const eyeClosed = btn.querySelector('.eye-closed');
-            if (input.type === 'password') {
-                input.type = 'text';
-                if (eyeOpen) eyeOpen.style.display = 'none';
-                if (eyeClosed) eyeClosed.style.display = 'block';
-                btn.setAttribute('aria-label', 'Hide password');
-            } else {
-                input.type = 'password';
-                if (eyeOpen) eyeOpen.style.display = 'block';
-                if (eyeClosed) eyeClosed.style.display = 'none';
-                btn.setAttribute('aria-label', 'Show password');
-            }
+            const isHidden = input.type === "password";
+            input.type = isHidden ? "text" : "password";
+            btn.textContent = isHidden ? "Hide" : "Show";
         }
     </script>
 

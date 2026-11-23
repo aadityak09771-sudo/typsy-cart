@@ -272,11 +272,19 @@
             <div class="tc-order-details-grid">
                 <div class="tc-detail-col">
                     <h4>Customer</h4>
-                    <p>{{ found_order.full_name|default:found_order.user.username }}</p>
+                    {% if request.user == found_order.user or request.user.is_staff %}
+                        <p>{{ found_order.full_name|default:found_order.user.username }}</p>
+                    {% else %}
+                        <p style="color: #64748b;">Customer Verified (Privacy Protected)</p>
+                    {% endif %}
                 </div>
                 <div class="tc-detail-col">
-                    <h4>Delivery Location</h4>
-                    <p>{{ found_order.address|default:"Kanpur City" }} (PIN: {{ found_order.pincode|default:"208001" }})</p>
+                    <h4>Delivery Area</h4>
+                    {% if request.user == found_order.user or request.user.is_staff %}
+                        <p>{{ found_order.address|default:"Kanpur City" }} (PIN: {{ found_order.pincode|default:"208001" }})</p>
+                    {% else %}
+                        <p>Kanpur City (PIN: {{ found_order.pincode|slice:":3" }}***)</p>
+                    {% endif %}
                 </div>
                 <div class="tc-detail-col">
                     <h4>Payment</h4>

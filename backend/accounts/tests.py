@@ -180,14 +180,7 @@ class AuthenticationAndSessionTests(TestCase):
         self.assertIn("/accounts/login/?next=/accounts/dashboard/", response.url)
 
     def test_customer_registration_success(self):
-        response = self.client.post(
-            reverse("register"),
-            {
-                "username": "New Customer",
-                "password1": "SecurePass1234!",
-                "password2": "SecurePass1234!",
-            },
-            follow=True
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(User.objects.filter(username="New Customer").exists())
+        """Register route seamlessly redirects to passwordless OTP authentication flow."""
+        response = self.client.get(reverse("register"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("login"))

@@ -1,0 +1,107 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Shipping &amp; Delivery Policy | TipsyCart Kanpur{% endblock %}
+
+{% block meta_description %}
+TipsyCart Shipping & Delivery: Fast, reliable, and discreet delivery across Kanpur.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.tc-policy-page {
+    max-width: 900px;
+    margin: 40px auto 70px;
+    padding: 0 20px;
+    font-family: inherit;
+}
+.tc-policy-hero {
+    text-align: center;
+    padding: 44px 24px;
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 50%, #fce7f3 100%);
+    border-radius: 24px;
+    border: 1px solid #fbcfe8;
+    margin-bottom: 36px;
+    box-shadow: 0 10px 30px rgba(165, 44, 105, 0.06);
+}
+.tc-policy-eyebrow {
+    color: #9d174d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+.tc-policy-hero h1 {
+    font-size: clamp(26px, 3.8vw, 38px);
+    color: #2b1f30;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.tc-policy-hero h1 span {
+    color: #be185d;
+}
+.tc-policy-card {
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    border-radius: 20px;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+.tc-policy-card h2 {
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tc-policy-card p, .tc-policy-card li {
+    color: #475569;
+    font-size: 14.5px;
+    line-height: 1.7;
+}
+.tc-policy-card ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="tc-policy-page">
+    <header class="tc-policy-hero">
+        <span class="tc-policy-eyebrow">Fast &amp; Discreet Delivery</span>
+        <h1>Shipping &amp; <span>Delivery Policy</span></h1>
+        <p>Learn how TipsyCart delivers everyday essentials quickly and safely across Kanpur.</p>
+    </header>
+
+    <section class="tc-policy-card">
+        <h2>⚡ 1. Delivery Speeds &amp; Areas</h2>
+        <ul>
+            <li>We currently serve Kanpur urban and suburban pin codes with fast hyperlocal delivery.</li>
+            <li>Standard orders are delivered on the same day or within 24 hours of placement.</li>
+            <li>Express delivery options are available for urgent hygiene and personal safety products.</li>
+        </ul>
+    </section>
+
+    <section class="tc-policy-card">
+        <h2>📦 2. Discreet &amp; Secure Packaging</h2>
+        <ul>
+            <li>All personal hygiene, period care, and safety items are packaged in 100% opaque, tamper-evident boxes.</li>
+            <li>There are no product names or descriptions printed on the outer packaging for maximum customer comfort and privacy.</li>
+        </ul>
+    </section>
+
+    <section class="tc-policy-card">
+        <h2>🛵 3. Order Tracking</h2>
+        <p>You can track the live status of your order anytime using our <a href="/track-order/" style="color: #be185d; font-weight: 700;">Track Order Page</a> or directly from your customer dashboard.</p>
+    </section>
+</main>
+{% endblock %}

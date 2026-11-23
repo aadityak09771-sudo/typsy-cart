@@ -24,7 +24,7 @@ from rest_framework.permissions import IsAuthenticated
 from delivery.models import DeliveryAssignment, OrderStatusHistory
 from products.models import Product
 
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, Coupon
 
 
 logger = logging.getLogger(__name__)
@@ -144,18 +144,26 @@ def products_json(request):
 
         products = Product.objects.filter(
             is_active=True
-        ).order_by("id")
+        ).select_related("category_ref", "subcategory_ref").order_by("id")
 
         items = [
             {
                 "id": product.id,
+                "product_number": product.product_number or "",
                 "name": product.name,
                 "description": product.description,
                 "category": product.category,
                 "subcategory": product.subcategory,
+                "category_id": product.category_ref_id,
+                "category_slug": product.category_ref.slug if product.category_ref else "",
                 "brand": product.brand,
-                "image_url": product.image_url,
+                "image_url": product.get_image_url(),
                 "price": str(product.price),
+                "original_price": str(product.original_price or product.price),
+                "discount_enabled": product.discount_enabled,
+                "discount_percentage": product.discount_percentage,
+                "is_featured": product.is_featured,
+                "is_available": product.is_available and product.stock > 0,
                 "stock": product.stock,
             }
             for product in products
@@ -337,6 +345,44 @@ def clear_cart(request):
     })
 
 
+# PUBLIC / LOGGED-IN: Validate and apply coupon code
+@require_POST
+def apply_coupon(request):
+    data = read_json_object(request)
+    if data is None:
+        return JsonResponse({"error": "Invalid JSON request."}, status=400)
+
+    code = str(data.get("code", "")).strip().upper()
+    if not code:
+        return JsonResponse({"error": "Please enter a coupon code."}, status=400)
+
+    try:
+        cart_total = Decimal(str(data.get("cart_total", "0.00")))
+    except Exception:
+        cart_total = Decimal("0.00")
+
+    coupon = Coupon.objects.filter(code__iexact=code).first()
+    if not coupon:
+        return JsonResponse({"error": f"Coupon '{code}' does not exist."}, status=404)
+
+    valid, reason = coupon.is_valid(cart_total)
+    if not valid:
+        return JsonResponse({"error": reason}, status=400)
+
+    discount = coupon.calculate_discount(cart_total)
+    new_total = max(Decimal("0.00"), cart_total - discount)
+
+    return JsonResponse({
+        "success": True,
+        "code": coupon.code,
+        "discount_type": coupon.discount_type,
+        "discount_value": str(coupon.discount_value),
+        "discount_amount": str(discount),
+        "new_total": str(new_total),
+        "message": f"Coupon {coupon.code} applied successfully! You saved ₹{discount}.",
+    })
+
+
 # EXISTING WEBSITE LOGGED-IN CHECKOUT.
 @login_required
 @require_POST
@@ -420,13 +466,33 @@ def place_order(request):
                 total += product.price * item.quantity
                 checked_items.append((item, product))
 
+            # Apply coupon discount if provided
+            coupon_code = str(data.get("coupon_code", "")).strip().upper()
+            applied_coupon = None
+            discount_amount = Decimal("0.00")
+
+            if coupon_code:
+                c = Coupon.objects.filter(code__iexact=coupon_code, is_active=True).first()
+                if c:
+                    valid, _ = c.is_valid(total)
+                    if valid:
+                        discount_amount = c.calculate_discount(total)
+                        applied_coupon = c
+
+            final_total = max(Decimal("0.00"), total - discount_amount)
+
             order = Order.objects.create(
                 user=request.user,
                 **delivery,
-                total_amount=total,
+                total_amount=final_total,
+                discount_amount=discount_amount,
+                coupon=applied_coupon,
                 payment_method="COD",
                 status="Pending",
             )
+
+            if applied_coupon:
+                Coupon.objects.filter(id=applied_coupon.id).update(times_used=F("times_used") + 1)
 
             for item, product in checked_items:
                 OrderItem.objects.create(

@@ -1,7 +1,9 @@
 
+from decimal import Decimal
 from django.conf import settings
 from django.db import models
-from products.models import Product
+from django.utils import timezone
+from products.models import Product, Category
 
 
 class Cart(models.Model):
@@ -78,6 +80,21 @@ class Order(models.Model):
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
+    )
+
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Discount applied to this order via coupon or promotion",
+    )
+
+    coupon = models.ForeignKey(
+        "Coupon",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
     )
 
     status = models.CharField(
@@ -275,3 +292,107 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_name} × {self.quantity}"
+
+
+class Coupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ("percentage", "Percentage (%)"),
+        ("fixed", "Fixed Amount (₹)"),
+    ]
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Coupon promo code (e.g. WELCOME10, TIPSY50)",
+    )
+    discount_type = models.CharField(
+        max_length=20,
+        choices=DISCOUNT_TYPE_CHOICES,
+        default="percentage",
+    )
+    discount_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Percentage discount (e.g. 10 for 10%) or fixed amount in ₹",
+    )
+    min_order_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Minimum cart order amount required to use this coupon",
+    )
+    max_discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Maximum discount cap in ₹ (useful for percentage coupons)",
+    )
+    usage_limit = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Total number of times this coupon can be redeemed across all users",
+    )
+    times_used = models.PositiveIntegerField(
+        default=0,
+        editable=False,
+    )
+    start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Start date and time from when this coupon becomes active",
+    )
+    end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Expiry date and time for this coupon",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Enable or disable this coupon",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Discount Coupon"
+        verbose_name_plural = "Discounts & Coupons"
+
+    def __str__(self):
+        desc = f"{self.discount_value}% OFF" if self.discount_type == "percentage" else f"₹{self.discount_value} OFF"
+        return f"{self.code} ({desc})"
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    def is_valid(self, order_amount: Decimal) -> tuple[bool, str]:
+        now = timezone.now()
+        if not self.is_active:
+            return False, "This coupon is currently inactive."
+        if self.start_date and now < self.start_date:
+            return False, "This coupon promotion has not started yet."
+        if self.end_date and now > self.end_date:
+            return False, "This coupon has expired."
+        if self.usage_limit and self.times_used >= self.usage_limit:
+            return False, "This coupon has reached its maximum usage limit."
+        if order_amount < self.min_order_amount:
+            return False, f"Minimum order amount of ₹{self.min_order_amount} required to use this coupon."
+        return True, "Coupon is valid."
+
+    def calculate_discount(self, order_amount: Decimal) -> Decimal:
+        if order_amount <= 0:
+            return Decimal("0.00")
+        if self.discount_type == "percentage":
+            pct = min(Decimal("100"), max(Decimal("0"), self.discount_value))
+            discount = (order_amount * pct) / Decimal("100")
+        else:
+            discount = min(order_amount, self.discount_value)
+
+        if self.max_discount_amount and discount > self.max_discount_amount:
+            discount = self.max_discount_amount
+
+        return max(Decimal("0.00"), round(discount, 2))
+

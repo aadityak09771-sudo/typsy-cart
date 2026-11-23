@@ -1,10 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#fff7fa">
-    <title>Login | Tipsy Cart</title>
+    <title>Account | TipsyCart</title>
+    <meta name="robots" content="noindex, nofollow">
 
     <style>
         * {
@@ -29,147 +31,119 @@
         .login-card {
             width: 100%;
             max-width: 440px;
-            padding: 37px;
-            background: rgba(255,255,255,.97);
+            padding: 38px 34px;
+            background: rgba(255,255,255,.98);
             border: 1px solid #f7e3ec;
             border-radius: 22px;
             box-shadow: 0 18px 55px rgba(111, 28, 64, .10);
+            transition: all 0.3s ease;
         }
 
-        .brand {
-            margin-bottom: 31px;
+        .brand-logo-wrap {
             text-align: center;
+            margin-bottom: 22px;
         }
 
-        .brand-icon {
-            width: 55px;
-            height: 55px;
-            margin: 0 auto 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 17px;
-            background: linear-gradient(135deg, #ec4899, #9d174d);
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            box-shadow: 0 7px 18px #be185d35;
-        }
-
-        .brand h1 {
-            margin: 0;
-            color: #a51655;
-            font-size: 29px;
-            font-weight: 800;
-            letter-spacing: -.8px;
-        }
-
-        .tagline {
-            margin: 7px 0 0;
-            color: #a16a82;
-            font-size: 11px;
-            font-weight: bold;
-            letter-spacing: 1.5px;
+        .brand-logo-img {
+            height: 64px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
         }
 
         .heading {
-            margin-bottom: 26px;
-            text-align: center;
+            margin-bottom: 24px;
+            text-align: left;
         }
 
         .heading h2 {
-            margin: 0 0 8px;
-            color: #30242c;
-            font-size: 23px;
+            margin: 0 0 6px;
+            color: #1e293b;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
         .heading p {
             margin: 0;
-            color: #887782;
+            color: #64748b;
             font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .message {
-            margin-bottom: 14px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: #fff1f2;
-            color: #a61b38;
-            font-size: 13px;
             line-height: 1.5;
         }
 
-        .errors {
-            margin-top: 7px;
-            color: #b42318;
-            font-size: 12px;
+        .alert-box {
+            display: none;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            animation: fadeIn 0.25s ease;
         }
 
-        .errors ul {
-            margin: 5px 0;
-            padding-left: 19px;
+        .alert-box.error {
+            display: block;
+            background: #fff1f2;
+            color: #a61b38;
+            border: 1px solid #f8d0d7;
+            border-left: 4px solid #a61b38;
+        }
+
+        .alert-box.success {
+            display: block;
+            background: #e6f4ea;
+            color: #137333;
+            border: 1px solid #c8e6c9;
+            border-left: 4px solid #137333;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #493641;
+            color: #1e293b;
             font-size: 13px;
             font-weight: 700;
         }
 
-        .form-group input {
+        .form-input {
             display: block;
             width: 100%;
             min-height: 48px;
             padding: 12px 14px;
-            border: 1px solid #ead9e1;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
             outline: none;
-            background: #fffdfd;
-            color: #30242c;
+            background: #ffffff;
+            color: #1e293b;
             font-size: 14px;
             transition: border-color .2s, box-shadow .2s;
         }
 
-        .form-group input:focus {
+        .form-input:focus {
             border-color: #be185d;
-            box-shadow: 0 0 0 3px #be185d16;
+            box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.12);
         }
 
-        .password-wrapper {
-            position: relative;
-        }
-
-        .password-wrapper input {
-            padding-right: 72px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            top: 50%;
-            right: 12px;
-            transform: translateY(-50%);
-            width: auto;
-            margin: 0;
-            padding: 5px;
-            border: 0;
-            background: transparent;
+        .otp-input-field {
+            letter-spacing: 12px;
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            font-family: monospace;
             color: #a51655;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
+            background: #fff8fb;
         }
 
         .submit-btn {
             width: 100%;
-            min-height: 49px;
-            margin-top: 7px;
+            min-height: 48px;
+            margin-top: 8px;
             border: 0;
             border-radius: 11px;
             background: linear-gradient(135deg, #be185d, #9d174d);
@@ -177,45 +151,98 @@
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 7px 17px #be185d30;
-            transition: transform .2s, box-shadow .2s;
+            box-shadow: 0 7px 18px rgba(190, 24, 93, 0.28);
+            transition: transform .2s, box-shadow .2s, opacity .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 22px #be185d40;
+            box-shadow: 0 10px 22px rgba(190, 24, 93, 0.38);
         }
 
-        .footer {
-            margin: 23px 0 0;
+        .submit-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timer-badge {
+            display: inline-block;
+            background: #fff0f5;
+            color: #a51655;
+            border: 1px solid #f8dce7;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+
+        .card-footer {
+            margin-top: 24px;
             text-align: center;
-            color: #786b73;
-            font-size: 13px;
-            line-height: 1.7;
+            font-size: 14px;
+            color: #64748b;
         }
 
-        a {
-            color: #b01858;
+        .link-btn {
+            color: #be185d;
             font-weight: 700;
             text-decoration: none;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
         }
 
-        a:hover {
+        .link-btn:hover {
             text-decoration: underline;
         }
 
-        .back-home {
-            margin-top: 12px;
+        .subtle-links {
+            margin-top: 18px;
+            text-align: center;
             font-size: 12px;
+            color: #94a3b8;
         }
 
-        .security-note {
-            margin-top: 27px;
-            padding-top: 17px;
-            border-top: 1px solid #f3e5eb;
-            text-align: center;
-            color: #9b8791;
-            font-size: 11px;
+        .subtle-links a {
+            color: #94a3b8;
+            text-decoration: none;
+        }
+
+        .subtle-links a:hover {
+            color: #be185d;
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         @media (max-width: 480px) {
@@ -224,16 +251,16 @@
             }
 
             .login-card {
-                padding: 29px 22px;
+                padding: 28px 20px;
                 border-radius: 18px;
             }
 
-            .brand h1 {
-                font-size: 26px;
+            .brand-logo-img {
+                height: 52px;
             }
 
             .heading h2 {
-                font-size: 21px;
+                font-size: 22px;
             }
         }
     </style>
@@ -243,102 +270,387 @@
 
     <main class="login-card">
 
-        <header class="brand">
-            <div class="brand-icon">T</div>
-            <h1>Tipsy Cart</h1>
-            <p class="tagline">CARE • COMFORT • CONFIDENCE</p>
+        <!-- Real TipsyCart Logo -->
+        <header class="brand-logo-wrap">
+            <a href="/" title="TipsyCart Home">
+                <img src="{% static 'home/images/tipsycart-logo.png' %}" alt="TipsyCart Logo" class="brand-logo-img">
+            </a>
         </header>
 
-        <section class="heading">
-            <h2>Welcome back!</h2>
-            <p>Login to your Tipsy Cart customer account.</p>
-        </section>
+        <!-- Status Alert Box -->
+        <div id="status-alert" class="alert-box" role="status"></div>
 
         {% if messages %}
             {% for message in messages %}
-                <div class="message" role="status">
+                <div class="alert-box {% if message.tags == 'error' %}error{% else %}success{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-            {% if next %}
-                <input type="hidden" name="next" value="{{ next }}">
-            {% endif %}
+        <!-- STEP 1: Details Entry (Create Account or Login) -->
+        <section id="step-details">
+            <div class="heading">
+                <h2 id="card-title">Create Account</h2>
+                <p id="card-subtitle">Create your account and start your shopping journey</p>
+            </div>
 
-            {% if form.non_field_errors %}
-                <div class="errors">
-                    {{ form.non_field_errors }}
+            <form id="form-send-otp" onsubmit="handleSendOtp(event)">
+                {% csrf_token %}
+                <input type="hidden" id="next-param" name="next" value="{{ next }}">
+
+                <!-- Username / Full Name -->
+                <div class="form-group" id="group-username">
+                    <label for="customer-username">Full Name / Username</label>
+                    <input type="text" id="customer-username" name="username" class="form-input" placeholder="Enter your full name or username" required autocomplete="name" pattern="^[a-zA-Z0-9_.\s-]{2,40}$" title="2-40 characters: letters, numbers, spaces, underscores, dots, hyphens">
                 </div>
-            {% endif %}
 
-            {% for field in form %}
+                <!-- Email Address -->
                 <div class="form-group">
-
-                    <label for="{{ field.id_for_label }}">
-                        {{ field.label }}
-                    </label>
-
-                    {{ field }}
-
-                    {% if field.errors %}
-                        <div class="errors">
-                            {{ field.errors }}
-                        </div>
-                    {% endif %}
-
+                    <label for="customer-email">Email Address</label>
+                    <input type="email" id="customer-email" name="email" class="form-input" placeholder="Enter your email address" required autocomplete="email">
                 </div>
-            {% endfor %}
 
-            <button type="submit" class="submit-btn">
-                Login to Account
-            </button>
-        </form>
+                <button type="submit" id="btn-send-otp" class="submit-btn">
+                    <span>Send OTP</span> <span>&rarr;</span>
+                </button>
+            </form>
 
-        <p class="footer">
-            Don't have an account?
-            <a href="{% url 'register' %}">Create Account</a>
-        </p>
+            <div class="card-footer" id="footer-toggle-wrap">
+                <span id="footer-prompt-text">Already have an account?</span>
+                <button type="button" class="link-btn" id="footer-toggle-btn" onclick="toggleAuthMode()">Login here</button>
+            </div>
+        </section>
 
-        <p class="footer back-home">
-            <a href="/">← Back to Home</a>
-        </p>
 
-        <div class="security-note">
-            Your account details are protected by Tipsy Cart.
+        <!-- STEP 2: 6-Digit OTP Verification (Revealed after Send OTP) -->
+        <section id="step-verify" class="hidden">
+            <div class="heading">
+                <h2>Enter OTP</h2>
+                <p>Code sent to <strong id="sent-email-display" style="color: #a51655;"></strong> <button type="button" class="link-btn" onclick="switchToDetailsStep()" style="font-size: 13px; margin-left: 4px;">(Edit)</button></p>
+            </div>
+
+            <form id="form-verify-otp" onsubmit="handleVerifyOtp(event)">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="otp-code">Enter 6-Digit OTP</label>
+                    <input type="text" id="otp-code" name="otp" class="form-input otp-input-field" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" placeholder="••••••" required autocomplete="one-time-code">
+                </div>
+
+                <button type="submit" id="btn-verify-otp" class="submit-btn">
+                    <span>Verify &amp; Continue</span> <span>&rarr;</span>
+                </button>
+
+                <div style="text-align: center; margin-top: 14px;">
+                    <span id="countdown-wrapper" class="timer-badge">
+                        ⏱️ Resend code in <span id="countdown-timer">60</span>s
+                    </span>
+                    <button type="button" id="btn-resend-otp" class="link-btn hidden" onclick="handleResendOtp()" style="margin-top: 10px; font-size: 13px;">
+                        🔄 Didn't receive code? <strong>Resend OTP</strong>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Subtle Store Links at the bottom -->
+        <div class="subtle-links">
+            <a href="{% url 'delivery:login' %}">🛵 Delivery Partner Login</a>
+            <span style="margin: 0 6px;">•</span>
+            <a href="/">Store Home</a>
         </div>
 
     </main>
 
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll('input[type="password"]').forEach(function (input) {
-                const wrapper = document.createElement("div");
-                wrapper.className = "password-wrapper";
+        // Auth Mode: "register" (default) or "login"
+        let currentMode = "register";
+        let activeEmail = "";
+        let activeUsername = "";
+        let countdownInterval = null;
 
-                input.parentNode.insertBefore(wrapper, input);
-                wrapper.appendChild(input);
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
-                const toggle = document.createElement("button");
-                toggle.type = "button";
-                toggle.className = "toggle-password";
-                toggle.textContent = "Show";
-                toggle.setAttribute("aria-label", "Show password");
+        const csrftoken = getCookie('csrftoken') || (document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '');
 
-                toggle.addEventListener("click", function () {
-                    const isHidden = input.type === "password";
-                    input.type = isHidden ? "text" : "password";
-                    toggle.textContent = isHidden ? "Hide" : "Show";
-                    toggle.setAttribute(
-                        "aria-label",
-                        isHidden ? "Hide password" : "Show password"
-                    );
+        function showAlert(message, type = "error") {
+            const box = document.getElementById("status-alert");
+            if (!box) return;
+            box.className = `alert-box ${type}`;
+            box.textContent = message;
+            box.style.display = "block";
+            box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function clearAlert() {
+            const box = document.getElementById("status-alert");
+            if (box) {
+                box.style.display = "none";
+                box.textContent = "";
+            }
+        }
+
+        function setButtonLoading(btn, isLoading, loadingText = "Sending OTP...") {
+            if (!btn) return;
+            btn.disabled = isLoading;
+            if (isLoading) {
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.innerHTML = `<span class="spinner"></span> <span>${loadingText}</span>`;
+            } else {
+                if (btn.dataset.originalHtml) {
+                    btn.innerHTML = btn.dataset.originalHtml;
+                }
+            }
+        }
+
+        // Toggle between "register" and "login" mode
+        function toggleAuthMode(targetMode) {
+            clearAlert();
+            if (targetMode) {
+                currentMode = targetMode;
+            } else {
+                currentMode = (currentMode === "register") ? "login" : "register";
+            }
+
+            const title = document.getElementById("card-title");
+            const subtitle = document.getElementById("card-subtitle");
+            const usernameGroup = document.getElementById("group-username");
+            const usernameInput = document.getElementById("customer-username");
+            const promptText = document.getElementById("footer-prompt-text");
+            const toggleBtn = document.getElementById("footer-toggle-btn");
+
+            if (currentMode === "register") {
+                title.textContent = "Create Account";
+                subtitle.textContent = "Create your account and start your shopping journey";
+                usernameGroup.classList.remove("hidden");
+                usernameInput.required = true;
+                usernameInput.placeholder = "Enter your full name or username";
+                promptText.textContent = "Already have an account?";
+                toggleBtn.textContent = "Login here";
+            } else {
+                title.textContent = "Welcome Back";
+                subtitle.textContent = "Log in with your name or email and verification code";
+                usernameGroup.classList.remove("hidden");
+                usernameInput.required = false;
+                usernameInput.placeholder = "Enter your full name or username (optional)";
+                promptText.textContent = "New to TipsyCart?";
+                toggleBtn.textContent = "Create account";
+            }
+        }
+
+        function switchToDetailsStep() {
+            clearAlert();
+            document.getElementById("step-details").classList.remove("hidden");
+            document.getElementById("step-verify").classList.add("hidden");
+        }
+
+        function switchToVerifyStep(email, username) {
+            clearAlert();
+            activeEmail = email;
+            activeUsername = username;
+            document.getElementById("sent-email-display").textContent = email;
+            document.getElementById("step-details").classList.add("hidden");
+            document.getElementById("step-verify").classList.remove("hidden");
+            document.getElementById("otp-code").value = "";
+            document.getElementById("otp-code").focus();
+            startCountdown(60);
+        }
+
+        function startCountdown(seconds) {
+            clearInterval(countdownInterval);
+            let remaining = seconds;
+            const timerSpan = document.getElementById("countdown-timer");
+            const wrapper = document.getElementById("countdown-wrapper");
+            const resendBtn = document.getElementById("btn-resend-otp");
+
+            wrapper.classList.remove("hidden");
+            resendBtn.classList.add("hidden");
+            timerSpan.textContent = remaining;
+
+            countdownInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    wrapper.classList.add("hidden");
+                    resendBtn.classList.remove("hidden");
+                } else {
+                    timerSpan.textContent = remaining;
+                }
+            }, 1000);
+        }
+
+        // Action: Send OTP
+        async function handleSendOtp(event) {
+            event.preventDefault();
+            clearAlert();
+
+            const usernameInput = document.getElementById("customer-username");
+            const emailInput = document.getElementById("customer-email");
+            const username = (usernameInput.value || "").trim();
+            const email = (emailInput.value || "").trim().toLowerCase();
+            const btn = document.getElementById("btn-send-otp");
+
+            if (currentMode === "register" && !username) {
+                showAlert("Please enter your name or username.");
+                usernameInput.focus();
+                return;
+            }
+
+            if (username && !/^[a-zA-Z0-9_.\s-]{2,40}$/.test(username)) {
+                showAlert("Name/Username must be 2-40 characters using letters, numbers, spaces, underscores, dots or hyphens.");
+                usernameInput.focus();
+                return;
+            }
+
+            if (!email) {
+                showAlert("Please enter your email address.");
+                emailInput.focus();
+                return;
+            }
+
+            setButtonLoading(btn, true, "Sending OTP...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        username: username,
+                        name: username,
+                        purpose: "customer_login"
+                    })
                 });
 
-                wrapper.appendChild(toggle);
-            });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`Verification code sent to ${email}!`, "success");
+                    switchToVerifyStep(email, username);
+                } else {
+                    showAlert(data.error || "Failed to send verification code. Please try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please check your internet connection.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        // Action: Resend OTP
+        async function handleResendOtp() {
+            clearAlert();
+            if (!activeEmail) return;
+            const resendBtn = document.getElementById("btn-resend-otp");
+            setButtonLoading(resendBtn, true, "Resending...");
+
+            try {
+                const response = await fetch("{% url 'send_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: activeEmail,
+                        username: activeUsername,
+                        name: activeUsername,
+                        purpose: "customer_login"
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`A new verification code was sent to ${activeEmail}.`, "success");
+                    startCountdown(data.cooldown || 60);
+                } else {
+                    showAlert(data.error || "Unable to resend OTP right now.");
+                    startCountdown(data.cooldown_remaining || 30);
+                }
+            } catch (err) {
+                showAlert("A network error occurred. Please try again.");
+            } finally {
+                setButtonLoading(resendBtn, false);
+            }
+        }
+
+        // Action: Verify OTP
+        async function handleVerifyOtp(event) {
+            event.preventDefault();
+            clearAlert();
+            const otpInput = document.getElementById("otp-code");
+            const otp = (otpInput.value || "").trim();
+            const btn = document.getElementById("btn-verify-otp");
+
+            if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
+                showAlert("Please enter a valid 6-digit numerical code.");
+                return;
+            }
+
+            setButtonLoading(btn, true, "Verifying...");
+
+            try {
+                const nextParam = new URLSearchParams(window.location.search).get("next") || "{{ next }}";
+                const response = await fetch("{% url 'verify_otp' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        email: activeEmail,
+                        username: activeUsername,
+                        name: activeUsername,
+                        otp: otp,
+                        purpose: "customer_login",
+                        next: nextParam
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert("Verification successful! Welcome to TipsyCart...", "success");
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || "/dashboard/";
+                    }, 400);
+                } else {
+                    showAlert(data.error || "Invalid verification code. Please try again.");
+                }
+            } catch (err) {
+                showAlert("A network error occurred during verification. Please try again.");
+            } finally {
+                setButtonLoading(btn, false);
+            }
+        }
+
+        // Auto-check URL query param: e.g. /login/?mode=login or /login/?mode=register
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get("mode");
+            if (mode === "login") {
+                toggleAuthMode("login");
+            } else {
+                toggleAuthMode("register");
+            }
         });
     </script>
 

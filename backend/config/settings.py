@@ -40,6 +40,13 @@ render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host and render_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_host)
 
+# Automatic Custom Domain Support
+custom_domain = os.getenv("CUSTOM_DOMAIN", "").strip().lower()
+if custom_domain:
+    for domain_variant in [custom_domain, f"www.{custom_domain}", f".{custom_domain}"]:
+        if domain_variant not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(domain_variant)
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -57,6 +64,20 @@ if render_host:
     if https_host not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(https_host)
 
+if custom_domain:
+    for dom in [custom_domain, f"www.{custom_domain}"]:
+        c_origin = f"https://{dom}"
+        if c_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(c_origin)
+
+# Synchronize all non-local hosts into CSRF trusted origins automatically
+for host in ALLOWED_HOSTS:
+    clean_h = host.lstrip(".")
+    if clean_h and clean_h not in ["localhost", "127.0.0.1", "testserver"]:
+        https_origin = f"https://{clean_h}"
+        if https_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(https_origin)
+
 
 # APPLICATIONS
 INSTALLED_APPS = [
@@ -66,6 +87,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "Homepage",
@@ -80,12 +102,21 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+# CORS CONFIGURATION
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.onrender\.com$",
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
 ]
 
 
@@ -102,6 +133,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "products.context_processors.admin_ecommerce_context",
             ],
         },
     },
@@ -192,6 +224,14 @@ MAILERS = {
         },
     },
 }
+
+# RESEND API & OTP SECURITY CONFIGURATION
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+OTP_EXPIRY_SECONDS = int(os.getenv("OTP_EXPIRY_SECONDS", "300"))
+OTP_RESEND_COOLDOWN_SECONDS = int(os.getenv("OTP_RESEND_COOLDOWN_SECONDS", "60"))
+OTP_MAX_ATTEMPTS = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))
+
 
 
 # PRODUCTION SECURITY (RENDER / HTTPS)

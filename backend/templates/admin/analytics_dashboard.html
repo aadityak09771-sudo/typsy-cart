@@ -1,0 +1,353 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .tc-analytics-container {
+    max-width: 1250px;
+    margin: 20px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .tc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .tc-nav-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tc-pill {
+    padding: 6px 14px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .tc-pill:hover {
+    background: #fdf2f8;
+    color: #a51655;
+    border-color: #fbcfe8;
+  }
+  .tc-pill.active {
+    background: #a51655;
+    color: #ffffff;
+    border-color: #a51655;
+  }
+
+  .tc-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .tc-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .tc-kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+    background: #a51655;
+  }
+  .tc-kpi-card.green::before { background: #16a34a; }
+  .tc-kpi-card.blue::before { background: #2563eb; }
+  .tc-kpi-card.red::before { background: #dc2626; }
+  .tc-kpi-card.purple::before { background: #7c3aed; }
+
+  .tc-kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .tc-kpi-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .tc-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .tc-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .tc-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 10px;
+  }
+
+  .tc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tc-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f9fafb;
+    color: #4b5563;
+    font-weight: 700;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .tc-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+  }
+  .tc-table tr:hover {
+    background: #fdf2f8;
+  }
+
+  .tc-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .tc-badge-green { background: #dcfce7; color: #15803d; }
+  .tc-badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .tc-badge-yellow { background: #fef3c7; color: #b45309; }
+  .tc-badge-red { background: #fee2e2; color: #b91c1c; }
+  .tc-badge-gray { background: #f3f4f6; color: #4b5563; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-analytics-container">
+  <div class="tc-header">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #111827; margin: 0;">📊 Reports &amp; Analytics</h1>
+      <p style="color: #6b7280; font-size: 14px; margin: 4px 0 0;">Real-time database performance, sales, orders, and inventory metrics.</p>
+    </div>
+    <div class="tc-nav-pills">
+      <a href="{% url 'admin:index' %}" class="tc-pill">← Admin Home</a>
+      <a href="{% url 'admin_inventory' %}" class="tc-pill">📦 Inventory</a>
+      <a href="{% url 'admin_cart_overview' %}" class="tc-pill">🛒 Carts</a>
+      <a href="{% url 'admin:orders_order_changelist' %}" class="tc-pill">🛍️ Orders</a>
+      <a href="{% url 'admin_analytics' %}" class="tc-pill active">📊 Analytics</a>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="tc-kpi-grid">
+    <div class="tc-kpi-card green">
+      <div class="tc-kpi-label">Gross Revenue</div>
+      <div class="tc-kpi-val">₹{{ gross_sales }}</div>
+    </div>
+    <div class="tc-kpi-card blue">
+      <div class="tc-kpi-label">Total Orders</div>
+      <div class="tc-kpi-val">{{ total_orders }}</div>
+    </div>
+    <div class="tc-kpi-card purple">
+      <div class="tc-kpi-label">Delivered Orders</div>
+      <div class="tc-kpi-val">{{ completed_orders }}</div>
+    </div>
+    <div class="tc-kpi-card red">
+      <div class="tc-kpi-label">Cancelled Orders</div>
+      <div class="tc-kpi-val">{{ cancelled_orders }}</div>
+    </div>
+    <div class="tc-kpi-card">
+      <div class="tc-kpi-label">Avg Order Value</div>
+      <div class="tc-kpi-val">₹{{ avg_order_value }}</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Order Status & Payment Breakdown -->
+  <div class="tc-grid-2">
+    <!-- Status Breakdown -->
+    <div class="tc-card">
+      <div class="tc-card-title">
+        <span>📦 Orders by Status</span>
+        <span style="font-size: 12px; color: #6b7280; font-weight: 400;">Total: {{ total_orders }}</span>
+      </div>
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th style="text-align: right;">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in status_counts %}
+          <tr>
+            <td>
+              <span class="tc-badge 
+                {% if item.status == 'Delivered' %}tc-badge-green
+                {% elif item.status == 'Cancelled' %}tc-badge-red
+                {% elif item.status == 'Pending' %}tc-badge-yellow
+                {% else %}tc-badge-blue{% endif %}">
+                {{ item.status }}
+              </span>
+            </td>
+            <td style="text-align: right; font-weight: 700;">{{ item.count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" style="text-align: center; color: #9ca3af; padding: 24px;">No orders found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="tc-card">
+      <div class="tc-card-title">
+        <span>💳 Orders by Payment Method</span>
+      </div>
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Payment Method</th>
+            <th style="text-align: right;">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in payment_counts %}
+          <tr>
+            <td style="font-weight: 600;">
+              {% if item.payment_method == 'COD' %}💵 Cash on Delivery (COD)
+              {% elif item.payment_method == 'Razorpay' %}💳 Online (Razorpay)
+              {% else %}{{ item.payment_method }}{% endif %}
+            </td>
+            <td style="text-align: right; font-weight: 700;">{{ item.count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" style="text-align: center; color: #9ca3af; padding: 24px;">No payment data recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Row 2: Top Products & Category Sales -->
+  <div class="tc-grid-2">
+    <!-- Top Products -->
+    <div class="tc-card">
+      <div class="tc-card-title">
+        <span>🔥 Top Selling Products</span>
+      </div>
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th style="text-align: center;">Units Sold</th>
+            <th style="text-align: right;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td style="font-weight: 600;">{{ p.product_name }}</td>
+            <td style="text-align: center; font-weight: 700;">{{ p.total_qty }}</td>
+            <td style="text-align: right; color: #16a34a; font-weight: 700;">₹{{ p.total_revenue }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" style="text-align: center; color: #9ca3af; padding: 24px;">No sales recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Category Sales -->
+    <div class="tc-card">
+      <div class="tc-card-title">
+        <span>🏷️ Sales by Category</span>
+      </div>
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align: center;">Units Sold</th>
+            <th style="text-align: right;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in category_sales %}
+          <tr>
+            <td style="font-weight: 600;">{{ c.product__category|default:"General" }}</td>
+            <td style="text-align: center; font-weight: 700;">{{ c.total_qty }}</td>
+            <td style="text-align: right; color: #16a34a; font-weight: 700;">₹{{ c.total_revenue }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" style="text-align: center; color: #9ca3af; padding: 24px;">No category sales data yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Row 3: Coupon Performance -->
+  <div class="tc-card" style="margin-bottom: 30px;">
+    <div class="tc-card-title">
+      <span>🎟️ Coupon &amp; Discount Performance</span>
+      <a href="{% url 'admin:orders_coupon_add' %}" style="font-size: 13px; font-weight: 700; color: #a51655; text-decoration: none;">+ Add Coupon</a>
+    </div>
+    <table class="tc-table">
+      <thead>
+        <tr>
+          <th>Coupon Code</th>
+          <th>Discount</th>
+          <th>Min Order</th>
+          <th>Times Used</th>
+          <th>Limit</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for coupon in coupons %}
+        <tr>
+          <td style="font-family: monospace; font-size: 14px; font-weight: 700; color: #a51655;">{{ coupon.code }}</td>
+          <td>
+            {% if coupon.discount_type == 'percentage' %}{{ coupon.discount_value }}% OFF
+            {% else %}₹{{ coupon.discount_value }} OFF{% endif %}
+          </td>
+          <td>₹{{ coupon.min_order_amount }}</td>
+          <td style="font-weight: 700;">{{ coupon.times_used }}</td>
+          <td>{{ coupon.usage_limit|default:"Unlimited" }}</td>
+          <td>
+            {% if coupon.is_active %}<span class="tc-badge tc-badge-green">Active</span>
+            {% else %}<span class="tc-badge tc-badge-gray">Inactive</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align: center; color: #9ca3af; padding: 24px;">No coupons created yet. <a href="{% url 'admin:orders_coupon_add' %}">Create first coupon</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

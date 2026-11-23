@@ -25,6 +25,13 @@ urlpatterns = [
         name="place_order",
     ),
 
+    # Coupon validation API
+    path(
+        "api/apply-coupon/",
+        views.apply_coupon,
+        name="apply_coupon",
+    ),
+
     # New token-authenticated mobile checkout
     path(
         "checkout/mobile-order/",

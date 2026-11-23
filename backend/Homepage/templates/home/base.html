@@ -5,10 +5,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{% block title %}Tipsy Cart{% endblock %}</title>
+    <title>{% block title %}Tipsy Cart — Everyday Essentials & Personal Care{% endblock %}</title>
 
-    <meta name="description" content="{% block meta_description %}Tipsy Cart - everyday essentials, personal care and safety products.{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Shop everyday essentials, personal hygiene, period care, and safety products in Kanpur with comfort, privacy and express convenience.{% endblock %}">
     <meta name="theme-color" content="#fff7fa">
+
+    {% block meta_robots %}
+    <meta name="robots" content="index, follow">
+    {% endblock %}
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="TipsyCart">
+    <meta property="og:title" content="{% block og_title %}{% block title_inner %}TipsyCart — Everyday Essentials & Personal Care{% endblock %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Shop everyday essentials, personal hygiene, and safety products with comfort, privacy and convenience.{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{% block twitter_title_inner %}TipsyCart — Everyday Essentials{% endblock %}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Shop everyday essentials, personal care and safety products with comfort and privacy.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
+
+    <!-- Schema.org JSON-LD Structured Data (Organization & WebSite) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "{{ request.scheme }}://{{ request.get_host }}/#organization",
+          "name": "TipsyCart",
+          "url": "{{ request.scheme }}://{{ request.get_host }}/",
+          "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}",
+          "description": "Everyday essentials, personal hygiene, period care and safety products delivered with comfort, privacy and convenience.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Kanpur",
+            "addressRegion": "Uttar Pradesh",
+            "postalCode": "208001",
+            "addressCountry": "IN"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "{{ request.scheme }}://{{ request.get_host }}/#website",
+          "url": "{{ request.scheme }}://{{ request.get_host }}/",
+          "name": "TipsyCart",
+          "publisher": {
+            "@id": "{{ request.scheme }}://{{ request.get_host }}/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "{{ request.scheme }}://{{ request.get_host }}/shop/?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
 
     <link rel="stylesheet" href="{% static 'home/css/common.css' %}?v=5.2">
     {% block extra_css %}{% endblock %}
@@ -81,9 +140,9 @@
                     <span class="btn-text-full">📦 My Orders</span>
                     <span class="btn-text-short">📦 Orders</span>
                 </a>
-                <a href="{% url 'dashboard' %}" class="account-btn account-outline">
-                    <span class="btn-text-full">My Account</span>
-                    <span class="btn-text-short">Account</span>
+                <a href="{% url 'dashboard' %}" class="account-btn account-outline" title="Logged in as {{ user.first_name|default:user.username }}">
+                    <span class="btn-text-full">👤 {{ user.first_name|default:user.username }}</span>
+                    <span class="btn-text-short">👤 {{ user.first_name|default:user.username }}</span>
                 </a>
 
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
@@ -257,7 +316,16 @@
         <!-- BOTTOM FOOTER BAR -->
         <div class="tc-footer-bottom">
             <div class="tc-footer-bottom-inner">
-                <p class="tc-footer-copyright">&copy; 2026 TipsyCart. All Rights Reserved.</p>
+                <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+                    <p class="tc-footer-copyright" style="margin: 0;">&copy; 2026 TipsyCart. All Rights Reserved.</p>
+                    <div style="font-size: 12px; color: #94a3b8; display: flex; gap: 10px;">
+                        <a href="/privacy-policy/" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+                        <span>•</span>
+                        <a href="/terms-conditions/" style="color: #64748b; text-decoration: none;">Terms &amp; Conditions</a>
+                        <span>•</span>
+                        <a href="/shipping-delivery/" style="color: #64748b; text-decoration: none;">Shipping Policy</a>
+                    </div>
+                </div>
                 <div class="tc-footer-app-badges">
                     <span class="tc-app-label">Download Our App</span>
                     <span class="tc-app-divider" aria-hidden="true">|</span>

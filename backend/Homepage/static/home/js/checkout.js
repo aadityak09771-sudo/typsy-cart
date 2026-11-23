@@ -7,6 +7,64 @@ document.addEventListener("DOMContentLoaded", () => {
     const submitButton = document.getElementById("place-order-button");
 
     let cartItems = [];
+    let currentRawTotal = 0;
+    let appliedCoupon = null;
+
+    const couponInput = document.getElementById("coupon-code-input");
+    const applyCouponBtn = document.getElementById("apply-coupon-btn");
+    const couponFeedback = document.getElementById("coupon-feedback");
+    const discountRow = document.getElementById("discount-row");
+    const discountCodeBadge = document.getElementById("discount-code-badge");
+    const discountAmountVal = document.getElementById("discount-amount-val");
+
+    if (applyCouponBtn) {
+        applyCouponBtn.addEventListener("click", async () => {
+            const code = couponInput.value.trim().toUpperCase();
+            if (!code) {
+                if (couponFeedback) {
+                    couponFeedback.textContent = "Please enter a coupon code.";
+                    couponFeedback.style.color = "#dc2626";
+                }
+                return;
+            }
+            applyCouponBtn.disabled = true;
+            applyCouponBtn.textContent = "Checking...";
+            try {
+                const res = await requestJSON("/orders/api/apply-coupon/", {
+                    method: "POST",
+                    body: JSON.stringify({ code: code, cart_total: currentRawTotal })
+                });
+                appliedCoupon = res;
+                if (couponFeedback) {
+                    couponFeedback.textContent = res.message || `Coupon ${res.code} applied!`;
+                    couponFeedback.style.color = "#16a34a";
+                }
+                if (discountRow) {
+                    discountRow.style.display = "flex";
+                    discountCodeBadge.textContent = res.code;
+                    discountAmountVal.textContent = res.discount_amount;
+                }
+                if (totalElement) {
+                    totalElement.textContent = res.new_total;
+                }
+            } catch (err) {
+                appliedCoupon = null;
+                if (couponFeedback) {
+                    couponFeedback.textContent = err.message;
+                    couponFeedback.style.color = "#dc2626";
+                }
+                if (discountRow) {
+                    discountRow.style.display = "none";
+                }
+                if (totalElement) {
+                    totalElement.textContent = currentRawTotal.toFixed(2);
+                }
+            } finally {
+                applyCouponBtn.disabled = false;
+                applyCouponBtn.textContent = "Apply";
+            }
+        });
+    }
 
     function getCookie(name) {
         const prefix = `${name}=`;
@@ -111,7 +169,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 itemsContainer.appendChild(row);
             });
 
-            totalElement.textContent = total.toFixed(2);
+            currentRawTotal = total;
+            if (appliedCoupon) {
+                // If coupon was applied, re-verify with new total
+                try {
+                    const rec = await requestJSON("/orders/api/apply-coupon/", {
+                        method: "POST",
+                        body: JSON.stringify({ code: appliedCoupon.code, cart_total: currentRawTotal })
+                    });
+                    appliedCoupon = rec;
+                    if (totalElement) totalElement.textContent = rec.new_total;
+                    if (discountAmountVal) discountAmountVal.textContent = rec.discount_amount;
+                } catch(e) {
+                    appliedCoupon = null;
+                    if (discountRow) discountRow.style.display = "none";
+                    if (couponFeedback) couponFeedback.textContent = "";
+                    totalElement.textContent = total.toFixed(2);
+                }
+            } else {
+                totalElement.textContent = total.toFixed(2);
+            }
             submitButton.disabled = false;
         } catch (error) {
             itemsContainer.textContent = error.message;
@@ -140,7 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
             city: formData.get("city").trim(),
             state: formData.get("state").trim(),
             pincode: formData.get("pincode").trim(),
-            payment_method: "COD"
+            payment_method: "COD",
+            coupon_code: appliedCoupon ? appliedCoupon.code : ""
         };
 
         submitButton.disabled = true;

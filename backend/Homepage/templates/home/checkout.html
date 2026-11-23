@@ -4,6 +4,10 @@
 
 {% block title %}Checkout | Tipsy Cart{% endblock %}
 
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'home/css/checkout.css' %}">
 <style>
@@ -307,6 +311,21 @@
             <h2>Order Summary</h2>
             <div id="checkout-items">
                 <p>Loading your cart...</p>
+            </div>
+
+            <!-- Coupon Box -->
+            <div class="coupon-box" style="margin: 16px 0; padding: 12px; background: #fdf2f8; border: 1px dashed #f472b6; border-radius: 10px;">
+                <label for="coupon-code-input" style="display: block; font-size: 12px; font-weight: 700; color: #a51655; margin-bottom: 6px;">🎟️ Have a Discount Coupon?</label>
+                <div style="display: flex; gap: 6px;">
+                    <input type="text" id="coupon-code-input" placeholder="e.g. WELCOME10" style="flex: 1; padding: 7px 10px; font-size: 13px; text-transform: uppercase; border: 1px solid #fbcfe8; border-radius: 6px; font-weight: 700;">
+                    <button type="button" id="apply-coupon-btn" style="background: #a51655; color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;">Apply</button>
+                </div>
+                <div id="coupon-feedback" style="font-size: 12px; margin-top: 6px; font-weight: 600;"></div>
+            </div>
+
+            <div id="discount-row" style="display: none; justify-content: space-between; align-items: center; padding: 6px 0; color: #16a34a; font-size: 14px; font-weight: 700; border-bottom: 1px dashed #e5e7eb; margin-bottom: 8px;">
+                <span>Coupon Discount (<span id="discount-code-badge"></span>):</span>
+                <span>-₹<span id="discount-amount-val">0.00</span></span>
             </div>
 
             <div class="summary-total">

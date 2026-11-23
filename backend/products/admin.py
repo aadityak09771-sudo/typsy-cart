@@ -1,6 +1,9 @@
-
 import csv
 import io
+import json
+import os
+import tempfile
+import uuid
 from decimal import Decimal, InvalidOperation
 
 from django import forms
@@ -8,158 +11,490 @@ from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import path
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
-from .models import Product
+from .models import Category, Subcategory, Product
+from .services.zip_importer import ZipProductImporter
 
 
 MAX_CSV_SIZE = 10 * 1024 * 1024
 
 
-GROCERY_SUBCATEGORIES = [
-    ("Fruits & Vegetables", "Fruits & Vegetables"),
-    ("Atta, Rice & Pulses", "Atta, Rice & Pulses"),
-    ("Dairy & Bakery", "Dairy & Bakery"),
-    ("Snacks & Beverages", "Snacks & Beverages"),
-    ("Household Essentials", "Household Essentials"),
-]
+# ---------------------------------------------------------------------------
+# CUSTOM ADMIN FILTERS
+# ---------------------------------------------------------------------------
 
-DAILY_ESSENTIALS_SUBCATEGORIES = [
-    ("Home Cleaning", "Home Cleaning"),
-    ("Personal Care & Bath", "Personal Care & Bath"),
-    ("Oral Care & Grooming", "Oral Care & Grooming"),
-    ("Utilities & Protection", "Utilities & Protection"),
-]
+class StockLevelFilter(admin.SimpleListFilter):
+    title = "Stock Status"
+    parameter_name = "stock_status"
 
-PERSONAL_CARE_SUBCATEGORIES = [
-    ("Personal Care & Bath", "Personal Care & Bath"),
-    ("Hygiene & Sanitization", "Hygiene & Sanitization"),
-]
+    def lookups(self, request, model_admin):
+        return [
+            ("out_of_stock", "Out of Stock (0)"),
+            ("low_stock", "Low Stock (1 – 10)"),
+            ("in_stock", "Healthy Stock (> 10)"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "out_of_stock":
+            return queryset.filter(stock=0)
+        if self.value() == "low_stock":
+            return queryset.filter(stock__gt=0, stock__lte=10)
+        if self.value() == "in_stock":
+            return queryset.filter(stock__gt=10)
+        return queryset
 
 
-class ProductAdminForm(forms.ModelForm):
+class DiscountStatusFilter(admin.SimpleListFilter):
+    title = "Discount Status"
+    parameter_name = "discount_status"
 
-    subcategory = forms.ChoiceField(
-        choices=[("", "Select Subcategory")],
-        required=False,
+    def lookups(self, request, model_admin):
+        return [
+            ("discounted", "Discount Active"),
+            ("regular", "Regular Price (No Discount)"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "discounted":
+            return queryset.filter(discount_enabled=True, discount_value__gt=0)
+        if self.value() == "regular":
+            return queryset.filter(discount_enabled=False)
+        return queryset
+
+
+# ---------------------------------------------------------------------------
+# CATEGORY ADMIN
+# ---------------------------------------------------------------------------
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "image_thumb",
+        "name",
+        "slug",
+        "display_order",
+        "product_count_badge",
+        "is_active",
+        "created_at",
+    )
+    list_display_links = ("image_thumb", "name")
+    list_editable = ("display_order", "is_active")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("name", "description", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+    ordering = ("display_order", "name")
+
+    fieldsets = (
+        ("Category Details", {"fields": ("name", "slug", "description")}),
+        ("Image", {"fields": ("image", "image_url")}),
+        ("Display & Status", {"fields": ("display_order", "is_active")}),
     )
 
+    @admin.display(description="Image")
+    def image_thumb(self, obj):
+        url = obj.get_image_url()
+        return format_html(
+            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" />',
+            url,
+        )
+
+    @admin.display(description="Active Products")
+    def product_count_badge(self, obj):
+        count = obj.products.filter(is_active=True).count()
+        bg = "#e8f5e9" if count > 0 else "#f3f4f6"
+        color = "#2e7d32" if count > 0 else "#6b7280"
+        return format_html(
+            '<span style="background: {}; color: {}; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px;">{} products</span>',
+            bg, color, count,
+        )
+
+    def delete_model(self, request, obj):
+        if obj.products.exists():
+            count = obj.products.count()
+            self.message_user(
+                request,
+                f"Cannot delete category '{obj.name}' because it contains {count} products. Please reassign or delete these products first.",
+                level=messages.ERROR,
+            )
+            return
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        blocked = []
+        for cat in queryset:
+            if cat.products.exists():
+                blocked.append(f"{cat.name} ({cat.products.count()} products)")
+        if blocked:
+            self.message_user(
+                request,
+                f"Cannot delete the following categories because they contain products: {', '.join(blocked)}. Reassign products first.",
+                level=messages.ERROR,
+            )
+            return
+        super().delete_queryset(request, queryset)
+
+
+# ---------------------------------------------------------------------------
+# SUBCATEGORY ADMIN
+# ---------------------------------------------------------------------------
+
+@admin.register(Subcategory)
+class SubcategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "category_badge",
+        "display_order",
+        "product_count_badge",
+        "is_active",
+        "created_at",
+    )
+    list_display_links = ("name",)
+    list_editable = ("display_order", "is_active")
+    list_filter = ("category", "is_active")
+    search_fields = ("name", "category__name", "description")
+    prepopulated_fields = {"slug": ("name",)}
+    ordering = ("category__display_order", "display_order", "name")
+
+    fieldsets = (
+        ("Subcategory Info", {"fields": ("category", "name", "slug", "description")}),
+        ("Image", {"fields": ("image", "image_url")}),
+        ("Display & Status", {"fields": ("display_order", "is_active")}),
+    )
+
+    @admin.display(description="Parent Category")
+    def category_badge(self, obj):
+        return format_html(
+            '<span style="background: #fdf2f8; color: #a51655; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">{}</span>',
+            obj.category.name,
+        )
+
+    @admin.display(description="Products")
+    def product_count_badge(self, obj):
+        count = obj.products.filter(is_active=True).count()
+        return format_html(
+            '<span style="background: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">{} items</span>',
+            count,
+        )
+
+
+# ---------------------------------------------------------------------------
+# PRODUCT ADMIN FORM
+# ---------------------------------------------------------------------------
+
+class ProductAdminForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = "__all__"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def clean_image(self):
+        uploaded_image = self.cleaned_data.get("image")
+        if uploaded_image and hasattr(uploaded_image, "size"):
+            if uploaded_image.size > 12 * 1024 * 1024:
+                raise forms.ValidationError("Product image file must be smaller than 12 MB.")
+            ext = os.path.splitext(uploaded_image.name)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                raise forms.ValidationError("Supported image formats are JPG, PNG, WEBP, and GIF.")
+        return uploaded_image
 
-        existing_subcategories = list(
-            Product.objects.exclude(
-                subcategory=""
-            ).values_list(
-                "subcategory",
-                flat=True,
-            ).distinct()
-        )
+    def clean(self):
+        cleaned_data = super().clean()
+        price = cleaned_data.get("price")
+        orig_price = cleaned_data.get("original_price")
+        discount_enabled = cleaned_data.get("discount_enabled")
+        discount_val = cleaned_data.get("discount_value")
+        discount_type = cleaned_data.get("discount_type")
 
-        if self.instance and self.instance.pk:
-            current_subcategory = self.instance.subcategory
+        if orig_price is None or orig_price <= 0:
+            if price and price > 0:
+                cleaned_data["original_price"] = price
+                orig_price = price
 
-            if (
-                current_subcategory
-                and current_subcategory not in existing_subcategories
-            ):
-                existing_subcategories.append(current_subcategory)
+        if discount_enabled and discount_val and discount_val > 0:
+            if discount_type == "percentage" and discount_val > 99:
+                self.add_error("discount_value", "Percentage discount cannot exceed 99%.")
+            elif discount_type == "fixed" and orig_price and discount_val >= orig_price:
+                self.add_error("discount_value", "Fixed discount cannot equal or exceed original price.")
 
-        choices = [("", "Select Subcategory")]
+        return cleaned_data
 
-        added = set()
 
-        # Grocery subcategories
-        for value, label in GROCERY_SUBCATEGORIES:
-            choices.append((value, f"Groceries — {label}"))
-            added.add(value)
-
-        # Daily Essentials subcategories
-        for value, label in DAILY_ESSENTIALS_SUBCATEGORIES:
-            choices.append((value, f"Daily Essentials — {label}"))
-            added.add(value)
-
-        # Personal Care subcategories
-        for value, label in PERSONAL_CARE_SUBCATEGORIES:
-            if value not in added:
-                choices.append((value, f"Personal Care — {label}"))
-                added.add(value)
-
-        for value in sorted(existing_subcategories, key=str.casefold):
-            if value not in added:
-                choices.append((value, value))
-
-        self.fields["subcategory"].choices = choices
-
+# ---------------------------------------------------------------------------
+# PRODUCT ADMIN
+# ---------------------------------------------------------------------------
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-
     form = ProductAdminForm
 
     list_display = (
-        "id",
+        "image_preview",
+        "product_number",
         "name",
-        "category",
-        "subcategory",
-        "price",
-        "stock",
+        "category_badge",
+        "pricing_display",
+        "stock_badge",
+        "is_available",
+        "is_featured",
         "is_active",
         "created_at",
     )
 
     list_filter = (
-        "category",
-        "subcategory",
+        "category_ref",
+        "subcategory_ref",
+        "is_available",
+        "is_featured",
+        "discount_enabled",
         "is_active",
+        StockLevelFilter,
+        DiscountStatusFilter,
         "created_at",
     )
 
     search_fields = (
+        "product_number",
         "name",
         "description",
         "brand",
         "subcategory",
+        "category",
     )
 
     list_editable = (
-        "price",
-        "stock",
+        "is_available",
+        "is_featured",
         "is_active",
     )
 
-    list_display_links = ("id", "name")
+    list_display_links = ("image_preview", "name")
     ordering = ("-created_at",)
     list_per_page = 25
     date_hierarchy = "created_at"
 
-    change_list_template = (
-        "admin/products/product/change_list.html"
+    change_list_template = "admin/products/product/change_list.html"
+
+    fieldsets = (
+        (
+            "Product Information",
+            {
+                "fields": (
+                    "name",
+                    "product_number",
+                    "brand",
+                    "description",
+                )
+            },
+        ),
+        (
+            "Categorization",
+            {
+                "fields": (
+                    "category_ref",
+                    "subcategory_ref",
+                ),
+                "description": "Select Category and Subcategory from your database.",
+            },
+        ),
+        (
+            "Pricing & Discounts",
+            {
+                "fields": (
+                    "original_price",
+                    "discount_enabled",
+                    "discount_type",
+                    "discount_value",
+                    "price",
+                ),
+                "description": "Final Selling Price is charged to customers. If Discount is enabled, it auto-calculates from Original Price.",
+            },
+        ),
+        (
+            "Inventory & Stock",
+            {
+                "fields": (
+                    "stock",
+                    "is_available",
+                ),
+                "description": "Stock count in units. If stock reaches 0, availability is auto-disabled.",
+            },
+        ),
+        (
+            "Product Image",
+            {
+                "fields": (
+                    "image",
+                    "image_url",
+                    "image_preview_large",
+                ),
+                "description": "Upload a product photo directly from your computer (JPG, PNG, WEBP).",
+            },
+        ),
+        (
+            "Store Visibility & Status",
+            {
+                "fields": (
+                    "is_featured",
+                    "is_active",
+                ),
+                "description": "Featured products appear on homepage showcases. Inactive products are hidden from the store.",
+            },
+        ),
     )
+
+    readonly_fields = ("image_preview_large", "created_at")
+
+    # -----------------------------------------------------------------------
+    # DISPLAY METHODS
+    # -----------------------------------------------------------------------
+
+    @admin.display(description="Image")
+    def image_preview(self, obj):
+        url = obj.get_image_url()
+        return format_html(
+            '<img src="{}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;" />',
+            url,
+        )
+
+    @admin.display(description="Current Image")
+    def image_preview_large(self, obj):
+        if not obj or not obj.pk:
+            return "Save product first to view image preview."
+        url = obj.get_image_url()
+        return format_html(
+            '<div style="margin-top: 6px;"><img src="{}" style="max-width: 220px; max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; padding: 6px; background: #fff0f5;" /><br><small style="color: #64748b;">Image Path: {}</small></div>',
+            url,
+            obj.image_url or (obj.image.url if obj.image else "Default"),
+        )
+
+    @admin.display(description="Category", ordering="category")
+    def category_badge(self, obj):
+        cat_name = obj.category_ref.name if obj.category_ref else (obj.category or "Unassigned")
+        sub_name = obj.subcategory_ref.name if obj.subcategory_ref else (obj.subcategory or "")
+        sub_html = f'<br><small style="color: #6b7280;">↳ {sub_name}</small>' if sub_name else ""
+        return format_html(
+            '<span style="background: #fdf2f8; color: #a51655; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">{}</span>{}',
+            cat_name, mark_safe(sub_html)
+        )
+
+    @admin.display(description="Pricing (MRP / Sell)")
+    def pricing_display(self, obj):
+        if obj.discount_enabled and obj.original_price and obj.original_price > obj.price:
+            pct = obj.discount_percentage
+            return format_html(
+                '<del style="color: #94a3b8; font-size: 11px;">₹{}</del> '
+                '<strong style="color: #15803d; font-size: 13px;">₹{}</strong> '
+                '<span style="background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px;">{}% OFF</span>',
+                obj.original_price, obj.price, pct
+            )
+        return format_html('<strong style="color: #1e293b; font-size: 13px;">₹{}</strong>', obj.price)
+
+    @admin.display(description="Stock", ordering="stock")
+    def stock_badge(self, obj):
+        if obj.stock == 0:
+            return format_html(
+                '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">OUT OF STOCK</span>'
+            )
+        elif obj.stock <= 10:
+            return format_html(
+                '<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">LOW: {} left</span>',
+                obj.stock,
+            )
+        return format_html(
+            '<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">{} units</span>',
+            obj.stock,
+        )
+
+    # -----------------------------------------------------------------------
+    # BULK ADMIN ACTIONS
+    # -----------------------------------------------------------------------
+
+    actions = [
+        "mark_available",
+        "mark_unavailable",
+        "mark_featured",
+        "unmark_featured",
+        "activate_products",
+        "deactivate_products",
+    ]
+
+    @admin.action(description="✓ Mark selected products as In Stock / Available")
+    def mark_available(self, request, queryset):
+        updated = queryset.update(is_available=True)
+        self.message_user(request, f"{updated} products marked as Available.", level=messages.SUCCESS)
+
+    @admin.action(description="✗ Mark selected products as Unavailable")
+    def mark_unavailable(self, request, queryset):
+        updated = queryset.update(is_available=False)
+        self.message_user(request, f"{updated} products marked as Unavailable.", level=messages.SUCCESS)
+
+    @admin.action(description="★ Mark selected products as Featured on Homepage")
+    def mark_featured(self, request, queryset):
+        updated = queryset.update(is_featured=True)
+        self.message_user(request, f"{updated} products featured on store.", level=messages.SUCCESS)
+
+    @admin.action(description="☆ Remove Featured status from selected products")
+    def unmark_featured(self, request, queryset):
+        updated = queryset.update(is_featured=False)
+        self.message_user(request, f"{updated} products unfeatured.", level=messages.SUCCESS)
+
+    @admin.action(description="👁️ Activate selected products (Visible in Store)")
+    def activate_products(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} products activated.", level=messages.SUCCESS)
+
+    @admin.action(description="🚫 Deactivate selected products (Hide from Store)")
+    def deactivate_products(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} products hidden from store.", level=messages.SUCCESS)
+
+    # -----------------------------------------------------------------------
+    # CUSTOM URLS
+    # -----------------------------------------------------------------------
 
     def get_urls(self):
         urls = super().get_urls()
-
         custom_urls = [
             path(
                 "import-csv/",
                 self.admin_site.admin_view(self.import_csv),
                 name="products_product_import",
             ),
+            path(
+                "import-zip/",
+                self.admin_site.admin_view(self.import_zip),
+                name="products_product_zip_import",
+            ),
+            path(
+                "api/subcategories/",
+                self.admin_site.admin_view(self.subcategories_api),
+                name="products_subcategories_api",
+            ),
         ]
-
         return custom_urls + urls
+
+    def subcategories_api(self, request):
+        category_id = request.GET.get("category_id")
+        if not category_id:
+            return JsonResponse({"subcategories": []})
+        subcats = list(
+            Subcategory.objects.filter(category_id=category_id, is_active=True)
+            .order_by("display_order", "name")
+            .values("id", "name")
+        )
+        return JsonResponse({"subcategories": subcats})
+
+    # -----------------------------------------------------------------------
+    # CSV IMPORTER
+    # -----------------------------------------------------------------------
 
     def validate_csv(self, uploaded_file):
         if uploaded_file.size > MAX_CSV_SIZE:
-            raise ValueError(
-                "CSV file must be smaller than 10 MB."
-            )
+            raise ValueError("CSV file must be smaller than 10 MB.")
 
         if not uploaded_file.name.lower().endswith(".csv"):
             raise ValueError("Only CSV files are allowed.")
@@ -167,41 +502,16 @@ class ProductAdmin(admin.ModelAdmin):
         content = uploaded_file.read().decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(content))
 
-        required_columns = {
-            "name",
-            "description",
-            "category",
-            "subcategory",
-            "brand",
-            "price",
-            "stock",
-            "image_url",
-            "is_active",
-        }
+        required_columns = {"name", "price"}
 
         if not reader.fieldnames:
             raise ValueError("CSV file is empty.")
 
-        reader.fieldnames = [
-            (field or "").strip().lower()
-            for field in reader.fieldnames
-        ]
-
-        if len(reader.fieldnames) != len(set(reader.fieldnames)):
-            raise ValueError(
-                "CSV contains duplicate column names."
-            )
+        reader.fieldnames = [(field or "").strip().lower() for field in reader.fieldnames]
 
         missing = required_columns - set(reader.fieldnames)
-
         if missing:
-            raise ValueError(
-                "Missing columns: " + ", ".join(sorted(missing))
-            )
-
-        valid_categories = {
-            choice[0] for choice in Product.CATEGORY_CHOICES
-        }
+            raise ValueError("Missing columns: " + ", ".join(sorted(missing)))
 
         valid_rows = []
         errors = []
@@ -210,127 +520,47 @@ class ProductAdmin(admin.ModelAdmin):
 
         for row_number, row in enumerate(reader, start=2):
             try:
-                if None in row:
-                    raise ValueError(
-                        "Unexpected extra CSV columns."
-                    )
-
                 name = (row.get("name") or "").strip()
-                description = (
-                    row.get("description") or ""
-                ).strip()
-                category = (
-                    row.get("category") or ""
-                ).strip()
-                subcategory = (
-                    row.get("subcategory") or ""
-                ).strip()
-                brand = (row.get("brand") or "").strip()
-                image_url = (
-                    row.get("image_url") or ""
-                ).strip()
+                description = (row.get("description") or "").strip()
+                cat_name = (row.get("category") or "Daily Essentials").strip()
+                subcategory = (row.get("subcategory") or "").strip()
+                brand = (row.get("brand") or "TipsyCart").strip()
+                image_url = (row.get("image_url") or "").strip()
+                pnum = (row.get("product_number") or "").strip()
 
                 if not name:
-                    raise ValueError(
-                        "Product name is required."
-                    )
+                    raise ValueError("Product name is required.")
 
-                if category not in valid_categories:
-                    raise ValueError(
-                        f"Invalid category: {category}"
-                    )
-
-                price = Decimal(
-                    (row.get("price") or "").strip()
-                )
-
+                price_raw = (row.get("price") or "").strip().replace("₹", "")
+                price = Decimal(price_raw)
                 if not price.is_finite() or price < 0:
-                    raise ValueError(
-                        "Price must be non-negative."
-                    )
+                    raise ValueError("Price must be non-negative.")
 
-                stock = int(
-                    (row.get("stock") or "0").strip()
-                )
+                stock = int((row.get("stock") or "50").strip())
 
-                if stock < 0:
-                    raise ValueError(
-                        "Stock cannot be negative."
-                    )
-
-                active_text = (
-                    (row.get("is_active") or "true")
-                    .strip()
-                    .lower()
-                )
-
-                if active_text in ("true", "1", "yes"):
-                    is_active = True
-                elif active_text in ("false", "0", "no"):
-                    is_active = False
-                else:
-                    raise ValueError(
-                        "is_active must be true or false."
-                    )
-
-                if image_url:
-                    URLValidator()(image_url)
-
-                duplicate_key = (
-                    name.casefold(),
-                    brand.casefold(),
-                    category,
-                )
-
-                if duplicate_key in seen_in_file:
+                duplicate_key = (name.casefold(), brand.casefold())
+                if duplicate_key in seen_in_file or Product.objects.filter(name__iexact=name, brand__iexact=brand).exists():
                     duplicate_count += 1
                     continue
 
                 seen_in_file.add(duplicate_key)
 
-                if Product.objects.filter(
-                    name__iexact=name,
-                    brand__iexact=brand,
-                    category=category,
-                ).exists():
-                    duplicate_count += 1
-                    continue
-
-                product = Product(
-                    name=name,
-                    description=description,
-                    category=category,
-                    subcategory=subcategory,
-                    brand=brand,
-                    price=price,
-                    stock=stock,
-                    image_url=image_url,
-                    is_active=is_active,
-                )
-
-                product.full_clean()
-
                 valid_rows.append({
                     "name": name,
+                    "product_number": pnum,
                     "description": description,
-                    "category": category,
+                    "category": cat_name,
                     "subcategory": subcategory,
                     "brand": brand,
                     "price": price,
+                    "original_price": price,
                     "stock": stock,
                     "image_url": image_url,
-                    "is_active": is_active,
+                    "is_active": True,
                 })
 
-            except (
-                ValueError,
-                InvalidOperation,
-                ValidationError,
-                TypeError,
-            ) as error:
-                errors.append(
-                    f"Row {row_number}: {error}"
-                )
+            except (ValueError, InvalidOperation, ValidationError, TypeError) as error:
+                errors.append(f"Row {row_number}: {error}")
 
         return valid_rows, duplicate_count, errors
 
@@ -340,43 +570,19 @@ class ProductAdmin(admin.ModelAdmin):
             action = request.POST.get("action")
 
             if not uploaded_file:
-                self.message_user(
-                    request,
-                    "Please select the CSV file again.",
-                    level=messages.ERROR,
-                )
-                return redirect("..")
-
-            if action not in ("preview", "confirm"):
-                self.message_user(
-                    request,
-                    "Invalid import action.",
-                    level=messages.ERROR,
-                )
+                self.message_user(request, "Please select the CSV file.", level=messages.ERROR)
                 return redirect("..")
 
             try:
-                valid_rows, duplicate_count, errors = (
-                    self.validate_csv(uploaded_file)
-                )
-
-            except (
-                UnicodeDecodeError,
-                csv.Error,
-                ValueError,
-            ) as error:
+                valid_rows, duplicate_count, errors = self.validate_csv(uploaded_file)
+            except Exception as error:
                 context = {
                     **self.admin_site.each_context(request),
                     "title": "Import Products from CSV",
                     "opts": self.model._meta,
                     "fatal_error": str(error),
                 }
-
-                return render(
-                    request,
-                    "admin/product_import.html",
-                    context,
-                )
+                return render(request, "admin/product_import.html", context)
 
             if action == "preview":
                 context = {
@@ -389,52 +595,26 @@ class ProductAdmin(admin.ModelAdmin):
                     "error_count": len(errors),
                     "errors": errors[:50],
                 }
-
-                return render(
-                    request,
-                    "admin/product_import.html",
-                    context,
-                )
+                return render(request, "admin/product_import.html", context)
 
             if errors:
-                self.message_user(
-                    request,
-                    "Import stopped because the CSV has invalid rows. "
-                    "Please correct them and preview again.",
-                    level=messages.ERROR,
-                )
+                self.message_user(request, "Import stopped because of CSV errors.", level=messages.ERROR)
                 return redirect("..")
 
             imported = 0
-
-            try:
-                with transaction.atomic():
-                    for row in valid_rows:
-                        duplicate = Product.objects.filter(
-                            name__iexact=row["name"],
-                            brand__iexact=row["brand"],
-                            category=row["category"],
-                        ).exists()
-
-                        if duplicate:
-                            duplicate_count += 1
-                            continue
-
-                        product = Product(**row)
-                        product.full_clean()
-                        product.save()
-                        imported += 1
-
-            except Exception:
-                raise
+            with transaction.atomic():
+                for row in valid_rows:
+                    cat, _ = Category.objects.get_or_create(name=row["category"], defaults={"is_active": True})
+                    p = Product(**row)
+                    p.category_ref = cat
+                    p.save()
+                    imported += 1
 
             self.message_user(
                 request,
-                f"{imported} products imported successfully. "
-                f"{duplicate_count} duplicates skipped.",
+                f"Successfully imported {imported} products. {duplicate_count} duplicates skipped.",
                 level=messages.SUCCESS,
             )
-
             return redirect("..")
 
         context = {
@@ -442,9 +622,125 @@ class ProductAdmin(admin.ModelAdmin):
             "title": "Import Products from CSV",
             "opts": self.model._meta,
         }
+        return render(request, "admin/product_import.html", context)
 
-        return render(
-            request,
-            "admin/product_import.html",
-            context,
-        )
+    # -----------------------------------------------------------------------
+    # BULK ZIP IMPORTER (CSV/XLSX + IMAGES)
+    # -----------------------------------------------------------------------
+
+    def import_zip(self, request):
+        if request.method == "POST":
+            action = request.POST.get("action", "preview")
+            default_category = request.POST.get("default_category", "Daily Essentials")
+            default_stock = request.POST.get("default_stock", "50")
+
+            if action == "preview":
+                uploaded_file = request.FILES.get("zip_file")
+                if not uploaded_file:
+                    self.message_user(request, "Please select a ZIP file to upload.", level=messages.ERROR)
+                    return redirect("..")
+
+                if not uploaded_file.name.lower().endswith(".zip"):
+                    self.message_user(request, "Only .zip archive files are supported.", level=messages.ERROR)
+                    return redirect("..")
+
+                token = f"tc_{request.user.id}_{uuid.uuid4().hex[:12]}"
+                temp_zip_path = os.path.join(tempfile.gettempdir(), f"{token}.zip")
+                try:
+                    with open(temp_zip_path, "wb") as f:
+                        for chunk in uploaded_file.chunks():
+                            f.write(chunk)
+
+                    importer = ZipProductImporter(
+                        open(temp_zip_path, "rb"),
+                        default_category=default_category,
+                        default_stock=default_stock,
+                    )
+                    analysis = importer.parse_and_validate()
+                except Exception as e:
+                    if os.path.exists(temp_zip_path):
+                        try:
+                            os.remove(temp_zip_path)
+                        except Exception:
+                            pass
+                    context = {
+                        **self.admin_site.each_context(request),
+                        "title": "Bulk Import Products (ZIP)",
+                        "opts": self.model._meta,
+                        "fatal_error": str(e),
+                        "category_choices": [(c.name, c.name) for c in Category.objects.all()],
+                    }
+                    return render(request, "admin/product_zip_import.html", context)
+
+                context = {
+                    **self.admin_site.each_context(request),
+                    "title": "Bulk Import Products (ZIP) - Preview",
+                    "opts": self.model._meta,
+                    "preview": True,
+                    "spreadsheet_name": analysis["spreadsheet_name"],
+                    "valid_count": analysis["valid_count"],
+                    "duplicate_count": analysis["duplicate_count"],
+                    "error_count": analysis["error_count"],
+                    "valid_products": analysis["valid_products"],
+                    "duplicate_products": analysis["duplicate_products"],
+                    "invalid_rows": analysis["invalid_rows"],
+                    "unmatched_images": analysis["unmatched_images"],
+                    "cached_token": token,
+                    "selected_category": default_category,
+                    "selected_stock": default_stock,
+                    "category_choices": [(c.name, c.name) for c in Category.objects.all()],
+                }
+                return render(request, "admin/product_zip_import.html", context)
+
+            elif action == "confirm":
+                token = request.POST.get("cached_token", "")
+                temp_zip_path = os.path.join(tempfile.gettempdir(), f"{token}.zip") if token else None
+
+                if not temp_zip_path or not os.path.exists(temp_zip_path):
+                    uploaded_file = request.FILES.get("zip_file")
+                    if not uploaded_file:
+                        self.message_user(
+                            request,
+                            "Import session expired or file not found. Please upload the ZIP file again.",
+                            level=messages.ERROR,
+                        )
+                        return redirect(".")
+                    with open(temp_zip_path, "wb") as f:
+                        for chunk in uploaded_file.chunks():
+                            f.write(chunk)
+
+                try:
+                    importer = ZipProductImporter(
+                        open(temp_zip_path, "rb"),
+                        default_category=default_category,
+                        default_stock=default_stock,
+                    )
+                    result = importer.execute_import(
+                        selected_category=default_category,
+                        default_stock=int(default_stock or 50),
+                    )
+                    imported_count = result["imported_count"]
+                    dup_count = result["skipped_duplicates"]
+                    self.message_user(
+                        request,
+                        f"🎉 Success! {imported_count} products were successfully imported and published to TipsyCart. {dup_count} duplicates skipped.",
+                        level=messages.SUCCESS,
+                    )
+                except Exception as e:
+                    self.message_user(request, f"Import failed: {e}", level=messages.ERROR)
+                finally:
+                    if temp_zip_path and os.path.exists(temp_zip_path):
+                        try:
+                            os.remove(temp_zip_path)
+                        except Exception:
+                            pass
+
+                return redirect("..")
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Bulk Import Products (ZIP: CSV/XLSX + Images)",
+            "opts": self.model._meta,
+            "category_choices": [(c.name, c.name) for c in Category.objects.all()],
+        }
+        return render(request, "admin/product_zip_import.html", context)

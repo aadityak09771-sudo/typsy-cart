@@ -8,14 +8,21 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero home-hero" id="home-hero">
+<section class="hero home-hero" id="home-hero" {% if hero_banner and hero_banner.get_image_url %}style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.45)), url('{{ hero_banner.get_image_url }}'); background-size: cover; background-position: center;"{% endif %}>
     <div class="hero-content">
-        <h1>Everyday essentials,<br><span>delivered with care.</span></h1>
-        <p>
-            Shop everyday essentials and personal care products
-            with comfort, privacy and convenience.
-        </p>
-        <a class="cta" href="#products">Explore Products</a>
+        {% if hero_banner and hero_banner.badge %}<span style="display:inline-block; background:rgba(255,255,255,0.25); backdrop-filter:blur(4px); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:10px; color:#fff; letter-spacing:1px; text-transform:uppercase;">{{ hero_banner.badge }}</span>{% endif %}
+        {% if hero_banner %}
+            <h1>{{ hero_banner.title|linebreaksbr }}</h1>
+            <p>{{ hero_banner.subtitle }}</p>
+            <a class="cta" href="{{ hero_banner.link|default:'#products' }}">{{ hero_banner.button_text|default:'Explore Products' }}</a>
+        {% else %}
+            <h1>Everyday essentials,<br><span>delivered with care.</span></h1>
+            <p>
+                Shop everyday essentials and personal care products
+                with comfort, privacy and convenience.
+            </p>
+            <a class="cta" href="#products">Explore Products</a>
+        {% endif %}
     </div>
 </section>
 

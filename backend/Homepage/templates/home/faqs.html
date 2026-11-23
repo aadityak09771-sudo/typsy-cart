@@ -114,6 +114,19 @@
     </div>
 
     <div class="tc-faq-accordion">
+        {% if faq_items %}
+            {% for item in faq_items %}
+            <div class="tc-faq-item {% if forloop.first %}open{% endif %}">
+                <button class="tc-faq-question" type="button">
+                    <span>{{ item.question }}</span>
+                    <span class="tc-faq-toggle-icon">+</span>
+                </button>
+                <div class="tc-faq-answer">
+                    <p>{{ item.answer|linebreaksbr }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
         <div class="tc-faq-item open">
             <button class="tc-faq-question" type="button">
                 <span>Where does TipsyCart deliver?</span>
@@ -173,6 +186,7 @@
                 <p>You can email our customer support team directly at <a href="mailto:support@tipsycart.in" style="color:#be185d; font-weight:700;">support@tipsycart.in</a> or visit our <a href="/contact/" style="color:#be185d; font-weight:700;">Contact Us</a> page for WhatsApp assistance.</p>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 

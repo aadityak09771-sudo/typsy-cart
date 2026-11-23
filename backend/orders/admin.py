@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 
 from accounts.models import PushDevice
 from delivery.models import DeliveryPartner, DeliveryAssignment, OrderStatusHistory
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, Coupon
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +77,70 @@ class CartItemInline(admin.TabularInline):
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "created_at", "updated_at")
-    search_fields = ("user__username", "user__email")
+    list_display = (
+        "id",
+        "customer_display",
+        "items_count",
+        "cart_total_display",
+        "created_at",
+        "updated_at",
+    )
+    search_fields = (
+        "user__username",
+        "user__email",
+        "user__first_name",
+        "user__last_name",
+    )
     inlines = [CartItemInline]
     list_per_page = 25
+
+    @admin.display(description="Customer")
+    def customer_display(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+    @admin.display(description="Total Items")
+    def items_count(self, obj):
+        return sum(item.quantity for item in obj.items.all())
+
+    @admin.display(description="Cart Total")
+    def cart_total_display(self, obj):
+        val = sum(item.subtotal for item in obj.items.all())
+        return format_html("<strong>₹{}</strong>", val)
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "discount_type",
+        "discount_value_display",
+        "min_order_amount",
+        "max_discount_amount",
+        "times_used",
+        "usage_limit",
+        "is_active",
+        "start_date",
+        "end_date",
+        "created_at",
+    )
+    list_filter = ("discount_type", "is_active", "start_date", "end_date")
+    search_fields = ("code",)
+    list_editable = ("is_active",)
+    list_per_page = 25
+
+    fieldsets = (
+        ("Coupon Code", {"fields": ("code", "is_active")}),
+        ("Discount Rules", {"fields": ("discount_type", "discount_value", "min_order_amount", "max_discount_amount")}),
+        ("Usage & Limits", {"fields": ("usage_limit", "times_used")}),
+        ("Validity Period", {"fields": ("start_date", "end_date")}),
+    )
+    readonly_fields = ("times_used",)
+
+    @admin.display(description="Discount")
+    def discount_value_display(self, obj):
+        if obj.discount_type == "percentage":
+            return format_html('<span style="color: #b91c1c; font-weight: 700;">{}% OFF</span>', obj.discount_value)
+        return format_html('<span style="color: #15803d; font-weight: 700;">₹{} OFF</span>', obj.discount_value)
 
 
 @admin.register(CartItem)

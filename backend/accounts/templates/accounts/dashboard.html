@@ -8,6 +8,10 @@
 Manage your Tipsy Cart account and view your orders.
 {% endblock %}
 
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'home/css/dashboard.css' %}">
 <style>
@@ -549,7 +553,7 @@ Manage your Tipsy Cart account and view your orders.
     <section class="dashboard-welcome">
         <div class="welcome-content">
             <span class="welcome-label">YOUR TIPSY CART ACCOUNT</span>
-            <h1>Welcome, {{ user.username }}! 👋</h1>
+            <h1>Welcome, {{ user.first_name|default:user.username }}! 👋</h1>
             <p>
                 Your everyday essentials are just a click away.
                 Manage your account and track your orders here.
@@ -779,7 +783,7 @@ Manage your Tipsy Cart account and view your orders.
             <div class="stat-icon">👤</div>
             <div class="stat-details">
                 <p>My Account</p>
-                <h2 class="account-name">{{ user.username }}</h2>
+                <h2 class="account-name">{{ user.first_name|default:user.username }}</h2>
                 <span>Member since {{ user.date_joined|date:"d M Y" }}</span>
             </div>
         </article>
@@ -791,6 +795,11 @@ Manage your Tipsy Cart account and view your orders.
             <div class="card-heading">
                 <span class="card-icon">👤</span>
                 <h2>My Profile</h2>
+            </div>
+
+            <div class="profile-detail">
+                <span>Name</span>
+                <strong>{{ user.first_name|default:user.username }}</strong>
             </div>
 
             <div class="profile-detail">
