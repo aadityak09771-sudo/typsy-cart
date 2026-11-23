@@ -169,7 +169,7 @@ def products_json(request):
                 "image_url": product.get_image_url(),
                 "price": str(product.price),
                 "original_price": str(product.original_price or product.price),
-                "discount_enabled": product.discount_enabled,
+                "discount_enabled": bool(product.discount_enabled or (product.original_price and product.original_price > product.price)),
                 "discount_type": product.discount_type,
                 "discount_value": str(product.discount_value),
                 "discount_percentage": product.discount_percentage,

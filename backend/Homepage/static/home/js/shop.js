@@ -93,13 +93,31 @@ document.addEventListener("DOMContentLoaded", () => {
         return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
     }
 
+    function getCategoryFallbackImage(category) {
+        const cat = (category || "").toLowerCase();
+        if (cat.includes("grocer")) {
+            return "/static/home/images/cat-groceries.jpg";
+        }
+        if (cat.includes("period")) {
+            return "/static/home/images/cat-period-care.jpg";
+        }
+        if (cat.includes("safety")) {
+            return "/static/home/images/cat-personal-safety.jpg";
+        }
+        if (cat.includes("personal")) {
+            return "/static/home/images/cat-personal-care.jpg";
+        }
+        return "/static/home/images/cat-daily-essentials.jpg";
+    }
+
     function renderProductPriceHTML(product) {
         const finalPrice = Math.max(0, Number(product.price) || 0);
         const originalPrice = Number(product.original_price);
         const isDiscountEnabled = Boolean(
             product.discount_enabled === true ||
             product.discount_enabled === "true" ||
-            product.discount_enabled === 1
+            product.discount_enabled === 1 ||
+            (Number.isFinite(originalPrice) && originalPrice > finalPrice)
         );
 
         const hasValidDiscount = isDiscountEnabled &&
@@ -558,7 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         productGrid.innerHTML = filtered.map(product => {
-            const fallbackUrl = "/static/home/images/cat-groceries.jpg";
+            const fallbackUrl = getCategoryFallbackImage(product.category);
             const imgSrc = product.image_url && product.image_url.trim() ? product.image_url : fallbackUrl;
             const altText = `${escapeHTML(product.name)} - Tipsy Cart Essentials`;
 

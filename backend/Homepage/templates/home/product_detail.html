@@ -145,7 +145,7 @@ Buy {{ product.name }} online at best price in Kanpur. Express delivery with Tip
             <h1 class="tc-product-title">{{ product.name }}</h1>
             <p class="tc-product-brand">Brand: <strong>{{ product.brand|default:"TipsyCart" }}</strong></p>
 
-            {% if product.discount_enabled and product.original_price and product.original_price > product.price %}
+            {% if product.original_price and product.original_price > product.price %}
             <div class="tc-price-wrap has-discount" style="margin-bottom: 16px;">
                 <div class="tc-price-row" style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
                     <span class="tc-price-current" style="font-size: 30px; font-weight: 800; color: #111827;">₹{{ product.price }}</span>

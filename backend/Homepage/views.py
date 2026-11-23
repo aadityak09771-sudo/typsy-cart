@@ -59,7 +59,7 @@ def home(request):
                 "subcategory": p.subcategory,
                 "price": str(p.price),
                 "original_price": str(p.original_price or p.price),
-                "discount_enabled": p.discount_enabled,
+                "discount_enabled": bool(p.discount_enabled or (p.original_price and p.original_price > p.price)),
                 "discount_type": p.discount_type,
                 "discount_value": str(p.discount_value),
                 "discount_percentage": p.discount_percentage,

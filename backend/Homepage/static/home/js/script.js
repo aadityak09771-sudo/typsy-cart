@@ -137,7 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const isDiscountEnabled = Boolean(
             product.discount_enabled === true ||
             product.discount_enabled === "true" ||
-            product.discount_enabled === 1
+            product.discount_enabled === 1 ||
+            (Number.isFinite(originalPrice) && originalPrice > finalPrice)
         );
 
         const hasValidDiscount = isDiscountEnabled &&

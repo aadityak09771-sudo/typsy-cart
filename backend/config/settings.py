@@ -11,30 +11,36 @@ load_dotenv(BASE_DIR / ".env")
 
 
 # SECURITY SETTINGS
+is_render = os.getenv("RENDER", "").lower() == "true" or bool(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
+django_debug_env = os.getenv("DJANGO_DEBUG")
+
+if django_debug_env is not None:
+    DEBUG = django_debug_env.lower() in ("true", "1", "yes")
+elif is_render:
+    DEBUG = False
+else:
+    DEBUG = True
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or os.getenv("SECRET_KEY")
 
 if not SECRET_KEY:
-    if os.getenv("DJANGO_DEBUG", "True").lower() == "true":
+    if DEBUG:
         SECRET_KEY = "django-insecure-dev-fallback-key-for-local-testing"
     else:
         raise ValueError("DJANGO_SECRET_KEY is missing from environment variables")
-
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv(
         "DJANGO_ALLOWED_HOSTS",
-        "localhost,127.0.0.1,testserver,.onrender.com"
+        "localhost,127.0.0.1,testserver,.onrender.com,typsy-cart.onrender.com"
     ).split(",")
     if host.strip()
 ]
 
-if ".onrender.com" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(".onrender.com")
-
-if "testserver" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append("testserver")
+for h in [".onrender.com", "typsy-cart.onrender.com", "testserver"]:
+    if h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(h)
 
 render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host and render_host not in ALLOWED_HOSTS:

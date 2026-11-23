@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from .models import PushDevice, EmailOTP, Customer
 
@@ -48,22 +48,33 @@ class CustomerAdmin(admin.ModelAdmin):
     @admin.display(description="Recent Orders")
     def order_history_display(self, obj):
         orders = obj.orders.all().order_by("-created_at")[:10]
-        if not orders:
+        if not orders.exists():
             return "No orders placed yet by this customer."
-        rows = []
+        rows_data = []
         for o in orders:
             order_url = reverse("admin:orders_order_change", args=[o.id])
             status_color = "#15803d" if o.status == "Delivered" else ("#b91c1c" if o.status == "Cancelled" else "#b45309")
-            rows.append(
-                f'<tr>'
-                f'<td style="padding: 6px 12px;"><a href="{order_url}" style="font-weight: 700; color: #a51655;">#{o.id}</a></td>'
-                f'<td style="padding: 6px 12px;">{o.created_at.strftime("%d %b %Y, %H:%M")}</td>'
-                f'<td style="padding: 6px 12px; font-weight: 700;">₹{o.total_amount}</td>'
-                f'<td style="padding: 6px 12px; color: {status_color}; font-weight: 700;">{o.status}</td>'
-                f'<td style="padding: 6px 12px;">{o.payment_method}</td>'
-                f'</tr>'
-            )
-        table_html = (
+            rows_data.append((
+                order_url,
+                o.id,
+                o.created_at.strftime("%d %b %Y, %H:%M"),
+                o.total_amount,
+                status_color,
+                o.status,
+                o.payment_method,
+            ))
+        rows_html = format_html_join(
+            "",
+            '<tr>'
+            '<td style="padding: 6px 12px;"><a href="{}" style="font-weight: 700; color: #a51655;">#{}</a></td>'
+            '<td style="padding: 6px 12px;">{}</td>'
+            '<td style="padding: 6px 12px; font-weight: 700;">₹{}</td>'
+            '<td style="padding: 6px 12px; color: {}; font-weight: 700;">{}</td>'
+            '<td style="padding: 6px 12px;">{}</td>'
+            '</tr>',
+            rows_data,
+        )
+        return format_html(
             '<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px;">'
             '<thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">'
             '<tr><th style="padding: 6px 12px; text-align: left;">Order ID</th>'
@@ -71,9 +82,9 @@ class CustomerAdmin(admin.ModelAdmin):
             '<th style="padding: 6px 12px; text-align: left;">Amount</th>'
             '<th style="padding: 6px 12px; text-align: left;">Status</th>'
             '<th style="padding: 6px 12px; text-align: left;">Payment</th></tr>'
-            '</thead><tbody>' + "".join(rows) + '</tbody></table>'
+            '</thead><tbody>{}</tbody></table>',
+            rows_html,
         )
-        return format_html(table_html)
 
     def has_add_permission(self, request):
         return False

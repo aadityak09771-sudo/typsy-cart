@@ -268,6 +268,8 @@ class Product(models.Model):
             else:
                 calc_price = self.original_price - self.discount_value
                 self.price = max(Decimal("1.00"), round(calc_price, 2))
+        elif self.original_price and self.price and self.original_price > self.price:
+            self.discount_enabled = True
 
         # 5. Availability sync with stock
         if self.stock == 0:
@@ -289,13 +291,13 @@ class Product(models.Model):
 
     @property
     def discount_percentage(self):
-        if not self.discount_enabled or not self.original_price or self.original_price <= self.price:
+        if not self.original_price or self.original_price <= self.price:
             return 0
         diff = self.original_price - self.price
         return int(round((diff / self.original_price) * 100))
 
     @property
     def savings_amount(self):
-        if not self.discount_enabled or not self.original_price or self.original_price <= self.price:
+        if not self.original_price or self.original_price <= self.price:
             return Decimal("0.00")
         return round(self.original_price - self.price, 2)

@@ -171,9 +171,11 @@ class CategoryAdmin(admin.ModelAdmin):
 
     @admin.display(description="Image")
     def image_thumb(self, obj):
-        url = obj.get_image_url()
+        url = obj.get_image_url() if obj else ""
+        if not url:
+            url = "/static/home/images/tipsycart-logo.png"
         return format_html(
-            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" />',
+            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
             url,
         )
 
@@ -322,9 +324,11 @@ class SubcategoryAdmin(admin.ModelAdmin):
 
     @admin.display(description="Image")
     def image_thumb(self, obj):
-        url = obj.get_image_url()
+        url = obj.get_image_url() if obj else ""
+        if not url:
+            url = "/static/home/images/tipsycart-logo.png"
         return format_html(
-            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" />',
+            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
             url,
         )
 
@@ -601,9 +605,11 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.display(description="Image")
     def image_preview(self, obj):
-        url = obj.get_image_url()
+        url = obj.get_image_url() if obj else ""
+        if not url:
+            url = "/static/home/images/tipsycart-logo.png"
         return format_html(
-            '<img src="{}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;" />',
+            '<img src="{}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
             url,
         )
 
@@ -627,7 +633,7 @@ class ProductAdmin(admin.ModelAdmin):
 
         return format_html(
             '<div class="tc-current-image-container" data-current-url="{}" style="margin-top: 6px;">'
-            '<img src="{}" style="max-width: 220px; max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; padding: 6px; background: #fff0f5;" /><br>'
+            '<img src="{}" style="max-width: 220px; max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; padding: 6px; background: #fff0f5;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" /><br>'
             '<small style="display: block; margin-top: 6px; font-size: 11px;">{}</small>'
             '</div>',
             url,
@@ -639,15 +645,19 @@ class ProductAdmin(admin.ModelAdmin):
     def category_badge(self, obj):
         cat_name = obj.category_ref.name if obj.category_ref else (obj.category or "Unassigned")
         sub_name = obj.subcategory_ref.name if obj.subcategory_ref else (obj.subcategory or "")
-        sub_html = f'<br><small style="color: #6b7280;">↳ {sub_name}</small>' if sub_name else ""
+        if sub_name:
+            sub_element = format_html('<br><small style="color: #6b7280;">↳ {}</small>', sub_name)
+        else:
+            sub_element = ""
         return format_html(
             '<span style="background: #fdf2f8; color: #a51655; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">{}</span>{}',
-            cat_name, mark_safe(sub_html)
+            cat_name, sub_element
         )
 
     @admin.display(description="Pricing (MRP / Sell)")
     def pricing_display(self, obj):
-        if obj.discount_enabled and obj.original_price and obj.original_price > obj.price:
+        has_discount = (obj.discount_enabled or (obj.original_price and obj.price and obj.original_price > obj.price))
+        if has_discount and obj.original_price and obj.original_price > obj.price:
             pct = obj.discount_percentage
             return format_html(
                 '<del style="color: #94a3b8; font-size: 11px;">₹{}</del> '
@@ -661,7 +671,8 @@ class ProductAdmin(admin.ModelAdmin):
     def stock_badge(self, obj):
         if obj.stock == 0:
             return format_html(
-                '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">OUT OF STOCK</span>'
+                '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">{}</span>',
+                "OUT OF STOCK"
             )
         elif obj.stock <= 10:
             return format_html(
