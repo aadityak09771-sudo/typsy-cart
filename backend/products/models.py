@@ -24,7 +24,13 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name) or "category"
+            slug = base_slug
+            counter = 1
+            while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         if self.image and self.image_url and self.image_url.startswith("/media/"):
             self.image_url = ""
         super().save(*args, **kwargs)
@@ -78,7 +84,14 @@ class Subcategory(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(f"{self.category.name}-{self.name}")
+            cat_name = self.category.name if self.category else "subcat"
+            base_slug = slugify(f"{cat_name}-{self.name}") or "subcat"
+            slug = base_slug
+            counter = 1
+            while Subcategory.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         if self.image and self.image_url and self.image_url.startswith("/media/"):
             self.image_url = ""
         super().save(*args, **kwargs)
