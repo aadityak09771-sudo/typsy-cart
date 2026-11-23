@@ -56,20 +56,30 @@ class Category(models.Model):
         )
         if self.image:
             try:
-                if hasattr(self.image, "path") and os.path.exists(self.image.path):
-                    return self.image.url
+                url = self.image.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+                if hasattr(self.image, "path"):
+                    try:
+                        if os.path.exists(self.image.path):
+                            return url
+                    except (NotImplementedError, Exception):
+                        return url
                 elif not hasattr(self.image, "path"):
-                    return self.image.url
+                    return url
             except Exception:
                 pass
         if self.image_url and self.image_url.strip():
-            if self.image_url.startswith("/media/"):
-                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+            url = self.image_url.strip()
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            if url.startswith("/media/"):
+                rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                 if os.path.exists(full_path):
-                    return self.image_url
+                    return url
             else:
-                return self.image_url
+                return url
         return fallback
 
 
@@ -118,20 +128,30 @@ class Subcategory(models.Model):
     def get_image_url(self):
         if self.image:
             try:
-                if hasattr(self.image, "path") and os.path.exists(self.image.path):
-                    return self.image.url
+                url = self.image.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+                if hasattr(self.image, "path"):
+                    try:
+                        if os.path.exists(self.image.path):
+                            return url
+                    except (NotImplementedError, Exception):
+                        return url
                 elif not hasattr(self.image, "path"):
-                    return self.image.url
+                    return url
             except Exception:
                 pass
         if self.image_url and self.image_url.strip():
-            if self.image_url.startswith("/media/"):
-                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+            url = self.image_url.strip()
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            if url.startswith("/media/"):
+                rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                 if os.path.exists(full_path):
-                    return self.image_url
+                    return url
             else:
-                return self.image_url
+                return url
         if self.category:
             return self.category.get_image_url()
         return "/static/home/images/tipsycart-logo.png"
@@ -304,8 +324,17 @@ class Product(models.Model):
     def get_image_url(self):
         if self.image:
             try:
-                if hasattr(self.image, "path") and os.path.exists(self.image.path):
-                    return self.image.url
+                url = self.image.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+                if hasattr(self.image, "path"):
+                    try:
+                        if os.path.exists(self.image.path):
+                            return url
+                    except (NotImplementedError, Exception):
+                        return url
+                elif not hasattr(self.image, "path"):
+                    return url
             except Exception:
                 pass
             fname = os.path.basename(self.image.name or "")
@@ -313,16 +342,19 @@ class Product(models.Model):
                 return f"/static/home/images/products/{fname}"
 
         if self.image_url and self.image_url.strip():
-            if self.image_url.startswith("/media/"):
-                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+            url = self.image_url.strip()
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            if url.startswith("/media/"):
+                rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                 if os.path.exists(full_path):
-                    return self.image_url
+                    return url
                 fname = os.path.basename(rel_path)
                 if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
                     return f"/static/home/images/products/{fname}"
             else:
-                return self.image_url
+                return url
 
         if self.category_ref:
             return self.category_ref.get_image_url()
