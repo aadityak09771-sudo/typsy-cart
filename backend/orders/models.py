@@ -286,8 +286,10 @@ class OrderItem(models.Model):
 
     @property
     def image_url(self):
-        if self.product and getattr(self.product, "image_url", None):
-            return self.product.image_url
+        if self.product:
+            if hasattr(self.product, "get_image_url"):
+                return self.product.get_image_url()
+            return getattr(self.product, "image_url", "")
         return ""
 
     def __str__(self):

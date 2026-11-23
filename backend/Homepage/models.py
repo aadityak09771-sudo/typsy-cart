@@ -53,9 +53,17 @@ class HeroBanner(models.Model):
         return f"Banner #{self.id}: {self.title[:50]}"
 
     def save(self, *args, **kwargs):
-        if self.image:
-            self.image_url = self.image.url
+        if self.image and self.image_url and self.image_url.startswith("/media/"):
+            self.image_url = ""
         super().save(*args, **kwargs)
+
+    def get_image_url(self):
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        return self.image_url or "/static/home/images/shop-banner-desktop.png"
 
 
 class FAQItem(models.Model):

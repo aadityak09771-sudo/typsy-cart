@@ -303,8 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 subcategory: String(product.subcategory || ""),
                 brand: String(product.brand || ""),
                 image_url: safeImageURL(product.image_url),
-                categorySlug: categorySlug(product.category),
-                subcategorySlug: subcategorySlug(product.subcategory)
+                categorySlug: product.category_slug || categorySlug(product.category),
+                subcategorySlug: product.subcategory_slug || subcategorySlug(product.subcategory)
             })).filter(product =>
                 Number.isInteger(product.id) && product.id > 0
             );

@@ -22,7 +22,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from delivery.models import DeliveryAssignment, OrderStatusHistory
-from products.models import Product
+from products.models import Product, Category, Subcategory
 
 from .models import Cart, CartItem, Order, OrderItem, Coupon
 
@@ -156,6 +156,8 @@ def products_json(request):
                 "subcategory": product.subcategory,
                 "category_id": product.category_ref_id,
                 "category_slug": product.category_ref.slug if product.category_ref else "",
+                "subcategory_id": product.subcategory_ref_id,
+                "subcategory_slug": product.subcategory_ref.slug if product.subcategory_ref else "",
                 "brand": product.brand,
                 "image_url": product.get_image_url(),
                 "price": str(product.price),
@@ -175,6 +177,43 @@ def products_json(request):
     return JsonResponse({
         "products": items
     })
+
+
+# PUBLIC API: Active categories & subcategories
+@require_GET
+def categories_json(request):
+    try:
+        categories = (
+            Category.objects.filter(is_active=True)
+            .prefetch_related("subcategories")
+            .order_by("display_order", "name")
+        )
+        data = [
+            {
+                "id": cat.id,
+                "name": cat.name,
+                "slug": cat.slug,
+                "description": cat.description,
+                "image_url": cat.get_image_url(),
+                "display_order": cat.display_order,
+                "subcategories": [
+                    {
+                        "id": sub.id,
+                        "name": sub.name,
+                        "slug": sub.slug,
+                        "description": sub.description,
+                        "image_url": sub.get_image_url(),
+                        "display_order": sub.display_order,
+                    }
+                    for sub in cat.subcategories.filter(is_active=True).order_by("display_order", "name")
+                ],
+            }
+            for cat in categories
+        ]
+        return JsonResponse({"categories": data})
+    except Exception as e:
+        logger.exception("Error in categories_json: %s", e)
+        return JsonResponse({"categories": []})
 
 
 
@@ -199,7 +238,7 @@ def cart_json(request):
                 "price": str(item.product.price),
                 "quantity": item.quantity,
                 "subtotal": str(sub),
-                "image_url": item.product.image_url if item.product else "",
+                "image_url": item.product.get_image_url() if item.product else "",
             })
 
     return JsonResponse({
@@ -523,7 +562,7 @@ def place_order(request):
                     "quantity": item.quantity,
                     "price": str(item.price),
                     "subtotal": str(item.subtotal),
-                    "image_url": item.product.image_url if item.product else "",
+                    "image_url": item.product.get_image_url() if item.product else "",
                 }
                 for item in order.items.all()
             ]

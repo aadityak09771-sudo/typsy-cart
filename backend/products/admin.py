@@ -24,6 +24,39 @@ from .services.zip_importer import ZipProductImporter
 MAX_CSV_SIZE = 10 * 1024 * 1024
 
 
+def validate_direct_image_url(url_val):
+    """Validates that a URL is a direct image link and not a search engine or HTML page."""
+    if not url_val:
+        return url_val
+    clean_val = str(url_val).strip()
+    if not clean_val:
+        return clean_val
+    invalid_patterns = [
+        "google.com/search",
+        "google.com/imgres",
+        "bing.com/images/search",
+        "yahoo.com/search",
+        "pinterest.com/pin/",
+        "facebook.com",
+        "instagram.com",
+    ]
+    for pattern in invalid_patterns:
+        if pattern in clean_val.lower():
+            raise forms.ValidationError(
+                "Please enter a direct public image link (e.g. ending in .jpg, .png, .webp), not a search engine or social media link."
+            )
+    if not (
+        clean_val.startswith("http://")
+        or clean_val.startswith("https://")
+        or clean_val.startswith("/static/")
+        or clean_val.startswith("/media/")
+    ):
+        raise forms.ValidationError(
+            "Image URL must start with http://, https://, /static/, or /media/."
+        )
+    return clean_val
+
+
 # ---------------------------------------------------------------------------
 # CUSTOM ADMIN FILTERS
 # ---------------------------------------------------------------------------
@@ -68,17 +101,46 @@ class DiscountStatusFilter(admin.SimpleListFilter):
 
 
 # ---------------------------------------------------------------------------
-# CATEGORY ADMIN
+# CATEGORY ADMIN FORM & ADMIN
 # ---------------------------------------------------------------------------
+
+class CategoryAdminForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = "__all__"
+
+    def clean_image(self):
+        img = self.cleaned_data.get("image")
+        if img and hasattr(img, "size"):
+            if img.size > 12 * 1024 * 1024:
+                raise forms.ValidationError("Category image file must be smaller than 12 MB.")
+            ext = os.path.splitext(img.name)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]:
+                raise forms.ValidationError("Supported image formats are JPG, PNG, WEBP, GIF, and SVG.")
+        return img
+
+    def clean_image_url(self):
+        return validate_direct_image_url(self.cleaned_data.get("image_url"))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        image = cleaned_data.get("image") or (self.instance and self.instance.image)
+        image_url = cleaned_data.get("image_url")
+        if image and image_url and image_url.startswith("/media/"):
+            cleaned_data["image_url"] = ""
+        return cleaned_data
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
+    form = CategoryAdminForm
     list_display = (
         "image_thumb",
         "name",
         "slug",
         "display_order",
         "product_count_badge",
+        "subcategory_count_badge",
         "is_active",
         "created_at",
     )
@@ -88,12 +150,24 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ("name", "description", "slug")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("display_order", "name")
+    readonly_fields = ("image_preview_large", "created_at")
 
     fieldsets = (
         ("Category Details", {"fields": ("name", "slug", "description")}),
-        ("Image", {"fields": ("image", "image_url")}),
+        ("Option 1: Upload Image from Computer", {
+            "fields": ("image", "image_preview_large"),
+            "description": "Upload an image file directly from your computer (JPG, PNG, WEBP, GIF, SVG). Maximum 12 MB.",
+        }),
+        ("Option 2: Enter External Direct Image URL", {
+            "fields": ("image_url",),
+            "description": "Or enter a public direct image link (e.g. https://.../photo.jpg). Leave blank if uploading an image file above.",
+        }),
         ("Display & Status", {"fields": ("display_order", "is_active")}),
     )
+
+    class Media:
+        js = ("products/admin_dynamic.js",)
+        css = {"all": ("products/admin_dynamic.css",)}
 
     @admin.display(description="Image")
     def image_thumb(self, obj):
@@ -101,6 +175,34 @@ class CategoryAdmin(admin.ModelAdmin):
         return format_html(
             '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" />',
             url,
+        )
+
+    @admin.display(description="Current Image")
+    def image_preview_large(self, obj):
+        if not obj or not obj.pk:
+            return "Save category first to view saved image."
+        url = obj.get_image_url()
+        if obj.image:
+            source_badge = format_html(
+                '<span style="color: #0284c7; font-weight: 600;">✓ Uploaded from Computer:</span> {}',
+                obj.image.name
+            )
+        elif obj.image_url:
+            source_badge = format_html(
+                '<span style="color: #7c3aed; font-weight: 600;">✓ External Direct URL:</span> {}',
+                obj.image_url
+            )
+        else:
+            source_badge = mark_safe('<span style="color: #64748b;">Using Default Store Image</span>')
+
+        return format_html(
+            '<div class="tc-current-image-container" data-current-url="{}" style="margin-top: 6px;">'
+            '<img src="{}" style="max-width: 200px; max-height: 150px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; padding: 4px; background: #fff0f5;" /><br>'
+            '<small style="display: block; margin-top: 6px; font-size: 11px;">{}</small>'
+            '</div>',
+            url,
+            url,
+            source_badge,
         )
 
     @admin.display(description="Active Products")
@@ -113,12 +215,21 @@ class CategoryAdmin(admin.ModelAdmin):
             bg, color, count,
         )
 
+    @admin.display(description="Subcategories")
+    def subcategory_count_badge(self, obj):
+        count = obj.subcategories.count()
+        return format_html(
+            '<span style="background: #fdf2f8; color: #a51655; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-size: 11px;">{} subcats</span>',
+            count,
+        )
+
     def delete_model(self, request, obj):
-        if obj.products.exists():
-            count = obj.products.count()
+        prod_count = obj.products.count()
+        subcat_count = obj.subcategories.count()
+        if prod_count > 0 or subcat_count > 0:
             self.message_user(
                 request,
-                f"Cannot delete category '{obj.name}' because it contains {count} products. Please reassign or delete these products first.",
+                f"Cannot delete category '{obj.name}' because it contains {prod_count} products and {subcat_count} subcategories. Please deactivate the category instead (uncheck Active) or reassign items first.",
                 level=messages.ERROR,
             )
             return
@@ -127,12 +238,14 @@ class CategoryAdmin(admin.ModelAdmin):
     def delete_queryset(self, request, queryset):
         blocked = []
         for cat in queryset:
-            if cat.products.exists():
-                blocked.append(f"{cat.name} ({cat.products.count()} products)")
+            p_count = cat.products.count()
+            s_count = cat.subcategories.count()
+            if p_count > 0 or s_count > 0:
+                blocked.append(f"{cat.name} ({p_count} products, {s_count} subcategories)")
         if blocked:
             self.message_user(
                 request,
-                f"Cannot delete the following categories because they contain products: {', '.join(blocked)}. Reassign products first.",
+                f"Cannot delete the following categories because they contain products or subcategories: {', '.join(blocked)}. Please deactivate them instead.",
                 level=messages.ERROR,
             )
             return
@@ -140,12 +253,41 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 # ---------------------------------------------------------------------------
-# SUBCATEGORY ADMIN
+# SUBCATEGORY ADMIN FORM & ADMIN
 # ---------------------------------------------------------------------------
+
+class SubcategoryAdminForm(forms.ModelForm):
+    class Meta:
+        model = Subcategory
+        fields = "__all__"
+
+    def clean_image(self):
+        img = self.cleaned_data.get("image")
+        if img and hasattr(img, "size"):
+            if img.size > 12 * 1024 * 1024:
+                raise forms.ValidationError("Subcategory image file must be smaller than 12 MB.")
+            ext = os.path.splitext(img.name)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]:
+                raise forms.ValidationError("Supported image formats are JPG, PNG, WEBP, GIF, and SVG.")
+        return img
+
+    def clean_image_url(self):
+        return validate_direct_image_url(self.cleaned_data.get("image_url"))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        image = cleaned_data.get("image") or (self.instance and self.instance.image)
+        image_url = cleaned_data.get("image_url")
+        if image and image_url and image_url.startswith("/media/"):
+            cleaned_data["image_url"] = ""
+        return cleaned_data
+
 
 @admin.register(Subcategory)
 class SubcategoryAdmin(admin.ModelAdmin):
+    form = SubcategoryAdminForm
     list_display = (
+        "image_thumb",
         "name",
         "category_badge",
         "display_order",
@@ -153,18 +295,66 @@ class SubcategoryAdmin(admin.ModelAdmin):
         "is_active",
         "created_at",
     )
-    list_display_links = ("name",)
+    list_display_links = ("image_thumb", "name")
     list_editable = ("display_order", "is_active")
     list_filter = ("category", "is_active")
     search_fields = ("name", "category__name", "description")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("category__display_order", "display_order", "name")
+    readonly_fields = ("image_preview_large", "created_at")
 
     fieldsets = (
         ("Subcategory Info", {"fields": ("category", "name", "slug", "description")}),
-        ("Image", {"fields": ("image", "image_url")}),
+        ("Option 1: Upload Image from Computer", {
+            "fields": ("image", "image_preview_large"),
+            "description": "Upload a subcategory image file directly from your computer (JPG, PNG, WEBP, GIF, SVG). Maximum 12 MB.",
+        }),
+        ("Option 2: Enter External Direct Image URL", {
+            "fields": ("image_url",),
+            "description": "Or enter a public direct image link (e.g. https://.../photo.jpg). Leave blank if uploading an image file above.",
+        }),
         ("Display & Status", {"fields": ("display_order", "is_active")}),
     )
+
+    class Media:
+        js = ("products/admin_dynamic.js",)
+        css = {"all": ("products/admin_dynamic.css",)}
+
+    @admin.display(description="Image")
+    def image_thumb(self, obj):
+        url = obj.get_image_url()
+        return format_html(
+            '<img src="{}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;" />',
+            url,
+        )
+
+    @admin.display(description="Current Image")
+    def image_preview_large(self, obj):
+        if not obj or not obj.pk:
+            return "Save subcategory first to view saved image."
+        url = obj.get_image_url()
+        if obj.image:
+            source_badge = format_html(
+                '<span style="color: #0284c7; font-weight: 600;">✓ Uploaded from Computer:</span> {}',
+                obj.image.name
+            )
+        elif obj.image_url:
+            source_badge = format_html(
+                '<span style="color: #7c3aed; font-weight: 600;">✓ External Direct URL:</span> {}',
+                obj.image_url
+            )
+        else:
+            source_badge = mark_safe('<span style="color: #64748b;">Using Default Store Image</span>')
+
+        return format_html(
+            '<div class="tc-current-image-container" data-current-url="{}" style="margin-top: 6px;">'
+            '<img src="{}" style="max-width: 200px; max-height: 150px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; padding: 4px; background: #fff0f5;" /><br>'
+            '<small style="display: block; margin-top: 6px; font-size: 11px;">{}</small>'
+            '</div>',
+            url,
+            url,
+            source_badge,
+        )
 
     @admin.display(description="Parent Category")
     def category_badge(self, obj):
@@ -181,9 +371,35 @@ class SubcategoryAdmin(admin.ModelAdmin):
             count,
         )
 
+    def delete_model(self, request, obj):
+        prod_count = obj.products.count()
+        if prod_count > 0:
+            self.message_user(
+                request,
+                f"Cannot delete subcategory '{obj.name}' because it contains {prod_count} products. Please deactivate the subcategory instead (uncheck Active) or reassign products first.",
+                level=messages.ERROR,
+            )
+            return
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        blocked = []
+        for sub in queryset:
+            p_count = sub.products.count()
+            if p_count > 0:
+                blocked.append(f"{sub.name} ({p_count} products)")
+        if blocked:
+            self.message_user(
+                request,
+                f"Cannot delete the following subcategories because they contain products: {', '.join(blocked)}. Please deactivate them instead.",
+                level=messages.ERROR,
+            )
+            return
+        super().delete_queryset(request, queryset)
+
 
 # ---------------------------------------------------------------------------
-# PRODUCT ADMIN FORM
+# PRODUCT ADMIN FORM & ADMIN
 # ---------------------------------------------------------------------------
 
 class ProductAdminForm(forms.ModelForm):
@@ -201,6 +417,9 @@ class ProductAdminForm(forms.ModelForm):
                 raise forms.ValidationError("Supported image formats are JPG, PNG, WEBP, and GIF.")
         return uploaded_image
 
+    def clean_image_url(self):
+        return validate_direct_image_url(self.cleaned_data.get("image_url"))
+
     def clean(self):
         cleaned_data = super().clean()
         price = cleaned_data.get("price")
@@ -208,6 +427,16 @@ class ProductAdminForm(forms.ModelForm):
         discount_enabled = cleaned_data.get("discount_enabled")
         discount_val = cleaned_data.get("discount_value")
         discount_type = cleaned_data.get("discount_type")
+        category_ref = cleaned_data.get("category_ref")
+        subcategory_ref = cleaned_data.get("subcategory_ref")
+
+        # Validate Category-Subcategory Relationship
+        if category_ref and subcategory_ref:
+            if subcategory_ref.category_id != category_ref.id:
+                self.add_error(
+                    "subcategory_ref",
+                    f"Subcategory '{subcategory_ref.name}' belongs to category '{subcategory_ref.category.name}', not '{category_ref.name}'. Please choose a matching subcategory."
+                )
 
         if orig_price is None or orig_price <= 0:
             if price and price > 0:
@@ -219,6 +448,12 @@ class ProductAdminForm(forms.ModelForm):
                 self.add_error("discount_value", "Percentage discount cannot exceed 99%.")
             elif discount_type == "fixed" and orig_price and discount_val >= orig_price:
                 self.add_error("discount_value", "Fixed discount cannot equal or exceed original price.")
+
+        # Clean up redundant /media/ string from external image_url if a local image exists
+        image = cleaned_data.get("image") or (self.instance and self.instance.image)
+        image_url = cleaned_data.get("image_url")
+        if image and image_url and image_url.startswith("/media/"):
+            cleaned_data["image_url"] = ""
 
         return cleaned_data
 
@@ -324,14 +559,22 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Product Image",
+            "Option 1: Upload Image from Computer",
             {
                 "fields": (
                     "image",
-                    "image_url",
                     "image_preview_large",
                 ),
-                "description": "Upload a product photo directly from your computer (JPG, PNG, WEBP).",
+                "description": "Upload a product photo directly from your computer (JPG, PNG, WEBP, GIF). Maximum 12 MB.",
+            },
+        ),
+        (
+            "Option 2: Enter External Direct Image URL",
+            {
+                "fields": (
+                    "image_url",
+                ),
+                "description": "Or enter an external public direct image link. Leave blank if uploading an image file above.",
             },
         ),
         (
@@ -347,6 +590,10 @@ class ProductAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ("image_preview_large", "created_at")
+
+    class Media:
+        js = ("products/admin_dynamic.js",)
+        css = {"all": ("products/admin_dynamic.css",)}
 
     # -----------------------------------------------------------------------
     # DISPLAY METHODS
@@ -365,10 +612,27 @@ class ProductAdmin(admin.ModelAdmin):
         if not obj or not obj.pk:
             return "Save product first to view image preview."
         url = obj.get_image_url()
+        if obj.image:
+            source_badge = format_html(
+                '<span style="color: #0284c7; font-weight: 600;">✓ Uploaded from Computer:</span> {}',
+                obj.image.name
+            )
+        elif obj.image_url:
+            source_badge = format_html(
+                '<span style="color: #7c3aed; font-weight: 600;">✓ External Direct URL:</span> {}',
+                obj.image_url
+            )
+        else:
+            source_badge = mark_safe('<span style="color: #64748b;">Using Default Store Image</span>')
+
         return format_html(
-            '<div style="margin-top: 6px;"><img src="{}" style="max-width: 220px; max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; padding: 6px; background: #fff0f5;" /><br><small style="color: #64748b;">Image Path: {}</small></div>',
+            '<div class="tc-current-image-container" data-current-url="{}" style="margin-top: 6px;">'
+            '<img src="{}" style="max-width: 220px; max-height: 220px; object-fit: contain; border-radius: 10px; border: 1px solid #e2e8f0; padding: 6px; background: #fff0f5;" /><br>'
+            '<small style="display: block; margin-top: 6px; font-size: 11px;">{}</small>'
+            '</div>',
             url,
-            obj.image_url or (obj.image.url if obj.image else "Default"),
+            url,
+            source_badge,
         )
 
     @admin.display(description="Category", ordering="category")

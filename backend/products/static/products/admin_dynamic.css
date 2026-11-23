@@ -1,0 +1,71 @@
+/* Admin Dynamic Enhancements for TipsyCart */
+
+.tc-current-image-container {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #fdf2f8;
+  border: 1px solid #fce7f3;
+  border-radius: 8px;
+  max-width: 380px;
+}
+
+.tc-current-image-container img {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.tc-live-image-preview-box {
+  background: #ffffff;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  max-width: 420px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.tc-preview-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a51655;
+  margin-bottom: 8px;
+}
+
+.tc-preview-frame {
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fdf2f8;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #fce7f3;
+}
+
+.tc-preview-frame img {
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.tc-preview-status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tc-badge-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}

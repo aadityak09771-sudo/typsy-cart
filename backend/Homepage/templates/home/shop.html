@@ -100,11 +100,9 @@ Shop groceries, daily essentials, personal care and safety products at Tipsy Car
                 <label class="visually-hidden" for="category-filter">Category</label>
                 <select id="category-filter" aria-label="Filter products">
                     <option value="all">All Categories</option>
-                    <option value="period-care">Period Care</option>
-                    <option value="personal-safety">Personal Safety</option>
-                    <option value="personal-care">Personal Care</option>
-                    <option value="daily-essentials">Daily Essentials</option>
-                    <option value="groceries">Groceries</option>
+                    {% for cat in categories_list %}
+                    <option value="{{ cat.slug }}">{{ cat.name }}</option>
+                    {% endfor %}
                 </select>
 
                 <label class="visually-hidden" for="sort-filter">Sort products</label>

@@ -11,6 +11,18 @@ urlpatterns = [
         views.products_json,
         name="products_json",
     ),
+    path(
+        "api/products/",
+        views.products_json,
+        name="api_products_json",
+    ),
+
+    # Public dynamic category listing API
+    path(
+        "api/categories/",
+        views.categories_json,
+        name="categories_json",
+    ),
 
     # Existing logged-in cart
     path("cart/", views.cart_json, name="cart_json"),

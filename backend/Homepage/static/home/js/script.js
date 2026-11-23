@@ -42,33 +42,44 @@ document.addEventListener("DOMContentLoaded", () => {
     let cart = loadSavedCart();
     let busy = false;
 
-    const categories = [
-        {
-            slug: "period-care",
-            title: "Period Care",
-            description: "Menstrual hygiene and period care essentials."
-        },
-        {
-            slug: "personal-safety",
-            title: "Personal Safety",
-            description: "Everyday personal safety essentials."
-        },
-        {
-            slug: "personal-care",
-            title: "Personal Care",
-            description: "Skincare, hygiene and personal care."
-        },
-        {
-            slug: "daily-essentials",
-            title: "Daily Essentials",
-            description: "Useful products for your everyday routine."
-        },
-        {
-            slug: "groceries",
-            title: "Groceries",
-            description: "Everyday groceries and food essentials."
+    let categories = [];
+    try {
+        const catScript = document.getElementById("homepage-categories-data");
+        if (catScript) {
+            categories = JSON.parse(catScript.textContent || "[]");
         }
-    ];
+    } catch (e) {
+        console.warn("Failed to parse homepage categories:", e);
+    }
+    if (!Array.isArray(categories) || categories.length === 0) {
+        categories = [
+            {
+                slug: "period-care",
+                title: "Period Care",
+                description: "Menstrual hygiene and period care essentials."
+            },
+            {
+                slug: "personal-safety",
+                title: "Personal Safety",
+                description: "Everyday personal safety essentials."
+            },
+            {
+                slug: "personal-care",
+                title: "Personal Care",
+                description: "Skincare, hygiene and personal care."
+            },
+            {
+                slug: "daily-essentials",
+                title: "Daily Essentials",
+                description: "Useful products for your everyday routine."
+            },
+            {
+                slug: "groceries",
+                title: "Groceries",
+                description: "Everyday groceries and food essentials."
+            }
+        ];
+    }
 
     // --------------------------------
     // Safe helpers
@@ -375,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return "groceries";
         }
 
-        return "";
+        return category || "";
     }
 
     // --------------------------------

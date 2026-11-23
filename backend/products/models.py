@@ -25,8 +25,8 @@ class Category(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        if self.image and not self.image_url:
-            self.image_url = self.image.url
+        if self.image and self.image_url and self.image_url.startswith("/media/"):
+            self.image_url = ""
         super().save(*args, **kwargs)
 
     @property
@@ -35,8 +35,21 @@ class Category(models.Model):
 
     def get_image_url(self):
         if self.image:
-            return self.image.url
-        return self.image_url or "/static/home/images/cat-daily-essentials.jpg"
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        if self.image_url:
+            return self.image_url
+        slug_map = {
+            "period-care": "/static/home/images/cat-period-care.jpg",
+            "personal-safety": "/static/home/images/cat-personal-safety.jpg",
+            "safety": "/static/home/images/cat-personal-safety.jpg",
+            "personal-care": "/static/home/images/cat-personal-care.jpg",
+            "daily-essentials": "/static/home/images/cat-daily-essentials.jpg",
+            "groceries": "/static/home/images/cat-groceries.jpg",
+        }
+        return slug_map.get(self.slug, "/static/home/images/tipsycart-logo.png")
 
 
 class Subcategory(models.Model):
@@ -66,13 +79,25 @@ class Subcategory(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(f"{self.category.name}-{self.name}")
-        if self.image and not self.image_url:
-            self.image_url = self.image.url
+        if self.image and self.image_url and self.image_url.startswith("/media/"):
+            self.image_url = ""
         super().save(*args, **kwargs)
 
     @property
     def product_count(self):
         return self.products.filter(is_active=True).count()
+
+    def get_image_url(self):
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        if self.image_url:
+            return self.image_url
+        if self.category:
+            return self.category.get_image_url()
+        return "/static/home/images/tipsycart-logo.png"
 
 
 class Product(models.Model):
@@ -213,11 +238,11 @@ class Product(models.Model):
         if self.subcategory_ref:
             self.subcategory = self.subcategory_ref.name
 
-        # 2. Image sync
-        if self.image:
-            self.image_url = self.image.url
+        # Clean up redundant /media/ string from external image_url if a local image exists
+        if self.image and self.image_url and self.image_url.startswith("/media/"):
+            self.image_url = ""
 
-        # 3. Original price fallback
+        # 2. Original price fallback
         if self.original_price is None or self.original_price <= 0:
             self.original_price = self.price
 
@@ -239,8 +264,15 @@ class Product(models.Model):
 
     def get_image_url(self):
         if self.image:
-            return self.image.url
-        return self.image_url or "/static/home/images/cat-daily-essentials.jpg"
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        if self.image_url:
+            return self.image_url
+        if self.category_ref:
+            return self.category_ref.get_image_url()
+        return "/static/home/images/tipsycart-logo.png"
 
     @property
     def discount_percentage(self):

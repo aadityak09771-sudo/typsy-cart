@@ -20,37 +20,52 @@ def home(request):
                 logger.warning("Could not auto-seed initial products: %s", se)
 
         hero_banner = HeroBanner.objects.filter(is_active=True).first()
-        categories_list = Category.objects.filter(is_active=True).order_by("display_order")
+        categories_qs = Category.objects.filter(is_active=True).order_by("display_order")
+        categories_list = list(categories_qs)
+        categories_data = [
+            {
+                "id": c.id,
+                "title": c.name,
+                "name": c.name,
+                "slug": c.slug,
+                "description": c.description or f"{c.name} essentials at TipsyCart.",
+                "image_url": c.get_image_url(),
+            }
+            for c in categories_list
+        ]
 
         # Prioritize featured products, fallback to recent
         featured_qs = Product.objects.filter(is_active=True, is_featured=True)
         if not featured_qs.exists():
             featured_qs = Product.objects.filter(is_active=True)
 
-        featured_products = list(
-            featured_qs.order_by("-created_at")[:12].values(
-                "id",
-                "product_number",
-                "name",
-                "category",
-                "subcategory",
-                "price",
-                "original_price",
-                "discount_enabled",
-                "stock",
-                "image_url"
-            )
-        )
+        featured_products = [
+            {
+                "id": p.id,
+                "product_number": p.product_number or "",
+                "name": p.name,
+                "category": p.category,
+                "subcategory": p.subcategory,
+                "price": str(p.price),
+                "original_price": str(p.original_price or p.price),
+                "discount_enabled": p.discount_enabled,
+                "stock": p.stock,
+                "image_url": p.get_image_url(),
+            }
+            for p in featured_qs.order_by("-created_at")[:12]
+        ]
     except Exception as e:
         logger.exception("Error fetching featured products for homepage: %s", e)
         featured_products = []
         hero_banner = None
         categories_list = []
+        categories_data = []
 
     return render(request, "home/index.html", {
         "featured_products": featured_products,
         "hero_banner": hero_banner,
         "categories_list": categories_list,
+        "categories_data": categories_data,
     })
 
 
@@ -77,12 +92,15 @@ def shop(request):
         products = Product.objects.filter(
             is_active=True
         ).order_by("-created_at")
+        categories_list = Category.objects.filter(is_active=True).order_by("display_order")
     except Exception as e:
         logger.exception("Error fetching products for shop page: %s", e)
         products = []
+        categories_list = []
 
     return render(request, "home/shop.html", {
-        "products": products
+        "products": products,
+        "categories_list": categories_list,
     })
 
 
