@@ -10,8 +10,19 @@ from Homepage.models import StoreSetting, HeroBanner, FAQItem
 logger = logging.getLogger(__name__)
 
 
+def ensure_categories_exist():
+    """Ensure core categories exist in DB; auto-sync from catalog if empty."""
+    try:
+        if not Category.objects.filter(is_active=True).exists():
+            from sync_initial_data import run_sync
+            run_sync()
+    except Exception as e:
+        logger.warning("Could not auto-seed categories: %s", e)
+
+
 def home(request):
     try:
+        ensure_categories_exist()
         if not Product.objects.exists():
             from django.core.management import call_command
             try:
@@ -71,6 +82,7 @@ def home(request):
 
 def categories(request):
     try:
+        ensure_categories_exist()
         categories_list = Category.objects.filter(is_active=True).prefetch_related("subcategories").order_by("display_order")
     except Exception as e:
         logger.exception("Error fetching categories: %s", e)
@@ -82,6 +94,7 @@ def categories(request):
 
 def shop(request):
     try:
+        ensure_categories_exist()
         if not Product.objects.exists():
             from django.core.management import call_command
             try:

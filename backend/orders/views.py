@@ -142,6 +142,13 @@ def products_json(request):
             except Exception as se:
                 logger.warning("Could not auto-seed initial products: %s", se)
 
+        if not Category.objects.filter(is_active=True).exists():
+            try:
+                from sync_initial_data import run_sync
+                run_sync()
+            except Exception as se:
+                logger.warning("Could not sync categories: %s", se)
+
         products = Product.objects.filter(
             is_active=True
         ).select_related("category_ref", "subcategory_ref").order_by("id")
@@ -183,6 +190,13 @@ def products_json(request):
 @require_GET
 def categories_json(request):
     try:
+        if not Category.objects.filter(is_active=True).exists():
+            try:
+                from sync_initial_data import run_sync
+                run_sync()
+            except Exception as se:
+                logger.warning("Could not sync categories: %s", se)
+
         categories = (
             Category.objects.filter(is_active=True)
             .prefetch_related("subcategories")
