@@ -4,7 +4,7 @@
 {% block title %}Tipsy Cart | Everyday Care{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/style.css' %}?v=4.5">
+<link rel="stylesheet" href="{% static 'home/css/style.css' %}?v=4.6">
 {% endblock %}
 
 {% block content %}
@@ -125,5 +125,5 @@
 {% block extra_js %}
 {{ featured_products|json_script:"homepage-products-data" }}
 {{ categories_data|json_script:"homepage-categories-data" }}
-<script src="{% static 'home/js/script.js' %}?v=2.2"></script>
+<script src="{% static 'home/js/script.js' %}?v=2.3"></script>
 {% endblock %}

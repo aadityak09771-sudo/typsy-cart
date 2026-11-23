@@ -125,6 +125,55 @@ document.addEventListener("DOMContentLoaded", () => {
             : "0.00";
     }
 
+    function formatCurrency(value) {
+        const price = Number(value);
+        if (!Number.isFinite(price) || price < 0) return "0";
+        return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
+    }
+
+    function renderProductPriceHTML(product) {
+        const finalPrice = Math.max(0, Number(product.price) || 0);
+        const originalPrice = Number(product.original_price);
+        const isDiscountEnabled = Boolean(
+            product.discount_enabled === true ||
+            product.discount_enabled === "true" ||
+            product.discount_enabled === 1
+        );
+
+        const hasValidDiscount = isDiscountEnabled &&
+            Number.isFinite(originalPrice) &&
+            originalPrice > finalPrice &&
+            finalPrice > 0;
+
+        if (!hasValidDiscount) {
+            return `
+                <div class="tc-price-wrap">
+                    <div class="tc-price-row">
+                        <span class="tc-price-current">₹${formatCurrency(finalPrice)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        const savings = Math.max(0, Number(product.savings_amount) || (originalPrice - finalPrice));
+        let discountPct = Number(product.discount_percentage);
+        if (!Number.isFinite(discountPct) || discountPct <= 0) {
+            discountPct = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
+        }
+        discountPct = Math.min(99, Math.max(1, Math.round(discountPct)));
+
+        return `
+            <div class="tc-price-wrap has-discount">
+                <div class="tc-price-row">
+                    <span class="tc-price-current">₹${formatCurrency(finalPrice)}</span>
+                    <span class="tc-price-original">₹${formatCurrency(originalPrice)}</span>
+                    <span class="tc-price-discount">${discountPct}% OFF</span>
+                </div>
+                <div class="tc-price-savings">You save ₹${formatCurrency(savings)}</div>
+            </div>
+        `;
+    }
+
     function categorySlug(value) {
         return String(value || "")
             .trim()
@@ -146,6 +195,16 @@ document.addEventListener("DOMContentLoaded", () => {
             subcategory: String(product.subcategory || ""),
             brand: String(product.brand || ""),
             price: Math.max(0, Number(product.price) || 0),
+            original_price: Number(product.original_price) || Math.max(0, Number(product.price) || 0),
+            discount_enabled: Boolean(
+                product.discount_enabled === true ||
+                product.discount_enabled === "true" ||
+                product.discount_enabled === 1
+            ),
+            discount_type: String(product.discount_type || "percentage"),
+            discount_value: Number(product.discount_value) || 0,
+            discount_percentage: Number(product.discount_percentage) || 0,
+            savings_amount: Number(product.savings_amount) || 0,
             stock: Math.max(0, Number(product.stock) || 0),
             image_url: safeImageURL(product.image_url)
         };
@@ -469,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     <div class="tc-product-bottom">
-                        <strong>₹${formatPrice(product.price)}</strong>
+                        ${renderProductPriceHTML(product)}
 
                         <button
                             type="button"

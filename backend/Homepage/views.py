@@ -60,6 +60,10 @@ def home(request):
                 "price": str(p.price),
                 "original_price": str(p.original_price or p.price),
                 "discount_enabled": p.discount_enabled,
+                "discount_type": p.discount_type,
+                "discount_value": str(p.discount_value),
+                "discount_percentage": p.discount_percentage,
+                "savings_amount": str(p.savings_amount),
                 "stock": p.stock,
                 "image_url": p.get_image_url(),
             }
