@@ -107,6 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cat.includes("personal")) {
             return "/static/home/images/cat-personal-care.jpg";
         }
+        if (cat.includes("plastic")) {
+            return "/static/home/images/cat-plastic-items.jpg";
+        }
         return "/static/home/images/cat-daily-essentials.jpg";
     }
 

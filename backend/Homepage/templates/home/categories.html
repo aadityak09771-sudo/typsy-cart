@@ -8,7 +8,7 @@ Explore Tipsy Cart categories: Period Care, Personal Safety, Personal Care, Dail
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/categories.css' %}?v=2.5">
+<link rel="stylesheet" href="{% static 'home/css/categories.css' %}?v=2.6">
 {% endblock %}
 
 {% block content %}
@@ -54,7 +54,7 @@ Explore Tipsy Cart categories: Period Care, Personal Safety, Personal Care, Dail
                         </a>
                     </div>
                     <div class="tc-cat-visual-wrap">
-                        <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-img" loading="lazy">
+                        <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-img" loading="lazy" onerror="this.onerror=null;this.src='/static/home/images/cat-plastic-items.jpg';">
                     </div>
                 </article>
                 {% empty %}

@@ -4,7 +4,7 @@
 {% block title %}Tipsy Cart | Everyday Care{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/style.css' %}?v=4.7">
+<link rel="stylesheet" href="{% static 'home/css/style.css' %}?v=4.8">
 {% endblock %}
 
 {% block content %}
@@ -53,7 +53,7 @@
                     </a>
                 </div>
                 <div class="tc-cat-visual-wrap">
-                    <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-img" loading="lazy">
+                    <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-img" loading="lazy" onerror="this.onerror=null;this.src='/static/home/images/cat-plastic-items.jpg';">
                 </div>
             </article>
             {% empty %}

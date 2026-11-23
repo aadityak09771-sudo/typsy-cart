@@ -1,5 +1,6 @@
 import os
 from decimal import Decimal
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
@@ -40,13 +41,6 @@ class Category(models.Model):
         return self.products.filter(is_active=True).count()
 
     def get_image_url(self):
-        if self.image:
-            try:
-                return self.image.url
-            except Exception:
-                pass
-        if self.image_url:
-            return self.image_url
         slug_map = {
             "period-care": "/static/home/images/cat-period-care.jpg",
             "personal-safety": "/static/home/images/cat-personal-safety.jpg",
@@ -54,8 +48,29 @@ class Category(models.Model):
             "personal-care": "/static/home/images/cat-personal-care.jpg",
             "daily-essentials": "/static/home/images/cat-daily-essentials.jpg",
             "groceries": "/static/home/images/cat-groceries.jpg",
+            "plastic-items": "/static/home/images/cat-plastic-items.jpg",
         }
-        return slug_map.get(self.slug, "/static/home/images/tipsycart-logo.png")
+        fallback = slug_map.get(
+            self.slug,
+            "/static/home/images/cat-plastic-items.jpg" if "plastic" in (self.slug or "") else "/static/home/images/tipsycart-logo.png"
+        )
+        if self.image:
+            try:
+                if hasattr(self.image, "path") and os.path.exists(self.image.path):
+                    return self.image.url
+                elif not hasattr(self.image, "path"):
+                    return self.image.url
+            except Exception:
+                pass
+        if self.image_url and self.image_url.strip():
+            if self.image_url.startswith("/media/"):
+                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                if os.path.exists(full_path):
+                    return self.image_url
+            else:
+                return self.image_url
+        return fallback
 
 
 class Subcategory(models.Model):
@@ -103,11 +118,20 @@ class Subcategory(models.Model):
     def get_image_url(self):
         if self.image:
             try:
-                return self.image.url
+                if hasattr(self.image, "path") and os.path.exists(self.image.path):
+                    return self.image.url
+                elif not hasattr(self.image, "path"):
+                    return self.image.url
             except Exception:
                 pass
-        if self.image_url:
-            return self.image_url
+        if self.image_url and self.image_url.strip():
+            if self.image_url.startswith("/media/"):
+                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                if os.path.exists(full_path):
+                    return self.image_url
+            else:
+                return self.image_url
         if self.category:
             return self.category.get_image_url()
         return "/static/home/images/tipsycart-logo.png"
@@ -280,13 +304,31 @@ class Product(models.Model):
     def get_image_url(self):
         if self.image:
             try:
-                return self.image.url
+                if hasattr(self.image, "path") and os.path.exists(self.image.path):
+                    return self.image.url
             except Exception:
                 pass
-        if self.image_url:
-            return self.image_url
+            fname = os.path.basename(self.image.name or "")
+            if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                return f"/static/home/images/products/{fname}"
+
+        if self.image_url and self.image_url.strip():
+            if self.image_url.startswith("/media/"):
+                rel_path = self.image_url.replace("/media/", "").lstrip("/")
+                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                if os.path.exists(full_path):
+                    return self.image_url
+                fname = os.path.basename(rel_path)
+                if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                    return f"/static/home/images/products/{fname}"
+            else:
+                return self.image_url
+
         if self.category_ref:
             return self.category_ref.get_image_url()
+        cat_lower = (self.category or "").lower()
+        if "plastic" in cat_lower:
+            return "/static/home/images/cat-plastic-items.jpg"
         return "/static/home/images/tipsycart-logo.png"
 
     @property
