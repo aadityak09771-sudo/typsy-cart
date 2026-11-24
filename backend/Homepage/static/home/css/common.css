@@ -1474,3 +1474,289 @@ a {
         justify-content: center;
     }
 }
+
+/* ========================================================
+   TIPSYCART PRODUCT CARD SLIDER, VARIANT CHIPS & STEPPER
+   ======================================================== */
+
+.tc-card-slider {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: #fff7fa;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.tc-slider-track {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.tc-slider-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    padding: 8px;
+    display: block;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.tc-product-card:hover .tc-slider-img,
+.product-card:hover .tc-slider-img {
+    transform: scale(1.03);
+}
+
+.tc-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #fbcfe8;
+    color: #a51655;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 6;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    padding: 0;
+}
+
+.tc-slider-arrow:hover {
+    background: #a51655;
+    color: #ffffff;
+    border-color: #a51655;
+}
+
+.tc-card-slider:hover .tc-slider-arrow {
+    opacity: 1;
+}
+
+.tc-slider-prev {
+    left: 6px;
+}
+
+.tc-slider-next {
+    right: 6px;
+}
+
+@media (max-width: 768px), (hover: none) {
+    .tc-slider-arrow {
+        opacity: 0.85;
+    }
+}
+
+.tc-slider-dots {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    z-index: 6;
+    pointer-events: auto;
+}
+
+.tc-slider-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(244, 114, 182, 0.5);
+    border: 1px solid rgba(165, 22, 85, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tc-slider-dot.active {
+    background: #a51655;
+    width: 14px;
+    border-radius: 4px;
+}
+
+/* Discount Badge */
+.tc-card-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #a51655;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    z-index: 5;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(165, 22, 85, 0.2);
+}
+
+/* Unit Badge */
+.tc-card-unit-badge {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin: 4px 0 6px;
+    width: fit-content;
+}
+
+/* Variant Selector Chips */
+.tc-card-variants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 6px 0 8px;
+}
+
+.tc-variant-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    line-height: 1.2;
+}
+
+.tc-variant-chip:hover {
+    border-color: #be185d;
+    color: #be185d;
+    background: #fff1f6;
+}
+
+.tc-variant-chip.active {
+    border-color: #be185d;
+    color: #be185d;
+    background: #fdf2f8;
+    font-weight: 700;
+    box-shadow: 0 0 0 1px #be185d;
+}
+
+/* Direct Add to Cart Button & Quantity Stepper */
+.tc-card-action-wrap {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.tc-card-add-btn {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1.5px solid #be185d;
+    border-radius: 9px;
+    background: #be185d;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(190, 24, 93, 0.18);
+    text-decoration: none;
+}
+
+.tc-card-add-btn:hover:not(:disabled) {
+    background: #9d174d;
+    border-color: #9d174d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.25);
+}
+
+.tc-card-add-btn:disabled,
+.tc-card-add-btn.disabled {
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.tc-card-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 38px;
+    background: #fdf2f8;
+    border: 1.5px solid #f472b6;
+    border-radius: 9px;
+    overflow: hidden;
+    padding: 2px 3px;
+    box-sizing: border-box;
+}
+
+.tc-stepper-btn {
+    width: 32px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 7px !important;
+    background: #be185d !important;
+    color: #ffffff !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease, transform 0.1s ease !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+}
+
+.tc-stepper-btn:hover {
+    background: #9d174d !important;
+    transform: scale(1.05) !important;
+}
+
+.tc-stepper-btn:active {
+    transform: scale(0.95) !important;
+}
+
+.tc-stepper-qty {
+    font-size: 14px;
+    font-weight: 800;
+    color: #831843;
+    text-align: center;
+    flex: 1;
+    user-select: none;
+    display: inline-block;
+}

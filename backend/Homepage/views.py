@@ -46,29 +46,84 @@ def home(request):
         ]
 
         # Prioritize featured products, fallback to recent
-        featured_qs = Product.objects.filter(is_active=True, is_featured=True)
+        featured_qs = Product.objects.filter(is_active=True, is_featured=True).prefetch_related(
+            "gallery_images", "variants", "colours", "sizes"
+        )
         if not featured_qs.exists():
-            featured_qs = Product.objects.filter(is_active=True)
+            featured_qs = Product.objects.filter(is_active=True).prefetch_related(
+                "gallery_images", "variants", "colours", "sizes"
+            )
 
-        featured_products = [
-            {
+        featured_products = []
+        for p in featured_qs.order_by("-created_at")[:12]:
+            is_var = p.is_variable
+            active_variants = [v for v in p.variants.all() if v.is_active] if is_var else []
+            prod_sizes = [
+                {"id": s.id, "name": s.name}
+                for s in p.sizes.all() if s.is_active
+            ] if is_var else []
+            if is_var and not prod_sizes and active_variants:
+                seen_opt_names = set()
+                for v in active_variants:
+                    opt_title = v.variant_name or v.get_title()
+                    if opt_title and opt_title not in seen_opt_names:
+                        seen_opt_names.add(opt_title)
+                        prod_sizes.append({"id": v.size_id or v.id, "name": opt_title})
+
+            featured_products.append({
                 "id": p.id,
                 "product_number": p.product_number or "",
                 "name": p.name,
                 "category": p.category,
                 "subcategory": p.subcategory,
-                "price": str(p.price),
+                "price": str(p.min_price if is_var else p.price),
                 "original_price": str(p.original_price or p.price),
+                "min_price": str(p.min_price),
+                "max_price": str(p.max_price),
+                "price_range_display": p.price_range_display,
+                "is_variable": is_var,
+                "has_variants": bool(active_variants),
                 "discount_enabled": bool(p.discount_enabled or (p.original_price and p.original_price > p.price)),
                 "discount_type": p.discount_type,
                 "discount_value": str(p.discount_value),
                 "discount_percentage": p.discount_percentage,
                 "savings_amount": str(p.savings_amount),
-                "stock": p.stock,
+                "stock": p.total_stock if is_var else p.stock,
+                "is_available": p.is_available and (p.total_stock > 0 if is_var else p.stock > 0),
                 "image_url": p.get_image_url(),
-            }
-            for p in featured_qs.order_by("-created_at")[:12]
-        ]
+                "gallery_images": [img["url"] for img in p.get_all_images()],
+                "unit_type": p.unit_type,
+                "unit": p.unit or "",
+                "unit_value": str(p.unit_value) if p.unit_value is not None else "",
+                "unit_selector_label": p.unit_selector_label,
+                "sizes": prod_sizes,
+                "colours": [
+                    {"id": c.id, "name": c.name, "color_code": c.color_code}
+                    for c in p.colours.all() if c.is_active
+                ] if is_var else [],
+                "variants": [
+                    {
+                        "id": v.id,
+                        "colour_id": v.colour_id,
+                        "size_id": v.size_id or v.id,
+                        "colour_name": v.colour.name if v.colour else "",
+                        "size_name": v.size.name if v.size else (v.variant_name or v.get_title()),
+                        "variant_name": v.variant_name or "",
+                        "unit": v.unit or p.unit or "",
+                        "unit_value": str(v.unit_value) if v.unit_value is not None else (str(p.unit_value) if p.unit_value is not None else ""),
+                        "title": v.get_title(),
+                        "sku": v.sku,
+                        "price": str(v.price),
+                        "original_price": str(v.original_price or v.price),
+                        "discount_percentage": v.discount_percentage,
+                        "savings_amount": str(v.savings_amount),
+                        "stock": v.stock,
+                        "is_available": v.is_in_stock,
+                        "image_url": v.get_image_url(),
+                    }
+                    for v in active_variants
+                ] if is_var else [],
+            })
     except Exception as e:
         logger.exception("Error fetching featured products for homepage: %s", e)
         featured_products = []

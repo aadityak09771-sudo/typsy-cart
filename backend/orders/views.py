@@ -167,6 +167,7 @@ def products_json(request):
         products = Product.objects.filter(
             is_active=True
         ).select_related("category_ref", "subcategory_ref").prefetch_related(
+            "gallery_images",
             "colours",
             "colours__images",
             "sizes",
@@ -178,6 +179,30 @@ def products_json(request):
         items = []
         for product in products:
             is_var = product.is_variable
+
+            prod_sizes = [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                }
+                for s in product.sizes.all() if s.is_active
+            ] if is_var else []
+
+            active_variants = [v for v in product.variants.all() if v.is_active] if is_var else []
+
+            # If variable product has active variants but no separate size objects,
+            # synthesize option choices from variant_name / title
+            if is_var and not prod_sizes and active_variants:
+                seen_opt_names = set()
+                for v in active_variants:
+                    opt_title = v.variant_name or v.get_title()
+                    if opt_title and opt_title not in seen_opt_names:
+                        seen_opt_names.add(opt_title)
+                        prod_sizes.append({
+                            "id": v.size_id or v.id,
+                            "name": opt_title,
+                        })
+
             p_data = {
                 "id": product.id,
                 "product_number": product.product_number or "",
@@ -193,6 +218,11 @@ def products_json(request):
                 "subcategory_slug": product.subcategory_ref.slug if product.subcategory_ref else "",
                 "brand": product.brand,
                 "image_url": product.get_image_url(),
+                "gallery_images": [img["url"] for img in product.get_all_images()],
+                "unit_type": product.unit_type,
+                "unit": product.unit or "",
+                "unit_value": str(product.unit_value) if product.unit_value is not None else "",
+                "unit_selector_label": product.unit_selector_label,
                 "price": str(product.min_price if is_var else product.price),
                 "original_price": str(product.original_price or product.price),
                 "min_price": str(product.min_price),
@@ -215,20 +245,17 @@ def products_json(request):
                     }
                     for c in product.colours.all() if c.is_active
                 ] if is_var else [],
-                "sizes": [
-                    {
-                        "id": s.id,
-                        "name": s.name,
-                    }
-                    for s in product.sizes.all() if s.is_active
-                ] if is_var else [],
+                "sizes": prod_sizes,
                 "variants": [
                     {
                         "id": v.id,
                         "colour_id": v.colour_id,
-                        "size_id": v.size_id,
+                        "size_id": v.size_id or v.id,
                         "colour_name": v.colour.name if v.colour else "",
-                        "size_name": v.size.name if v.size else "",
+                        "size_name": v.size.name if v.size else (v.variant_name or v.get_title()),
+                        "variant_name": v.variant_name or "",
+                        "unit": v.unit or product.unit or "",
+                        "unit_value": str(v.unit_value) if v.unit_value is not None else (str(product.unit_value) if product.unit_value is not None else ""),
                         "title": v.get_title(),
                         "sku": v.sku,
                         "price": str(v.price),
@@ -239,7 +266,7 @@ def products_json(request):
                         "is_available": v.is_in_stock,
                         "image_url": v.get_image_url(),
                     }
-                    for v in product.variants.all() if v.is_active
+                    for v in active_variants
                 ] if is_var else [],
             }
             items.append(p_data)
@@ -432,6 +459,10 @@ def add_to_cart(request):
         "success": True,
         "message": f"{item_label} added to cart.",
         "cart_count": cart_count,
+        "quantity": item.quantity,
+        "product_id": product.id,
+        "variant_id": variant.id if variant else None,
+        "cart_item_id": item.id,
     })
 
 
@@ -487,12 +518,15 @@ def remove_from_cart(request):
                 if not item:
                     item = cart.items.filter(product_id=product_id).first()
 
+            rem_qty = 0
             if item:
                 if item.quantity > 1:
                     item.quantity -= 1
                     item.save(update_fields=["quantity"])
+                    rem_qty = item.quantity
                 else:
                     item.delete()
+                    rem_qty = 0
 
             cart_count = get_cart_count(cart)
 
@@ -500,6 +534,9 @@ def remove_from_cart(request):
         "success": True,
         "message": "Cart item updated.",
         "cart_count": cart_count,
+        "quantity": rem_qty,
+        "product_id": product_id,
+        "variant_id": variant_id,
     })
 
 
@@ -1199,6 +1236,7 @@ def search_autocomplete(request):
         ).select_related(
             "category_ref", "subcategory_ref"
         ).prefetch_related(
+            "gallery_images",
             "variants"
         ).distinct()[:10]
 
@@ -1220,6 +1258,11 @@ def search_autocomplete(request):
                 "stock": p.total_stock if is_var else p.stock,
                 "is_available": p.is_available and (p.total_stock > 0 if is_var else p.stock > 0),
                 "image_url": p.get_image_url(),
+                "gallery_images": [img["url"] for img in p.get_all_images()],
+                "unit_type": p.unit_type,
+                "unit": p.unit or "",
+                "unit_value": str(p.unit_value) if p.unit_value is not None else "",
+                "unit_selector_label": p.unit_selector_label,
                 "url": f"/product/{p.id}/",
             })
 

@@ -66,6 +66,62 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn("Could not save cart:", e);
         }
         updateGlobalCartBadges(cart);
+        try {
+            window.dispatchEvent(new CustomEvent("tipsy:cartUpdated", { detail: { cart } }));
+        } catch (e) {}
+    }
+
+    function getCartItemQty(productId, variantId = null) {
+        const cart = getLocalCart();
+        const pId = Number(productId);
+        const vId = variantId ? Number(variantId) : null;
+        const item = cart.find(x => Number(x.id) === pId && ((x.variant_id ? Number(x.variant_id) : null) === vId));
+        return item ? (Number(item.quantity) || 0) : 0;
+    }
+
+    function changeCartQtyGlobal(productId, delta, variantId = null, itemData = {}) {
+        let cart = getLocalCart();
+        const pId = Number(productId);
+        const vId = variantId ? Number(variantId) : null;
+        let item = cart.find(x => Number(x.id) === pId && ((x.variant_id ? Number(x.variant_id) : null) === vId));
+        let newQty = 0;
+
+        if (delta > 0) {
+            if (item) {
+                item.quantity = Math.min(100, (Number(item.quantity) || 0) + delta);
+                newQty = item.quantity;
+            } else {
+                newQty = Math.min(100, delta);
+                item = {
+                    id: pId,
+                    name: String(itemData.name || "Product"),
+                    price: Number(itemData.price || 0),
+                    image_url: itemData.image_url || "",
+                    quantity: newQty,
+                    variant_id: vId,
+                    variant_title: itemData.variant_title || ""
+                };
+                cart.push(item);
+            }
+            syncBackendCartAdd(pId, delta, vId);
+            showCartToast(item.variant_title ? `${item.name} (${item.variant_title})` : item.name);
+        } else if (delta < 0) {
+            if (item) {
+                const dec = Math.abs(delta);
+                if (item.quantity > dec) {
+                    item.quantity -= dec;
+                    newQty = item.quantity;
+                } else {
+                    cart = cart.filter(x => !(Number(x.id) === pId && ((x.variant_id ? Number(x.variant_id) : null) === vId)));
+                    newQty = 0;
+                }
+                syncBackendCartRemove(pId, vId);
+            }
+        }
+
+        saveLocalCart(cart);
+        renderCartDrawer();
+        return newQty;
     }
 
     function calculateTotalCount(cart) {
@@ -602,4 +658,304 @@ document.addEventListener("DOMContentLoaded", () => {
     window.openCartDrawer = openCartDrawer;
     window.closeCartDrawer = closeCartDrawer;
     window.syncBackendCartAdd = syncBackendCartAdd;
+    window.syncBackendCartRemove = syncBackendCartRemove;
+    window.getLocalCart = getLocalCart;
+    window.saveLocalCart = saveLocalCart;
+    window.getCartItemQty = getCartItemQty;
+    window.changeCartQtyGlobal = changeCartQtyGlobal;
+
+    // ========================================================
+    // GLOBAL PRODUCT CARD SLIDER & DIRECT CART STEPPER CONTROLLER
+    // ========================================================
+
+    function navigateSlider(slider, directionOrIndex) {
+        if (!slider) return;
+        let images = [];
+        try {
+            images = JSON.parse(slider.dataset.images || "[]");
+        } catch {
+            images = [];
+        }
+        if (!Array.isArray(images) || images.length <= 1) return;
+
+        let currentIndex = parseInt(slider.dataset.currentIndex || "0", 10);
+        if (isNaN(currentIndex)) currentIndex = 0;
+
+        let newIndex = currentIndex;
+        if (typeof directionOrIndex === "number") {
+            newIndex = directionOrIndex;
+        } else if (directionOrIndex === "next") {
+            newIndex = (currentIndex + 1) % images.length;
+        } else if (directionOrIndex === "prev") {
+            newIndex = (currentIndex - 1 + images.length) % images.length;
+        }
+
+        slider.dataset.currentIndex = newIndex;
+
+        const imgEl = slider.querySelector(".tc-slider-img");
+        if (imgEl && images[newIndex]) {
+            imgEl.src = images[newIndex];
+        }
+
+        const dots = slider.querySelectorAll(".tc-slider-dot");
+        dots.forEach((dot, idx) => {
+            if (idx === newIndex) {
+                dot.classList.add("active");
+            } else {
+                dot.classList.remove("active");
+            }
+        });
+    }
+
+    function syncCardStepper(card) {
+        if (!card) return;
+        const productId = card.dataset.cardProductId || card.dataset.id;
+        if (!productId) return;
+
+        const variantId = card.dataset.selectedVariantId ? parseInt(card.dataset.selectedVariantId, 10) : null;
+        const qty = getCartItemQty(productId, variantId);
+        const actionWrap = card.querySelector(".tc-card-action-wrap");
+        if (!actionWrap) return;
+
+        const isOutOfStock = card.dataset.isOutOfStock === "true";
+
+        if (qty > 0) {
+            actionWrap.innerHTML = `
+                <div class="tc-card-stepper" data-product-id="${productId}">
+                    <button type="button" class="tc-stepper-btn tc-stepper-dec" aria-label="Decrease quantity">−</button>
+                    <span class="tc-stepper-qty">${qty}</span>
+                    <button type="button" class="tc-stepper-btn tc-stepper-inc" aria-label="Increase quantity">+</button>
+                </div>
+            `;
+        } else {
+            if (isOutOfStock) {
+                actionWrap.innerHTML = `
+                    <button type="button" class="tc-card-add-btn disabled" disabled>
+                        Out of Stock
+                    </button>
+                `;
+            } else {
+                actionWrap.innerHTML = `
+                    <button type="button" class="tc-card-add-btn">
+                        Add to Cart 🛒
+                    </button>
+                `;
+            }
+        }
+    }
+
+    function syncAllCardSteppers(container = document) {
+        const cards = container.querySelectorAll("[data-card-product-id]");
+        cards.forEach(card => syncCardStepper(card));
+    }
+
+    // Touch swipe handling for sliders
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchSliderTarget = null;
+
+    document.addEventListener("touchstart", (e) => {
+        const slider = e.target.closest(".tc-card-slider");
+        if (slider) {
+            touchSliderTarget = slider;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        } else {
+            touchSliderTarget = null;
+        }
+    }, { passive: true });
+
+    document.addEventListener("touchend", (e) => {
+        if (!touchSliderTarget) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+            if (diffX < 0) {
+                navigateSlider(touchSliderTarget, "next");
+            } else {
+                navigateSlider(touchSliderTarget, "prev");
+            }
+        }
+        touchSliderTarget = null;
+    }, { passive: true });
+
+    // Delegated click handling on document for slider arrows, dots, chips, add-to-cart and steppers
+    document.addEventListener("click", (e) => {
+        // 1. Slider prev arrow
+        const prevBtn = e.target.closest(".tc-slider-prev");
+        if (prevBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const slider = prevBtn.closest(".tc-card-slider");
+            navigateSlider(slider, "prev");
+            return;
+        }
+
+        // 2. Slider next arrow
+        const nextBtn = e.target.closest(".tc-slider-next");
+        if (nextBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const slider = nextBtn.closest(".tc-card-slider");
+            navigateSlider(slider, "next");
+            return;
+        }
+
+        // 3. Slider dot
+        const dot = e.target.closest(".tc-slider-dot");
+        if (dot) {
+            e.preventDefault();
+            e.stopPropagation();
+            const slider = dot.closest(".tc-card-slider");
+            const idx = parseInt(dot.dataset.index, 10);
+            if (!isNaN(idx)) {
+                navigateSlider(slider, idx);
+            }
+            return;
+        }
+
+        // 4. Variant chip click
+        const chip = e.target.closest(".tc-variant-chip");
+        if (chip) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = chip.closest("[data-card-product-id]");
+            if (!card) return;
+
+            const chips = card.querySelectorAll(".tc-variant-chip");
+            chips.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+
+            const variantId = chip.dataset.variantId || "";
+            card.dataset.selectedVariantId = variantId;
+
+            const priceEl = card.querySelector(".tc-current-price, .tc-price-current");
+            if (priceEl && chip.dataset.price) {
+                priceEl.textContent = `₹${chip.dataset.price}`;
+            }
+
+            const origPriceEl = card.querySelector(".tc-original-price, .tc-price-original");
+            if (origPriceEl) {
+                if (chip.dataset.origPrice && Number(chip.dataset.origPrice) > Number(chip.dataset.price)) {
+                    origPriceEl.textContent = `₹${chip.dataset.origPrice}`;
+                    origPriceEl.style.display = "";
+                } else {
+                    origPriceEl.style.display = "none";
+                }
+            }
+
+            const discEl = card.querySelector(".tc-card-discount-badge, .tc-discount-badge");
+            if (discEl) {
+                const discPct = parseInt(chip.dataset.discount || "0", 10);
+                if (discPct > 0) {
+                    discEl.textContent = `${discPct}% OFF`;
+                    discEl.style.display = "";
+                } else {
+                    discEl.style.display = "none";
+                }
+            }
+
+            const stock = parseInt(chip.dataset.stock || "0", 10);
+            card.dataset.isOutOfStock = stock <= 0 ? "true" : "false";
+
+            if (chip.dataset.image) {
+                const slider = card.querySelector(".tc-card-slider");
+                if (slider) {
+                    let images = [];
+                    try { images = JSON.parse(slider.dataset.images || "[]"); } catch {}
+                    const imgIdx = images.indexOf(chip.dataset.image);
+                    if (imgIdx >= 0) {
+                        navigateSlider(slider, imgIdx);
+                    } else {
+                        const imgEl = slider.querySelector(".tc-slider-img");
+                        if (imgEl) imgEl.src = chip.dataset.image;
+                    }
+                }
+            }
+
+            syncCardStepper(card);
+            return;
+        }
+
+        // 5. Add to Cart button on card
+        const addBtn = e.target.closest(".tc-card-add-btn");
+        if (addBtn && !addBtn.disabled && !addBtn.classList.contains("disabled")) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = addBtn.closest("[data-card-product-id]");
+            if (!card) return;
+
+            const pId = card.dataset.cardProductId;
+            const vId = card.dataset.selectedVariantId || null;
+            const name = card.dataset.productName || "Product";
+            const price = card.dataset.selectedPrice || (card.querySelector(".tc-current-price, .tc-price-current")?.textContent.replace(/[^0-9.]/g, "") || "0");
+            const img = card.querySelector(".tc-slider-img")?.src || "";
+            const activeChip = card.querySelector(".tc-variant-chip.active");
+            const vTitle = activeChip ? activeChip.textContent.trim() : (card.dataset.selectedVariantTitle || "");
+
+            changeCartQtyGlobal(pId, 1, vId, {
+                name: name,
+                price: price,
+                image_url: img,
+                variant_title: vTitle
+            });
+            syncCardStepper(card);
+            return;
+        }
+
+        // 6. Stepper increment button
+        const incBtn = e.target.closest(".tc-stepper-inc");
+        if (incBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = incBtn.closest("[data-card-product-id]");
+            if (!card) return;
+
+            const pId = card.dataset.cardProductId;
+            const vId = card.dataset.selectedVariantId || null;
+            const name = card.dataset.productName || "Product";
+            const price = card.dataset.selectedPrice || (card.querySelector(".tc-current-price, .tc-price-current")?.textContent.replace(/[^0-9.]/g, "") || "0");
+            const img = card.querySelector(".tc-slider-img")?.src || "";
+            const activeChip = card.querySelector(".tc-variant-chip.active");
+            const vTitle = activeChip ? activeChip.textContent.trim() : (card.dataset.selectedVariantTitle || "");
+
+            changeCartQtyGlobal(pId, 1, vId, {
+                name: name,
+                price: price,
+                image_url: img,
+                variant_title: vTitle
+            });
+            syncCardStepper(card);
+            return;
+        }
+
+        // 7. Stepper decrement button
+        const decBtn = e.target.closest(".tc-stepper-dec");
+        if (decBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = decBtn.closest("[data-card-product-id]");
+            if (!card) return;
+
+            const pId = card.dataset.cardProductId;
+            const vId = card.dataset.selectedVariantId || null;
+
+            changeCartQtyGlobal(pId, -1, vId);
+            syncCardStepper(card);
+            return;
+        }
+    });
+
+    // Sync all steppers on load and on cart update event
+    syncAllCardSteppers();
+    window.addEventListener("tipsy:cartUpdated", () => {
+        syncAllCardSteppers();
+    });
+
+    window.syncAllCardSteppers = syncAllCardSteppers;
+    window.syncCardStepper = syncCardStepper;
+    window.navigateSlider = navigateSlider;
 });

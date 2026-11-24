@@ -643,6 +643,12 @@
                 <span id="tc-product-sku-display">SKU: <strong>{{ product.product_number|default:product.id }}</strong></span>
             </div>
 
+            {% if product.unit_value and product.unit %}
+            <div class="tc-card-unit-badge" style="font-size:13px; padding: 4px 10px; margin: 6px 0 12px; display:inline-block;">
+                Selling Unit: <strong>{{ product.unit_value|floatformat }} {{ product.unit }}</strong>
+            </div>
+            {% endif %}
+
             <!-- PRICING DISPLAY -->
             <div id="tc-price-container" class="tc-product-price-box">
                 {% if is_variable %}

@@ -93,6 +93,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
     }
 
+    function formatUnit(val, unit) {
+        if (!val && !unit) return "";
+        const num = Number(val);
+        let strVal = "";
+        if (Number.isFinite(num) && num > 0) {
+            strVal = num % 1 === 0 ? num.toFixed(0) : num.toFixed(2).replace(/\.?0+$/, "");
+        } else if (val) {
+            strVal = String(val);
+        }
+        return [strVal, unit].filter(Boolean).join(" ");
+    }
+
     function getCategoryFallbackImage(category) {
         const cat = (category || "").toLowerCase();
         if (cat.includes("grocer")) {
@@ -377,30 +389,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Product list ka format sahi nahi hai.");
             }
 
-            products = data.products.map(product => ({
-                ...product,
-                id: Number(product.id),
-                price: Math.max(0, Number(product.price) || 0),
-                original_price: Number(product.original_price) || Math.max(0, Number(product.price) || 0),
-                discount_enabled: Boolean(
-                    product.discount_enabled === true ||
-                    product.discount_enabled === "true" ||
-                    product.discount_enabled === 1
-                ),
-                discount_type: String(product.discount_type || "percentage"),
-                discount_value: Number(product.discount_value) || 0,
-                discount_percentage: Number(product.discount_percentage) || 0,
-                savings_amount: Number(product.savings_amount) || 0,
-                stock: Math.max(0, Number(product.stock) || 0),
-                name: String(product.name || "Product"),
-                description: String(product.description || ""),
-                category: String(product.category || ""),
-                subcategory: String(product.subcategory || ""),
-                brand: String(product.brand || ""),
-                image_url: safeImageURL(product.image_url),
-                categorySlug: product.category_slug || categorySlug(product.category),
-                subcategorySlug: product.subcategory_slug || subcategorySlug(product.subcategory)
-            })).filter(product =>
+            products = data.products.map(product => {
+                const galleryImgs = Array.isArray(product.gallery_images) && product.gallery_images.length
+                    ? product.gallery_images.map(img => safeImageURL(img)).filter(Boolean)
+                    : [safeImageURL(product.image_url)].filter(Boolean);
+
+                return {
+                    ...product,
+                    id: Number(product.id),
+                    price: Math.max(0, Number(product.price) || 0),
+                    original_price: Number(product.original_price) || Math.max(0, Number(product.price) || 0),
+                    discount_enabled: Boolean(
+                        product.discount_enabled === true ||
+                        product.discount_enabled === "true" ||
+                        product.discount_enabled === 1
+                    ),
+                    discount_type: String(product.discount_type || "percentage"),
+                    discount_value: Number(product.discount_value) || 0,
+                    discount_percentage: Number(product.discount_percentage) || 0,
+                    savings_amount: Number(product.savings_amount) || 0,
+                    stock: Math.max(0, Number(product.stock) || 0),
+                    name: String(product.name || "Product"),
+                    description: String(product.description || ""),
+                    category: String(product.category || ""),
+                    subcategory: String(product.subcategory || ""),
+                    brand: String(product.brand || ""),
+                    image_url: safeImageURL(product.image_url),
+                    gallery_images: galleryImgs.length ? galleryImgs : [getCategoryFallbackImage(product.category)],
+                    unit_type: product.unit_type || "none",
+                    unit: String(product.unit || ""),
+                    unit_value: product.unit_value !== undefined && product.unit_value !== null ? String(product.unit_value) : "",
+                    unit_selector_label: product.unit_selector_label || "Select Option",
+                    is_variable: Boolean(product.is_variable || product.product_type === "variable"),
+                    variants: Array.isArray(product.variants) ? product.variants : [],
+                    sizes: Array.isArray(product.sizes) ? product.sizes : [],
+                    colours: Array.isArray(product.colours) ? product.colours : [],
+                    categorySlug: product.category_slug || categorySlug(product.category),
+                    subcategorySlug: product.subcategory_slug || subcategorySlug(product.subcategory)
+                };
+            }).filter(product =>
                 Number.isInteger(product.id) && product.id > 0
             );
 
@@ -595,88 +622,159 @@ document.addEventListener("DOMContentLoaded", () => {
 
         productGrid.innerHTML = filtered.map(product => {
             const fallbackUrl = getCategoryFallbackImage(product.category);
-            const imgSrc = product.image_url && product.image_url.trim() ? product.image_url : fallbackUrl;
+            const images = Array.isArray(product.gallery_images) && product.gallery_images.length
+                ? product.gallery_images
+                : [product.image_url || fallbackUrl];
             const altText = `${escapeHTML(product.name)} - Tipsy Cart Essentials`;
 
-            const image = `
-                <img
-                    class="product-image"
-                    src="${escapeHTML(imgSrc)}"
-                    alt="${altText}"
-                    loading="lazy"
-                    onerror="if (this.getAttribute('data-fallback') !== '1') { this.setAttribute('data-fallback', '1'); this.src = '${fallbackUrl}'; this.classList.add('tc-img-fallback'); }"
-                >
-            `;
-
             const isVariable = Boolean(product.is_variable || product.product_type === "variable");
-            const inStock = product.stock > 0;
+            const activeVariants = isVariable && Array.isArray(product.variants) ? product.variants : [];
+            const hasVariants = activeVariants.length > 0;
 
+            const firstAvailableVariant = activeVariants.find(v => v.is_available && v.stock > 0) || activeVariants[0] || null;
+            const selectedVariantId = firstAvailableVariant ? firstAvailableVariant.id : "";
+            const currentPrice = firstAvailableVariant ? Number(firstAvailableVariant.price) : product.price;
+            const origPrice = firstAvailableVariant ? (Number(firstAvailableVariant.original_price) || currentPrice) : product.original_price;
+            const discountPct = firstAvailableVariant ? (firstAvailableVariant.discount_percentage || 0) : product.discount_percentage;
+            const inStock = firstAvailableVariant ? (firstAvailableVariant.is_available && firstAvailableVariant.stock > 0) : (product.stock > 0);
+
+            // Unit badge
+            let unitBadgeHtml = "";
+            const unitText = formatUnit(product.unit_value, product.unit);
+            if (unitText) {
+                unitBadgeHtml = `<div class="tc-card-unit-badge">${escapeHTML(unitText)}</div>`;
+            }
+
+            // Variant chips
+            let variantChipsHtml = "";
+            if (isVariable && hasVariants) {
+                variantChipsHtml = `
+                    <div class="tc-card-variants">
+                        ${activeVariants.map((v, i) => {
+                            const isSelected = v.id === selectedVariantId;
+                            const chipLabel = v.size_name || formatUnit(v.unit_value, v.unit) || v.variant_name || v.title || `Opt ${i+1}`;
+                            return `
+                                <span
+                                    class="tc-variant-chip ${isSelected ? 'active' : ''}"
+                                    data-variant-id="${v.id}"
+                                    data-price="${formatCurrency(v.price)}"
+                                    data-orig-price="${formatCurrency(v.original_price || v.price)}"
+                                    data-discount="${v.discount_percentage || 0}"
+                                    data-stock="${v.stock}"
+                                    data-image="${escapeHTML(v.image_url || '')}"
+                                    data-title="${escapeHTML(chipLabel)}"
+                                    title="${escapeHTML(v.title || chipLabel)}"
+                                >
+                                    ${escapeHTML(chipLabel)}
+                                </span>
+                            `;
+                        }).join("")}
+                    </div>
+                `;
+            }
+
+            // Colours indicator
             let coloursIndicatorHtml = "";
             if (isVariable && Array.isArray(product.colours) && product.colours.length > 0) {
                 coloursIndicatorHtml = `
-                    <div class="product-colours-indicator" style="display:flex; align-items:center; gap:5px; margin: 6px 0 8px;">
+                    <div class="product-colours-indicator" style="display:flex; align-items:center; gap:5px; margin: 4px 0 6px;">
                         ${product.colours.slice(0, 5).map(c => `
-                            <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background-color:${escapeHTML(c.color_code || '#000')}; border:1px solid rgba(0,0,0,0.15); box-shadow:0 1px 2px rgba(0,0,0,0.08);" title="${escapeHTML(c.name)}"></span>
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${escapeHTML(c.color_code || '#000')}; border:1px solid rgba(0,0,0,0.15);" title="${escapeHTML(c.name)}"></span>
                         `).join("")}
-                        ${product.colours.length > 5 ? `<span style="font-size:11px; color:#64748b; font-weight:700;">+${product.colours.length - 5}</span>` : ""}
-                        <small style="font-size:11px; color:#64748b; margin-left:3px; font-weight:600;">${product.colours.length} colour${product.colours.length > 1 ? "s" : ""}</small>
+                        ${product.colours.length > 5 ? `<span style="font-size:10px; color:#64748b; font-weight:700;">+${product.colours.length - 5}</span>` : ""}
                     </div>
                 `;
             }
 
-            let actionButtonHtml = "";
-            if (isVariable) {
-                actionButtonHtml = `
-                    <a href="/product/${product.id}/" class="btn-select-options" style="display:block; text-align:center; background:linear-gradient(135deg, #ec4899, #a51655); color:white; font-weight:700; font-size:13px; padding:10px 14px; border-radius:10px; text-decoration:none; box-shadow:0 4px 12px rgba(165,22,85,0.18);">
-                        Select Options →
-                    </a>
-                `;
-            } else {
-                actionButtonHtml = `
-                    <button
-                        type="button"
-                        data-add="${product.id}"
-                        ${!inStock ? "disabled" : ""}
-                    >
-                        ${inStock ? "Add to Cart" : "Out of Stock"}
-                    </button>
-                `;
-            }
+            // Slider markup
+            const sliderHtml = `
+                <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0" onclick="window.location.href='/product/${product.id}/'">
+                    ${discountPct > 0 ? `<span class="tc-card-discount-badge tc-discount-badge">${discountPct}% OFF</span>` : ""}
+                    <div class="tc-slider-track">
+                        <img
+                            class="product-image tc-slider-img"
+                            src="${escapeHTML(images[0])}"
+                            alt="${altText}"
+                            loading="lazy"
+                            onerror="if (this.getAttribute('data-fallback') !== '1') { this.setAttribute('data-fallback', '1'); this.src = '${fallbackUrl}'; this.classList.add('tc-img-fallback'); }"
+                        >
+                    </div>
+                    ${images.length > 1 ? `
+                        <button type="button" class="tc-slider-arrow tc-slider-prev" aria-label="Previous image">‹</button>
+                        <button type="button" class="tc-slider-arrow tc-slider-next" aria-label="Next image">›</button>
+                        <div class="tc-slider-dots">
+                            ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join("")}
+                        </div>
+                    ` : ""}
+                    <div class="product-tag-row" style="position:absolute; bottom:6px; left:8px; z-index:4; pointer-events:none;">
+                        <span class="product-tag-cat">${escapeHTML(product.category || "Essentials")}</span>
+                    </div>
+                </div>
+            `;
+
+            // Cart quantity
+            const currentQty = window.getCartItemQty ? window.getCartItemQty(product.id, selectedVariantId) : 0;
+            const actionHtml = `
+                <div class="tc-card-action-wrap">
+                    ${currentQty > 0 ? `
+                        <div class="tc-card-stepper" data-product-id="${product.id}">
+                            <button type="button" class="tc-stepper-btn tc-stepper-dec" aria-label="Decrease quantity">−</button>
+                            <span class="tc-stepper-qty">${currentQty}</span>
+                            <button type="button" class="tc-stepper-btn tc-stepper-inc" aria-label="Increase quantity">+</button>
+                        </div>
+                    ` : (inStock ? `
+                        <button type="button" class="tc-card-add-btn">
+                            Add to Cart 🛒
+                        </button>
+                    ` : `
+                        <button type="button" class="tc-card-add-btn disabled" disabled>
+                            Out of Stock
+                        </button>
+                    `)}
+                </div>
+            `;
 
             return `
-                <article class="product-card">
-                    <div class="product-card-media">
-                        ${image}
-                        <div class="product-tag-row">
-                            <span class="product-tag-cat">${escapeHTML(product.category || "Essentials")}</span>
-                            ${product.subcategory ? `<span class="product-tag-subcat">${escapeHTML(product.subcategory)}</span>` : ""}
-                        </div>
-                    </div>
+                <article
+                    class="product-card"
+                    data-card-product-id="${product.id}"
+                    data-product-name="${escapeHTML(product.name)}"
+                    data-selected-variant-id="${selectedVariantId}"
+                    data-is-out-of-stock="${inStock ? 'false' : 'true'}"
+                >
+                    ${sliderHtml}
 
-                    <h2>${escapeHTML(product.name)}</h2>
+                    <h2 style="margin: 6px 0 2px;">
+                        <a href="/product/${product.id}/" style="color:inherit; text-decoration:none;">
+                            ${escapeHTML(product.name)}
+                        </a>
+                    </h2>
 
                     ${product.brand
                         ? `<p class="product-brand">${escapeHTML(product.brand)}</p>`
                         : ""}
 
-                    <p>${escapeHTML(product.description)}</p>
-
+                    ${unitBadgeHtml}
+                    ${variantChipsHtml}
                     ${coloursIndicatorHtml}
 
                     <div class="product-price">
-                        ${renderProductPriceHTML(product)}
+                        <div class="tc-price-wrap">
+                            <div class="tc-price-row">
+                                <span class="tc-price-current">₹${formatCurrency(currentPrice)}</span>
+                                ${origPrice && origPrice > currentPrice ? `<span class="tc-price-original">₹${formatCurrency(origPrice)}</span>` : ""}
+                            </div>
+                        </div>
                     </div>
 
-                    <p class="product-stock ${inStock ? "" : "out-of-stock"}">
-                        ${inStock
-                            ? `${product.stock} available`
-                            : "Out of stock"}
-                    </p>
-
-                    ${actionButtonHtml}
+                    ${actionHtml}
                 </article>
             `;
         }).join("");
+
+        if (window.syncAllCardSteppers) {
+            window.syncAllCardSteppers(productGrid);
+        }
 
         if (resultsCount) {
             resultsCount.textContent =
@@ -1167,6 +1265,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (requestedSubcategory) {
         currentSubcategory = subcategorySlug(requestedSubcategory);
     }
+
+    // Listen to unified cart updates
+    window.addEventListener("tipsy:cartUpdated", () => {
+        cart = loadSavedCart();
+        renderCart();
+    });
 
     // --------------------------------
     // Start

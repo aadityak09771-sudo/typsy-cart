@@ -246,14 +246,35 @@
     {% if products %}
     <section class="tc-search-grid" aria-label="Search Results Grid">
         {% for p in products %}
-        <article class="tc-product-card">
-            <div class="tc-card-img-wrap">
+        <article
+            class="tc-product-card"
+            data-card-product-id="{{ p.id }}"
+            data-product-name="{{ p.name }}"
+            data-selected-variant-id="{% if p.is_variable and p.has_variants %}{% for v in p.variants.all %}{% if forloop.first %}{{ v.id }}{% endif %}{% endfor %}{% endif %}"
+            data-is-out-of-stock="{% if p.is_available and p.stock > 0 %}false{% else %}true{% endif %}"
+        >
+            <!-- Product Card Slider -->
+            <div
+                class="tc-card-slider"
+                data-images='[{% for img in p.get_all_images %}"{{ img.url|escapejs }}"{% if not forloop.last %},{% endif %}{% empty %}"{{ p.get_image_url|escapejs }}"{% endfor %}]'
+                data-current-index="0"
+                onclick="window.location.href='/product/{{ p.id }}/'"
+            >
                 {% if p.discount_percentage > 0 %}
-                    <span class="tc-discount-badge">{{ p.discount_percentage }}% OFF</span>
+                    <span class="tc-card-discount-badge tc-discount-badge">{{ p.discount_percentage }}% OFF</span>
                 {% endif %}
-                <a href="/product/{{ p.id }}/">
-                    <img src="{{ p.get_image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy">
-                </a>
+                <div class="tc-slider-track">
+                    <img src="{{ p.get_image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy">
+                </div>
+                {% if p.get_all_images|length > 1 %}
+                    <button type="button" class="tc-slider-arrow tc-slider-prev" aria-label="Previous image">‹</button>
+                    <button type="button" class="tc-slider-arrow tc-slider-next" aria-label="Next image">›</button>
+                    <div class="tc-slider-dots">
+                        {% for img in p.get_all_images %}
+                            <span class="tc-slider-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
 
             <div>
@@ -263,21 +284,49 @@
                     <div class="tc-card-brand">{{ p.category }}</div>
                 {% endif %}
 
-                <h3 style="margin: 0;">
+                <h3 style="margin: 0 0 4px;">
                     <a href="/product/{{ p.id }}/" class="tc-card-name">{{ p.name }}</a>
                 </h3>
 
                 {% if p.unit_value and p.unit %}
-                    <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500;">
+                    <div class="tc-card-unit-badge">
                         {{ p.unit_value|floatformat }} {{ p.unit }}
+                    </div>
+                {% endif %}
+
+                {% if p.is_variable and p.has_variants %}
+                    <div class="tc-card-variants">
+                        {% for v in p.variants.all %}
+                        {% if v.is_active %}
+                            <span
+                                class="tc-variant-chip {% if forloop.first %}active{% endif %}"
+                                data-variant-id="{{ v.id }}"
+                                data-price="{{ v.price }}"
+                                data-orig-price="{{ v.original_price|default:v.price }}"
+                                data-discount="{{ v.discount_percentage }}"
+                                data-stock="{{ v.stock }}"
+                                data-image="{{ v.get_image_url|default:'' }}"
+                                data-title="{% if v.size %}{{ v.size.name }}{% elif v.unit_value %}{{ v.unit_value|floatformat }} {{ v.unit }}{% else %}{{ v.get_title }}{% endif %}"
+                            >
+                                {% if v.size %}{{ v.size.name }}{% elif v.unit_value %}{{ v.unit_value|floatformat }} {{ v.unit }}{% else %}{{ v.get_title }}{% endif %}
+                            </span>
+                        {% endif %}
+                        {% endfor %}
                     </div>
                 {% endif %}
             </div>
 
-            <div class="tc-card-pricing">
+            <div class="tc-card-pricing" style="margin-top:auto;">
                 <div class="tc-card-price-row">
                     {% if p.is_variable and p.has_variants %}
-                        <span class="tc-current-price">{{ p.price_range_display }}</span>
+                        {% with first_var=p.variants.first %}
+                            <span class="tc-current-price">₹{{ first_var.price|default:p.price }}</span>
+                            {% if first_var.original_price and first_var.original_price > first_var.price %}
+                                <span class="tc-original-price">₹{{ first_var.original_price }}</span>
+                            {% elif p.original_price and p.original_price > p.price %}
+                                <span class="tc-original-price">₹{{ p.original_price }}</span>
+                            {% endif %}
+                        {% endwith %}
                     {% else %}
                         <span class="tc-current-price">₹{{ p.price }}</span>
                         {% if p.original_price and p.original_price > p.price %}
@@ -286,23 +335,17 @@
                     {% endif %}
                 </div>
 
-                {% if p.is_variable and p.has_variants %}
-                    <a href="/product/{{ p.id }}/" class="tc-card-action-btn tc-btn-outline">
-                        Select Options →
-                    </a>
-                {% elif p.is_available and p.stock > 0 %}
-                    <button
-                        type="button"
-                        class="tc-card-action-btn tc-btn-primary"
-                        onclick="window.addToCartGlobal('{{ p.id }}', '{{ p.name|escapejs }}', '{{ p.price }}', '{{ p.get_image_url|escapejs }}')"
-                    >
-                        Add to Cart 🛒
-                    </button>
-                {% else %}
-                    <button type="button" class="tc-card-action-btn" style="background: #e2e8f0; color: #94a3b8; cursor: not-allowed;" disabled>
-                        Out of Stock
-                    </button>
-                {% endif %}
+                <div class="tc-card-action-wrap">
+                    {% if p.is_available and p.stock > 0 %}
+                        <button type="button" class="tc-card-add-btn">
+                            Add to Cart 🛒
+                        </button>
+                    {% else %}
+                        <button type="button" class="tc-card-add-btn disabled" disabled>
+                            Out of Stock
+                        </button>
+                    {% endif %}
+                </div>
             </div>
         </article>
         {% endfor %}

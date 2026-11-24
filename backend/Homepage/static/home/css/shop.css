@@ -688,7 +688,7 @@
     color: #c24141;
 }
 
-.product-card button {
+.product-card button:not(.tc-slider-arrow):not(.tc-stepper-btn) {
     width: 100%;
     min-height: 40px;
     padding: 9px 12px;
@@ -702,16 +702,32 @@
     transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.product-card button:hover:not(:disabled) {
+.product-card button:not(.tc-slider-arrow):not(.tc-stepper-btn):hover:not(:disabled) {
     background: #9d174d;
     transform: translateY(-1px);
 }
 
-.product-card button:disabled {
+.product-card button:not(.tc-slider-arrow):not(.tc-stepper-btn):disabled {
     border-color: #e6d8df;
     background: #eee8eb;
     color: #93858c;
     cursor: not-allowed;
+}
+
+.product-card .tc-slider-arrow,
+.tc-product-card .tc-slider-arrow {
+    width: 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+}
+
+.product-card .tc-stepper-btn,
+.tc-product-card .tc-stepper-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
 }
 
 .empty-message {
