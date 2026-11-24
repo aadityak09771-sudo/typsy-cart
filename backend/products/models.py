@@ -166,10 +166,54 @@ class Product(models.Model):
         ("Groceries", "Groceries"),
     ]
 
+    PRODUCT_TYPE_CHOICES = [
+        ("simple", "Simple Product"),
+        ("variable", "Variable Product"),
+    ]
+
     DISCOUNT_TYPE_CHOICES = [
         ("percentage", "Percentage (%)"),
         ("fixed", "Fixed Amount (₹)"),
     ]
+
+    UNIT_TYPE_CHOICES = [
+        ("none", "Standard / Single Item"),
+        ("weight", "Weight (mg, g, kg)"),
+        ("volume", "Volume (ml, L)"),
+        ("count", "Count / Pack (piece, pack, box, dozen, set)"),
+        ("size", "Clothing Size (XS, S, M, L, XL, XXL)"),
+        ("shoe_size", "Shoe Size"),
+        ("custom", "Custom Unit"),
+    ]
+
+    product_type = models.CharField(
+        max_length=20,
+        choices=PRODUCT_TYPE_CHOICES,
+        default="simple",
+        db_index=True,
+        help_text="Product Type: Simple (single price & stock) or Variable (multiple options)",
+    )
+
+    unit_type = models.CharField(
+        max_length=20,
+        choices=UNIT_TYPE_CHOICES,
+        default="none",
+        db_index=True,
+        help_text="Selling unit category: Weight, Volume, Count/Pack, Clothing/Shoe size, etc.",
+    )
+    unit = models.CharField(
+        max_length=30,
+        blank=True,
+        default="",
+        help_text="Unit name or abbreviation (e.g. g, kg, ml, L, piece, pack, box, dozen)",
+    )
+    unit_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Default/base numeric quantity (e.g. 250 for 250g, 1 for 1kg/1L)",
+    )
 
     product_number = models.CharField(
         max_length=60,
@@ -375,3 +419,521 @@ class Product(models.Model):
         if not self.original_price or self.original_price <= self.price:
             return Decimal("0.00")
         return round(self.original_price - self.price, 2)
+
+    @property
+    def is_variable(self):
+        return self.product_type == "variable"
+
+    @property
+    def has_variants(self):
+        if not self.is_variable:
+            return False
+        return self.variants.filter(is_active=True).exists()
+
+    @property
+    def min_price(self):
+        if self.is_variable:
+            active_vars = self.variants.filter(is_active=True)
+            if active_vars.exists():
+                return min(v.price for v in active_vars)
+        return self.price
+
+    @property
+    def max_price(self):
+        if self.is_variable:
+            active_vars = self.variants.filter(is_active=True)
+            if active_vars.exists():
+                return max(v.price for v in active_vars)
+        return self.price
+
+    @property
+    def total_stock(self):
+        if self.is_variable:
+            active_vars = self.variants.filter(is_active=True)
+            if active_vars.exists():
+                return sum(v.stock for v in active_vars)
+        return self.stock
+
+    @property
+    def price_range_display(self):
+        if self.is_variable and self.has_variants:
+            p_min = self.min_price
+            p_max = self.max_price
+            if p_min == p_max:
+                return f"₹{p_min}"
+            return f"₹{p_min} – ₹{p_max}"
+        return f"₹{self.price}"
+
+
+    @property
+    def unit_selector_label(self):
+        labels = {
+            "weight": "Select Weight",
+            "volume": "Select Quantity / Volume",
+            "count": "Select Pack / Quantity",
+            "size": "Select Size",
+            "shoe_size": "Select Shoe Size",
+            "custom": "Select Option",
+        }
+        return labels.get(self.unit_type, "Select Option")
+
+    def get_all_images(self, colour=None):
+        """
+        Returns list of image dicts:
+        [{'url': ..., 'is_primary': bool, 'id': int, 'alt': str, 'source': str}]
+        Prioritizes selected colour images, followed by product gallery images, and main cover.
+        """
+        images = []
+        seen = set()
+
+        if colour:
+            for cimg in colour.images.all().order_by("display_order", "id"):
+                url = cimg.get_image_url()
+                if url and url not in seen:
+                    images.append({
+                        "url": url,
+                        "is_primary": cimg.is_primary,
+                        "alt": f"{self.name} - {colour.name}",
+                        "id": cimg.id,
+                        "source": "colour",
+                    })
+                    seen.add(url)
+
+        for gimg in self.gallery_images.all().order_by("display_order", "id"):
+            url = gimg.get_image_url()
+            if url and url not in seen:
+                images.append({
+                    "url": url,
+                    "is_primary": gimg.is_primary,
+                    "alt": gimg.alt_text or self.name,
+                    "id": gimg.id,
+                    "source": "gallery",
+                })
+                seen.add(url)
+
+        cover_url = self.get_image_url()
+        if cover_url and cover_url not in seen:
+            if not any(img["is_primary"] for img in images):
+                images.insert(0, {
+                    "url": cover_url,
+                    "is_primary": True,
+                    "alt": self.name,
+                    "id": 0,
+                    "source": "cover",
+                })
+            else:
+                images.append({
+                    "url": cover_url,
+                    "is_primary": False,
+                    "alt": self.name,
+                    "id": 0,
+                    "source": "cover",
+                })
+            seen.add(cover_url)
+
+        if not images:
+            images.append({
+                "url": "/static/home/images/tipsycart-logo.png",
+                "is_primary": True,
+                "alt": self.name,
+                "id": 0,
+                "source": "default",
+            })
+        return images
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="gallery_images",
+    )
+    image = models.ImageField(
+        upload_to="products/gallery/",
+        blank=True,
+        null=True,
+        help_text="Upload gallery image file directly from computer (Cloudinary/local)",
+    )
+    image_url = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Direct public image link or Cloudinary URL (e.g. https://...)",
+    )
+    alt_text = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Descriptive alt text for SEO and accessibility",
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text="Set as primary/cover image for the product",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers appear first)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Product Gallery Image"
+        verbose_name_plural = "Product Gallery Images"
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return f"{self.product.name} Gallery Image #{self.id}"
+
+    def save(self, *args, **kwargs):
+        if self.is_primary and self.product_id:
+            ProductImage.objects.filter(product_id=self.product_id).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+    def get_image_url(self):
+        if self.image:
+            try:
+                url = self.image.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+                if hasattr(self.image, "path"):
+                    try:
+                        if os.path.exists(self.image.path):
+                            return url
+                    except (NotImplementedError, Exception):
+                        return url
+                elif not hasattr(self.image, "path"):
+                    return url
+            except Exception:
+                pass
+            fname = os.path.basename(self.image.name or "")
+            if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                return f"/static/home/images/products/{fname}"
+
+        if self.image_url and self.image_url.strip():
+            url = self.image_url.strip()
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            if url.startswith("/media/"):
+                rel_path = url.replace("/media/", "").lstrip("/")
+                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                if os.path.exists(full_path):
+                    return url
+                fname = os.path.basename(rel_path)
+                if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                    return f"/static/home/images/products/{fname}"
+            else:
+                return url
+
+        if self.product:
+            return self.product.get_image_url()
+        return "/static/home/images/tipsycart-logo.png"
+
+
+class ProductColour(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="colours",
+    )
+    name = models.CharField(
+        max_length=60,
+        help_text="Colour name e.g. Black, White, Sky Blue, Olive Green",
+    )
+    color_code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="#000000",
+        help_text="HEX color code (e.g. #000000, #FFFFFF, #2563EB)",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Product Colour"
+        verbose_name_plural = "Product Colours"
+        ordering = ["display_order", "id"]
+        unique_together = [["product", "name"]]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
+    def get_primary_image_url(self):
+        primary_img = self.images.filter(is_primary=True).first()
+        if not primary_img:
+            primary_img = self.images.first()
+        if primary_img:
+            return primary_img.get_image_url()
+        return self.product.get_image_url()
+
+
+class ProductColourImage(models.Model):
+    colour = models.ForeignKey(
+        ProductColour,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(
+        upload_to="products/variants/",
+        blank=True,
+        null=True,
+        help_text="Upload image file directly from computer (Cloudinary/local)",
+    )
+    image_url = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Direct public image link or Cloudinary URL (e.g. https://...)",
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text="Set as primary thumbnail for this colour",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Colour Image"
+        verbose_name_plural = "Colour Images"
+        ordering = ["display_order", "id"]
+
+    def __str__(self):
+        return f"{self.colour.name} Image #{self.id}"
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            ProductColourImage.objects.filter(colour=self.colour).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+    def get_image_url(self):
+        if self.image:
+            try:
+                url = self.image.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+                if hasattr(self.image, "path"):
+                    try:
+                        if os.path.exists(self.image.path):
+                            return url
+                    except (NotImplementedError, Exception):
+                        return url
+                elif not hasattr(self.image, "path"):
+                    return url
+            except Exception:
+                pass
+            fname = os.path.basename(self.image.name or "")
+            if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                return f"/static/home/images/products/{fname}"
+
+        if self.image_url and self.image_url.strip():
+            url = self.image_url.strip()
+            if url.startswith("http://") or url.startswith("https://"):
+                return url
+            if url.startswith("/media/"):
+                rel_path = url.replace("/media/", "").lstrip("/")
+                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                if os.path.exists(full_path):
+                    return url
+                fname = os.path.basename(rel_path)
+                if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
+                    return f"/static/home/images/products/{fname}"
+            else:
+                return url
+
+        if self.colour and self.colour.product:
+            return self.colour.product.get_image_url()
+        return "/static/home/images/tipsycart-logo.png"
+
+
+class ProductSize(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="sizes",
+    )
+    name = models.CharField(
+        max_length=50,
+        help_text="Size name e.g. S, M, L, XL, XXL, UK 7, Free Size, 500g, 1L",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Product Size"
+        verbose_name_plural = "Product Sizes"
+        ordering = ["display_order", "id"]
+        unique_together = [["product", "name"]]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.name}"
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="variants",
+    )
+    colour = models.ForeignKey(
+        ProductColour,
+        on_delete=models.CASCADE,
+        related_name="variants",
+        null=True,
+        blank=True,
+    )
+    size = models.ForeignKey(
+        ProductSize,
+        on_delete=models.CASCADE,
+        related_name="variants",
+        null=True,
+        blank=True,
+    )
+    sku = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Unique SKU for this variant (e.g. TC-BLK-M)",
+    )
+    variant_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Custom variant label (e.g. 250 g, 500 g, 1 kg, Pack of 2, Red / M)",
+    )
+    unit = models.CharField(
+        max_length=30,
+        blank=True,
+        default="",
+        help_text="Variant unit (e.g. g, kg, ml, L, piece, pack, box)",
+    )
+    unit_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Numeric weight or quantity value (e.g. 250, 500, 1)",
+    )
+    barcode = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Optional EAN/UPC barcode",
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Final selling price in INR",
+    )
+    original_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Original regular price / MRP in INR",
+    )
+    discount_enabled = models.BooleanField(default=False)
+    discount_type = models.CharField(
+        max_length=20,
+        choices=Product.DISCOUNT_TYPE_CHOICES,
+        default="percentage",
+        blank=True,
+    )
+    discount_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+    )
+    stock = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Product Variant"
+        verbose_name_plural = "Product Variants"
+        unique_together = [["product", "colour", "size"]]
+        ordering = ["colour__display_order", "size__display_order", "id"]
+
+    def __str__(self):
+        return f"{self.product.name} ({self.get_title()}) - ₹{self.price}"
+
+    def get_title(self):
+        if self.variant_name:
+            if self.colour and self.colour.name.lower() not in self.variant_name.lower():
+                return f"{self.colour.name} - {self.variant_name}"
+            return self.variant_name
+        parts = []
+        if self.colour:
+            parts.append(self.colour.name)
+        if self.size:
+            parts.append(self.size.name)
+        return " / ".join(parts) if parts else "Standard"
+
+    def get_full_name(self):
+        return f"{self.product.name} ({self.get_title()})"
+
+    @property
+    def is_in_stock(self):
+        return self.is_active and self.stock > 0
+
+    @property
+    def discount_percentage(self):
+        if not self.original_price or self.original_price <= self.price:
+            return 0
+        diff = self.original_price - self.price
+        return int(round((diff / self.original_price) * 100))
+
+    @property
+    def savings_amount(self):
+        if not self.original_price or self.original_price <= self.price:
+            return Decimal("0.00")
+        return round(self.original_price - self.price, 2)
+
+    def get_image_url(self):
+        if self.colour:
+            c_url = self.colour.get_primary_image_url()
+            if c_url:
+                return c_url
+        return self.product.get_image_url()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.price is not None and self.price < 0:
+            raise ValidationError({"price": "Variant price cannot be negative."})
+        if self.original_price is not None and self.original_price < 0:
+            raise ValidationError({"original_price": "Variant original price cannot be negative."})
+        if self.stock is not None and self.stock < 0:
+            raise ValidationError({"stock": "Variant stock cannot be negative."})
+        if self.discount_enabled and self.discount_value and self.discount_value > 0:
+            if self.discount_type == "percentage" and self.discount_value > 99:
+                raise ValidationError({"discount_value": "Percentage discount cannot exceed 99%."})
+            elif self.discount_type == "fixed" and self.original_price and self.discount_value >= self.original_price:
+                raise ValidationError({"discount_value": "Fixed discount cannot equal or exceed original price."})
+
+    def save(self, *args, **kwargs):
+        # 1. Fallback for original_price
+        if self.original_price is None or self.original_price <= 0:
+            self.original_price = self.price
+
+        # 2. Discount calculation
+        if self.discount_enabled and self.discount_value and self.discount_value > 0 and self.original_price:
+            if self.discount_type == "percentage":
+                pct = min(Decimal("99.00"), max(Decimal("0.00"), self.discount_value))
+                calc_price = self.original_price * (Decimal("100.00") - pct) / Decimal("100.00")
+                self.price = max(Decimal("1.00"), round(calc_price, 2))
+            else:
+                calc_price = self.original_price - self.discount_value
+                self.price = max(Decimal("1.00"), round(calc_price, 2))
+        elif self.original_price and self.price and self.original_price > self.price:
+            self.discount_enabled = True
+
+        # 3. Auto-generate SKU if empty
+        if not self.sku:
+            base_sku = self.product.product_number or f"TC-{self.product.id}"
+            col_part = slugify(self.colour.name)[:3].upper() if self.colour else "DEF"
+            sz_part = slugify(self.size.name)[:4].upper() if self.size else "STD"
+            self.sku = f"{base_sku}-{col_part}-{sz_part}"
+
+        super().save(*args, **kwargs)
+

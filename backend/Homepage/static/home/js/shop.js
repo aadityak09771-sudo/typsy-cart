@@ -114,6 +114,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderProductPriceHTML(product) {
+        if (product.is_variable && product.min_price && product.max_price) {
+            const minP = Number(product.min_price);
+            const maxP = Number(product.max_price);
+            if (minP < maxP) {
+                return `
+                    <div class="tc-price-wrap">
+                        <div class="tc-price-row">
+                            <span class="tc-price-current">₹${formatCurrency(minP)} – ₹${formatCurrency(maxP)}</span>
+                        </div>
+                        <small style="color:#64748b; font-size:12px; font-weight:600;">Multiple options available</small>
+                    </div>
+                `;
+            }
+        }
+
         const finalPrice = Math.max(0, Number(product.price) || 0);
         const originalPrice = Number(product.original_price);
         const isDiscountEnabled = Boolean(
@@ -593,7 +608,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 >
             `;
 
+            const isVariable = Boolean(product.is_variable || product.product_type === "variable");
             const inStock = product.stock > 0;
+
+            let coloursIndicatorHtml = "";
+            if (isVariable && Array.isArray(product.colours) && product.colours.length > 0) {
+                coloursIndicatorHtml = `
+                    <div class="product-colours-indicator" style="display:flex; align-items:center; gap:5px; margin: 6px 0 8px;">
+                        ${product.colours.slice(0, 5).map(c => `
+                            <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background-color:${escapeHTML(c.color_code || '#000')}; border:1px solid rgba(0,0,0,0.15); box-shadow:0 1px 2px rgba(0,0,0,0.08);" title="${escapeHTML(c.name)}"></span>
+                        `).join("")}
+                        ${product.colours.length > 5 ? `<span style="font-size:11px; color:#64748b; font-weight:700;">+${product.colours.length - 5}</span>` : ""}
+                        <small style="font-size:11px; color:#64748b; margin-left:3px; font-weight:600;">${product.colours.length} colour${product.colours.length > 1 ? "s" : ""}</small>
+                    </div>
+                `;
+            }
+
+            let actionButtonHtml = "";
+            if (isVariable) {
+                actionButtonHtml = `
+                    <a href="/product/${product.id}/" class="btn-select-options" style="display:block; text-align:center; background:linear-gradient(135deg, #ec4899, #a51655); color:white; font-weight:700; font-size:13px; padding:10px 14px; border-radius:10px; text-decoration:none; box-shadow:0 4px 12px rgba(165,22,85,0.18);">
+                        Select Options →
+                    </a>
+                `;
+            } else {
+                actionButtonHtml = `
+                    <button
+                        type="button"
+                        data-add="${product.id}"
+                        ${!inStock ? "disabled" : ""}
+                    >
+                        ${inStock ? "Add to Cart" : "Out of Stock"}
+                    </button>
+                `;
+            }
 
             return `
                 <article class="product-card">
@@ -613,6 +661,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <p>${escapeHTML(product.description)}</p>
 
+                    ${coloursIndicatorHtml}
+
                     <div class="product-price">
                         ${renderProductPriceHTML(product)}
                     </div>
@@ -623,13 +673,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             : "Out of stock"}
                     </p>
 
-                    <button
-                        type="button"
-                        data-add="${product.id}"
-                        ${!inStock ? "disabled" : ""}
-                    >
-                        ${inStock ? "Add to Cart" : "Out of Stock"}
-                    </button>
+                    ${actionButtonHtml}
                 </article>
             `;
         }).join("");
@@ -1105,6 +1149,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const requestedCategory = params.get("category");
     const requestedSubcategory = params.get("subcategory");
+    const requestedSearch = params.get("search") || params.get("q");
+
+    if (requestedSearch && searchInput) {
+        searchInput.value = requestedSearch;
+    }
 
     if (
         requestedCategory &&

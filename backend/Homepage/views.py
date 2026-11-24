@@ -109,15 +109,102 @@ def shop(request):
         products = Product.objects.filter(
             is_active=True
         ).order_by("-created_at")
-        categories_list = Category.objects.filter(is_active=True).order_by("display_order")
+        categories_list = Category.objects.filter(is_active=True).prefetch_related("subcategories").order_by("display_order")
+
+        # Dynamic SEO category & subcategory resolution
+        category_slug = request.GET.get("category", "").strip().lower()
+        subcategory_slug = request.GET.get("subcategory", "").strip().lower()
+
+        selected_category = None
+        selected_subcategory = None
+
+        if category_slug:
+            selected_category = Category.objects.filter(slug__iexact=category_slug, is_active=True).first()
+
+        if subcategory_slug:
+            selected_subcategory = Subcategory.objects.filter(slug__iexact=subcategory_slug, is_active=True).first()
+
     except Exception as e:
         logger.exception("Error fetching products for shop page: %s", e)
         products = []
         categories_list = []
+        selected_category = None
+        selected_subcategory = None
 
     return render(request, "home/shop.html", {
         "products": products,
         "categories_list": categories_list,
+        "selected_category": selected_category,
+        "selected_subcategory": selected_subcategory,
+        "search_query": request.GET.get("search", "").strip() or request.GET.get("q", "").strip(),
+    })
+
+
+def search_view(request):
+    """
+    Search results page displaying matching products with full filters.
+    """
+    from django.db.models import Q
+    query = request.GET.get("q", "").strip() or request.GET.get("search", "").strip()
+    category_slug = request.GET.get("category", "").strip().lower()
+    subcategory_slug = request.GET.get("subcategory", "").strip().lower()
+    sort = request.GET.get("sort", "relevance").strip()
+
+    products_qs = Product.objects.filter(is_active=True).select_related(
+        "category_ref", "subcategory_ref"
+    ).prefetch_related(
+        "variants", "colours", "sizes", "gallery_images"
+    )
+
+    if query:
+        words = query.split()
+        q_filter = Q()
+        for w in words[:5]:
+            q_filter &= (
+                Q(name__icontains=w) |
+                Q(brand__icontains=w) |
+                Q(category__icontains=w) |
+                Q(subcategory__icontains=w) |
+                Q(category_ref__name__icontains=w) |
+                Q(subcategory_ref__name__icontains=w) |
+                Q(product_number__icontains=w) |
+                Q(description__icontains=w) |
+                Q(variants__sku__icontains=w) |
+                Q(variants__variant_name__icontains=w)
+            )
+        products_qs = products_qs.filter(q_filter).distinct()
+
+    if category_slug and category_slug != "all":
+        products_qs = products_qs.filter(
+            Q(category_ref__slug__iexact=category_slug) | Q(category__iexact=category_slug)
+        )
+
+    if subcategory_slug and subcategory_slug != "all":
+        products_qs = products_qs.filter(
+            Q(subcategory_ref__slug__iexact=subcategory_slug) | Q(subcategory__iexact=subcategory_slug)
+        )
+
+    if sort == "price-low":
+        products_qs = products_qs.order_by("price")
+    elif sort == "price-high":
+        products_qs = products_qs.order_by("-price")
+    elif sort == "newest":
+        products_qs = products_qs.order_by("-created_at")
+    elif sort == "discount":
+        products_qs = products_qs.order_by("-discount_value")
+    else:
+        products_qs = products_qs.order_by("-is_featured", "-created_at")
+
+    categories_list = Category.objects.filter(is_active=True).prefetch_related("subcategories").order_by("display_order")
+
+    return render(request, "home/search.html", {
+        "products": products_qs,
+        "query": query,
+        "results_count": products_qs.count(),
+        "categories_list": categories_list,
+        "selected_category": category_slug,
+        "selected_subcategory": subcategory_slug,
+        "selected_sort": sort,
     })
 
 
@@ -206,9 +293,110 @@ def cart_view(request):
 
 
 def product_detail(request, pk):
+    import json
     from django.shortcuts import get_object_or_404
-    product = get_object_or_404(Product, pk=pk, is_active=True)
-    return render(request, "home/product_detail.html", {"product": product})
+    product = get_object_or_404(
+        Product.objects.select_related("category_ref", "subcategory_ref").prefetch_related(
+            "gallery_images",
+            "colours",
+            "colours__images",
+            "sizes",
+            "variants",
+            "variants__colour",
+            "variants__size",
+        ),
+        pk=pk,
+        is_active=True,
+    )
+
+    all_gallery_images = product.get_all_images()
+
+    # -------------------------------------------------------------------------
+    # SIMILAR / RELATED PRODUCTS QUERY
+    # -------------------------------------------------------------------------
+    similar_products = []
+    try:
+        base_qs = Product.objects.filter(is_active=True).exclude(pk=product.pk).select_related(
+            "category_ref", "subcategory_ref"
+        )
+        subcat_matches = []
+        if product.subcategory_ref:
+            subcat_matches = list(base_qs.filter(subcategory_ref=product.subcategory_ref)[:8])
+        elif product.subcategory:
+            subcat_matches = list(base_qs.filter(subcategory=product.subcategory)[:8])
+
+        cat_matches = []
+        if len(subcat_matches) < 4:
+            needed = 8 - len(subcat_matches)
+            sub_ids = [p.id for p in subcat_matches]
+            if product.category_ref:
+                cat_matches = list(base_qs.filter(category_ref=product.category_ref).exclude(id__in=sub_ids)[:needed])
+            elif product.category:
+                cat_matches = list(base_qs.filter(category=product.category).exclude(id__in=sub_ids)[:needed])
+
+        similar_products = (subcat_matches + cat_matches)[:8]
+    except Exception as e:
+        logger.warning("Error fetching similar products: %s", e)
+        similar_products = []
+
+    context = {
+        "product": product,
+        "is_variable": product.is_variable,
+        "gallery_images": all_gallery_images,
+        "gallery_images_json": json.dumps(all_gallery_images),
+        "similar_products": similar_products,
+        "unit_selector_label": product.unit_selector_label,
+    }
+
+    if product.is_variable:
+        colours = list(product.colours.filter(is_active=True))
+        sizes = list(product.sizes.filter(is_active=True))
+        variants = list(product.variants.filter(is_active=True))
+
+        colours_data = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "color_code": c.color_code,
+                "images": [
+                    img.get_image_url() for img in c.images.all()
+                ] or [c.get_primary_image_url()],
+            }
+            for c in colours
+        ]
+
+        variants_data = [
+            {
+                "id": v.id,
+                "colour_id": v.colour_id,
+                "colour_name": v.colour.name if v.colour else "",
+                "size_id": v.size_id,
+                "size_name": v.size.name if v.size else "",
+                "variant_name": v.variant_name or "",
+                "unit": v.unit or "",
+                "unit_value": str(v.unit_value) if v.unit_value else "",
+                "title": v.get_title(),
+                "sku": v.sku,
+                "price": str(v.price),
+                "original_price": str(v.original_price or v.price),
+                "discount_percentage": v.discount_percentage,
+                "savings_amount": str(v.savings_amount),
+                "stock": v.stock,
+                "is_in_stock": v.is_in_stock,
+                "image_url": v.get_image_url(),
+            }
+            for v in variants
+        ]
+
+        context.update({
+            "colours": colours,
+            "sizes": sizes,
+            "variants": variants,
+            "colours_json": json.dumps(colours_data),
+            "variants_json": json.dumps(variants_data),
+        })
+
+    return render(request, "home/product_detail.html", context)
 
 
 def subscribe_newsletter(request):
@@ -287,14 +475,28 @@ def robots_txt(request):
     while strictly disallowing crawling of admin, accounts, dashboard, delivery portal,
     and checkout/cart endpoints.
     """
+    import os
     from django.http import HttpResponse
-    host = request.get_host()
-    scheme = "https" if request.is_secure() else "http"
+
+    custom_domain = os.getenv("CUSTOM_DOMAIN", "").strip().lower()
+    if custom_domain:
+        custom_domain = custom_domain.replace("https://", "").replace("http://", "").strip("/")
+        base_url = f"https://{custom_domain}"
+    elif os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+        base_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME').strip().lower()}"
+    elif request:
+        scheme = "https" if request.is_secure() else "http"
+        base_url = f"{scheme}://{request.get_host()}"
+    else:
+        base_url = "https://typsy-cart.onrender.com"
+
     lines = [
         "User-agent: *",
         "Allow: /",
         "Allow: /shop/",
         "Allow: /categories/",
+        "Allow: /product/",
+        "Allow: /products/",
         "Allow: /about/",
         "Allow: /contact/",
         "Allow: /help-center/",
@@ -309,11 +511,14 @@ def robots_txt(request):
         "Disallow: /delivery/",
         "Disallow: /orders/checkout/",
         "Disallow: /orders/cart/",
+        "Disallow: /checkout/",
+        "Disallow: /cart/",
         "Disallow: /login/",
         "Disallow: /register/",
+        "Disallow: /track-order/",
         "Disallow: /api/",
         "",
-        f"Sitemap: {scheme}://{host}/sitemap.xml",
+        f"Sitemap: {base_url}/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
 
@@ -323,18 +528,28 @@ def sitemap_xml(request):
     XML sitemap for Google and search engines.
     Dynamically includes all active storefront pages, category landing pages,
     and active catalog products with proper lastmod and priorities.
-    Excludes all private customer and order endpoints.
+    Excludes all private customer, cart, and admin endpoints.
     """
+    import os
     from django.http import HttpResponse
     from django.utils.html import escape
-    host = request.get_host()
-    scheme = "https" if request.is_secure() else "http"
-    base_url = f"{scheme}://{host}"
+
+    custom_domain = os.getenv("CUSTOM_DOMAIN", "").strip().lower()
+    if custom_domain:
+        custom_domain = custom_domain.replace("https://", "").replace("http://", "").strip("/")
+        base_url = f"https://{custom_domain}"
+    elif os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+        base_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME').strip().lower()}"
+    elif request:
+        scheme = "https" if request.is_secure() else "http"
+        base_url = f"{scheme}://{request.get_host()}"
+    else:
+        base_url = "https://typsy-cart.onrender.com"
 
     static_urls = [
         {"loc": f"{base_url}/", "changefreq": "daily", "priority": "1.0"},
         {"loc": f"{base_url}/shop/", "changefreq": "daily", "priority": "0.9"},
-        {"loc": f"{base_url}/categories/", "changefreq": "weekly", "priority": "0.8"},
+        {"loc": f"{base_url}/categories/", "changefreq": "weekly", "priority": "0.85"},
         {"loc": f"{base_url}/about/", "changefreq": "monthly", "priority": "0.6"},
         {"loc": f"{base_url}/contact/", "changefreq": "monthly", "priority": "0.6"},
         {"loc": f"{base_url}/help-center/", "changefreq": "monthly", "priority": "0.5"},
@@ -345,32 +560,39 @@ def sitemap_xml(request):
         {"loc": f"{base_url}/shipping-delivery/", "changefreq": "monthly", "priority": "0.5"},
     ]
 
-    category_slugs = [
-        "period-care",
-        "personal-safety",
-        "personal-care",
-        "daily-essentials",
-    ]
-    for cat in category_slugs:
-        static_urls.append(
-            {
-                "loc": f"{base_url}/shop/?category={cat}",
-                "changefreq": "daily",
-                "priority": "0.85",
-            }
-        )
+    category_urls = []
+    try:
+        active_categories = Category.objects.filter(is_active=True).prefetch_related("subcategories").order_by("display_order")
+        for cat in active_categories:
+            category_urls.append(
+                {
+                    "loc": f"{base_url}/shop/?category={cat.slug}",
+                    "changefreq": "daily",
+                    "priority": "0.85",
+                }
+            )
+            for sub in cat.subcategories.filter(is_active=True):
+                category_urls.append(
+                    {
+                        "loc": f"{base_url}/shop/?category={cat.slug}&subcategory={sub.slug}",
+                        "changefreq": "weekly",
+                        "priority": "0.8",
+                    }
+                )
+    except Exception as e:
+        logger.warning("Could not fetch categories for sitemap: %s", e)
 
     product_entries = []
     try:
-        active_products = Product.objects.filter(is_active=True).order_by("-created_at")[:100]
+        active_products = Product.objects.filter(is_active=True).order_by("-created_at")[:500]
         for p in active_products:
             lastmod = p.created_at.strftime("%Y-%m-%d") if p.created_at else ""
             product_entries.append(
                 {
-                    "loc": f"{base_url}/shop/?category={p.category.lower().replace(' ', '-')}",
+                    "loc": f"{base_url}/product/{p.id}/",
                     "lastmod": lastmod,
                     "changefreq": "weekly",
-                    "priority": "0.7",
+                    "priority": "0.8",
                 }
             )
     except Exception as e:
@@ -380,9 +602,9 @@ def sitemap_xml(request):
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
-    for item in static_urls + product_entries:
+    for item in static_urls + category_urls + product_entries:
         xml_lines.append("  <url>")
-        xml_lines.append(f"    <loc>{item['loc']}</loc>")
+        xml_lines.append(f"    <loc>{escape(item['loc'])}</loc>")
         if item.get("lastmod"):
             xml_lines.append(f"    <lastmod>{item['lastmod']}</lastmod>")
         xml_lines.append(f"    <changefreq>{item['changefreq']}</changefreq>")

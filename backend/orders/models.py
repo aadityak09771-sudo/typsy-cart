@@ -29,14 +29,37 @@ class CartItem(models.Model):
         Product,
         on_delete=models.CASCADE,
     )
+    variant = models.ForeignKey(
+        "products.ProductVariant",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="cart_items",
+    )
     quantity = models.PositiveIntegerField(default=1)
 
+    class Meta:
+        unique_together = [["cart", "product", "variant"]]
+
     def __str__(self):
-        return f"{self.product} × {self.quantity}"
+        title = f"{self.product.name} ({self.variant.get_title()})" if self.variant else self.product.name
+        return f"{title} × {self.quantity}"
+
+    @property
+    def unit_price(self):
+        if self.variant:
+            return self.variant.price
+        return self.product.price
 
     @property
     def subtotal(self):
-        return self.product.price * self.quantity
+        return self.unit_price * self.quantity
+
+    @property
+    def image_url(self):
+        if self.variant:
+            return self.variant.get_image_url()
+        return self.product.get_image_url()
 
 
 class Order(models.Model):
@@ -271,6 +294,28 @@ class OrderItem(models.Model):
         on_delete=models.PROTECT,
     )
 
+    variant = models.ForeignKey(
+        "products.ProductVariant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_items",
+    )
+
+    variant_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        help_text="Selected variant details e.g. Colour: Black, Size: L",
+    )
+
+    variant_sku = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Variant SKU",
+    )
+
     product_name = models.CharField(max_length=200)
 
     price = models.DecimalField(
@@ -286,6 +331,8 @@ class OrderItem(models.Model):
 
     @property
     def image_url(self):
+        if self.variant:
+            return self.variant.get_image_url()
         if self.product:
             if hasattr(self.product, "get_image_url"):
                 return self.product.get_image_url()
@@ -293,7 +340,8 @@ class OrderItem(models.Model):
         return ""
 
     def __str__(self):
-        return f"{self.product_name} × {self.quantity}"
+        desc = f"{self.product_name} ({self.variant_name})" if self.variant_name else self.product_name
+        return f"{desc} × {self.quantity}"
 
 
 class Coupon(models.Model):

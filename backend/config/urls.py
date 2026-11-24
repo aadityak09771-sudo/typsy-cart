@@ -9,11 +9,16 @@ from django.urls import path, include, re_path
 from django.views.static import serve
 from accounts import views as accounts_views
 from Homepage import views as homepage_views
+from orders import views as order_views
 from products import admin_views
 
 urlpatterns = [
     # Global admin logout to ensure clean logout for both staff and unauthorized accounts
     path("admin/logout/", accounts_views.admin_logout_view, name="admin_logout"),
+
+    # Real-time search autocomplete API alias
+    path("api/search/", order_views.search_autocomplete, name="root_search_autocomplete"),
+    path("search/", homepage_views.search_view, name="root_search_view"),
 
     # Custom Admin Management Views (Staff/Superuser protected)
     path("admin/inventory/", admin.site.admin_view(admin_views.inventory_view), name="admin_inventory"),

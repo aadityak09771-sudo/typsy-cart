@@ -24,6 +24,13 @@ urlpatterns = [
         name="categories_json",
     ),
 
+    # Real-time search autocomplete API
+    path(
+        "api/search/",
+        views.search_autocomplete,
+        name="search_autocomplete",
+    ),
+
     # Existing logged-in cart
     path("cart/", views.cart_json, name="cart_json"),
     path("cart/add/", views.add_to_cart, name="add_to_cart"),

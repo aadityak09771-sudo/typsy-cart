@@ -13,11 +13,20 @@ from django.core.validators import URLValidator
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from .models import Category, Subcategory, Product
+from .models import (
+    Category,
+    Subcategory,
+    Product,
+    ProductImage,
+    ProductColour,
+    ProductColourImage,
+    ProductSize,
+    ProductVariant,
+)
 from .services.zip_importer import ZipProductImporter
 
 
@@ -406,7 +415,29 @@ class SubcategoryAdmin(admin.ModelAdmin):
 # PRODUCT ADMIN FORM & ADMIN
 # ---------------------------------------------------------------------------
 
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"accept": "image/*"}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(d, initial) for d in data]
+        return single_clean(data, initial)
+
+
 class ProductAdminForm(forms.ModelForm):
+    bulk_gallery_images = MultipleFileField(
+        required=False,
+        label="Bulk Upload Gallery Images",
+        help_text="Select and upload multiple gallery images together at once (hold Ctrl/Cmd or Shift).",
+    )
+
     class Meta:
         model = Product
         fields = "__all__"
@@ -463,6 +494,126 @@ class ProductAdminForm(forms.ModelForm):
 
 
 # ---------------------------------------------------------------------------
+# VARIANT INLINES & ADMINS
+# ---------------------------------------------------------------------------
+
+class ProductColourImageInline(admin.TabularInline):
+    model = ProductColourImage
+    extra = 1
+    fields = ("image_preview_small", "image", "image_url", "is_primary", "display_order")
+    readonly_fields = ("image_preview_small",)
+
+    def image_preview_small(self, obj):
+        url = obj.get_image_url() if obj and obj.pk else ""
+        if not url:
+            url = "/static/home/images/tipsycart-logo.png"
+        return format_html(
+            '<img src="{}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
+            url
+        )
+    image_preview_small.short_description = "Preview"
+
+
+@admin.register(ProductColour)
+class ProductColourAdmin(admin.ModelAdmin):
+    list_display = ("name", "product", "color_code_badge", "image_count_badge", "display_order", "is_active")
+    list_filter = ("product", "is_active")
+    search_fields = ("name", "product__name", "color_code")
+    inlines = [ProductColourImageInline]
+
+    @admin.display(description="Swatch")
+    def color_code_badge(self, obj):
+        code = obj.color_code or "#000000"
+        return format_html(
+            '<span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:{}; vertical-align:middle; margin-right:6px; border:1px solid #ccc;"></span>{}',
+            code, code
+        )
+
+    @admin.display(description="Images")
+    def image_count_badge(self, obj):
+        count = obj.images.count()
+        return format_html('<span style="font-weight:600; color:#a51655;">{} image(s)</span>', count)
+
+
+@admin.register(ProductSize)
+class ProductSizeAdmin(admin.ModelAdmin):
+    list_display = ("name", "product", "display_order", "is_active")
+    list_filter = ("product", "is_active")
+    search_fields = ("name", "product__name")
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+    fields = ("image_preview", "image", "image_url", "alt_text", "is_primary", "display_order")
+    readonly_fields = ("image_preview",)
+    show_change_link = True
+
+    @admin.display(description="Preview")
+    def image_preview(self, obj):
+        url = obj.get_image_url() if obj else ""
+        if url:
+            return format_html('<img src="{}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0;" />', url)
+        return "—"
+
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ("image_preview", "product", "is_primary", "display_order", "created_at")
+    list_filter = ("is_primary", "product")
+    search_fields = ("product__name", "alt_text")
+
+    @admin.display(description="Preview")
+    def image_preview(self, obj):
+        url = obj.get_image_url() if obj else ""
+        if url:
+            return format_html('<img src="{}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 6px;" />', url)
+        return "—"
+
+
+class ProductColourInline(admin.TabularInline):
+    model = ProductColour
+    extra = 1
+    fields = ("name", "color_code", "display_order", "is_active")
+    show_change_link = True
+
+
+class ProductSizeInline(admin.TabularInline):
+    model = ProductSize
+    extra = 1
+    fields = ("name", "display_order", "is_active")
+    show_change_link = True
+
+
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 0
+    fields = (
+        "colour",
+        "size",
+        "variant_name",
+        "unit_value",
+        "unit",
+        "sku",
+        "original_price",
+        "discount_enabled",
+        "discount_value",
+        "price",
+        "stock",
+        "is_active",
+    )
+    show_change_link = True
+
+
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = ("get_full_name", "product", "colour", "size", "sku", "price", "original_price", "stock", "is_active")
+    list_filter = ("product", "is_active", "colour", "size")
+    search_fields = ("sku", "barcode", "product__name", "colour__name", "size__name")
+    list_editable = ("price", "stock", "is_active")
+
+
+# ---------------------------------------------------------------------------
 # PRODUCT ADMIN
 # ---------------------------------------------------------------------------
 
@@ -470,11 +621,15 @@ class ProductAdminForm(forms.ModelForm):
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
 
+    inlines = [ProductImageInline, ProductColourInline, ProductSizeInline, ProductVariantInline]
+    actions = ["activate_products", "deactivate_products", "generate_variants_action"]
+
     list_display = (
         "image_preview",
         "product_number",
         "name",
         "category_badge",
+        "product_type_badge",
         "pricing_display",
         "stock_badge",
         "is_available",
@@ -484,6 +639,7 @@ class ProductAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
+        "product_type",
         "category_ref",
         "subcategory_ref",
         "is_available",
@@ -530,6 +686,17 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
         (
+            "Product Type, Units & Variants Mode",
+            {
+                "fields": (
+                    "product_type",
+                    ("unit_type", "unit", "unit_value"),
+                    "variant_generator_link",
+                ),
+                "description": "Choose Simple Product for standard items with a single price & stock. Choose Variable Product to unlock options (Weights, Volumes, Packs, Colours, Sizes) with independent pricing & inventory below.",
+            },
+        ),
+        (
             "Categorization",
             {
                 "fields": (
@@ -549,7 +716,7 @@ class ProductAdmin(admin.ModelAdmin):
                     "discount_value",
                     "price",
                 ),
-                "description": "Final Selling Price is charged to customers. If Discount is enabled, it auto-calculates from Original Price.",
+                "description": "Final Selling Price is charged to customers (or used as base starting price for variants). If Discount is enabled, it auto-calculates from Original Price.",
             },
         ),
         (
@@ -559,26 +726,19 @@ class ProductAdmin(admin.ModelAdmin):
                     "stock",
                     "is_available",
                 ),
-                "description": "Stock count in units. If stock reaches 0, availability is auto-disabled.",
+                "description": "Stock count in units (or base stock). If stock reaches 0, availability is auto-disabled.",
             },
         ),
         (
-            "Option 1: Upload Image from Computer",
+            "Product Primary Image & Bulk Gallery Upload",
             {
                 "fields": (
                     "image",
                     "image_preview_large",
-                ),
-                "description": "Upload a product photo directly from your computer (JPG, PNG, WEBP, GIF). Maximum 12 MB.",
-            },
-        ),
-        (
-            "Option 2: Enter External Direct Image URL",
-            {
-                "fields": (
                     "image_url",
+                    "bulk_gallery_images",
                 ),
-                "description": "Or enter an external public direct image link. Leave blank if uploading an image file above.",
+                "description": "Upload a primary image or enter direct image link. Use 'Bulk Upload Gallery Images' to select multiple photos at once. You can also view, edit, and reorder all gallery images in the table below.",
             },
         ),
         (
@@ -593,7 +753,7 @@ class ProductAdmin(admin.ModelAdmin):
         ),
     )
 
-    readonly_fields = ("image_preview_large", "created_at")
+    readonly_fields = ("image_preview_large", "variant_generator_link", "created_at")
 
     class Media:
         js = ("products/admin_dynamic.js",)
@@ -717,6 +877,41 @@ class ProductAdmin(admin.ModelAdmin):
         updated = queryset.update(is_featured=False)
         self.message_user(request, f"{updated} products unfeatured.", level=messages.SUCCESS)
 
+    @admin.display(description="Type", ordering="product_type")
+    def product_type_badge(self, obj):
+        if obj.is_variable:
+            count = obj.variants.count()
+            return format_html(
+                '<span style="background: #fdf2f8; color: #a51655; border: 1px solid #fbcfe8; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">Variable ({})</span>',
+                count,
+            )
+        return mark_safe(
+            '<span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;">Simple</span>'
+        )
+
+    @admin.display(description="Variant Tools")
+    def variant_generator_link(self, obj):
+        if not obj or not obj.pk:
+            return "Save this product first to configure colours, sizes and auto-generate variants."
+        url = reverse("admin:products_product_generate_variants", args=[obj.pk])
+        var_count = obj.variants.count()
+        col_count = obj.colours.count()
+        size_count = obj.sizes.count()
+        return format_html(
+            '<div style="background: #fff0f5; padding: 14px 18px; border-radius: 10px; border: 1px solid #fbcfe8; margin-top: 6px;">'
+            '<p style="margin: 0 0 10px 0; color: #831843; font-weight: 600; font-size: 13px;">'
+            'Colours added: <strong>{}</strong> &nbsp;|&nbsp; Sizes added: <strong>{}</strong> &nbsp;|&nbsp; Active Variants: <strong>{}</strong>'
+            '</p>'
+            '<a href="{}" class="button" style="background: linear-gradient(135deg, #ec4899, #a51655); color: white !important; font-weight: 700; padding: 9px 18px; border-radius: 8px; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(165, 22, 85, 0.2);">'
+            '⚡ Auto-Generate All Variant Combinations'
+            '</a>'
+            '<p style="margin: 8px 0 0 0; font-size: 11px; color: #9d174d; line-height: 1.4;">'
+            'Click to automatically create Cartesian combinations (Colours × Sizes) with default pricing and stock. Then edit individual prices, discounts, and inventory in the Product Variants section below.'
+            '</p>'
+            '</div>',
+            col_count, size_count, var_count, url
+        )
+
     @admin.action(description="👁️ Activate selected products (Visible in Store)")
     def activate_products(self, request, queryset):
         updated = queryset.update(is_active=True)
@@ -727,6 +922,102 @@ class ProductAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"{updated} products hidden from store.", level=messages.SUCCESS)
 
+    @admin.action(description="⚡ Generate Variant Combinations for selected products")
+    def generate_variants_action(self, request, queryset):
+        total_created = 0
+        for product in queryset:
+            if product.product_type != "variable":
+                product.product_type = "variable"
+                product.save(update_fields=["product_type"])
+            created, _ = self._generate_combinations_for_product(product)
+            total_created += created
+        self.message_user(
+            request,
+            f"⚡ Generated {total_created} new variant combinations for selected products.",
+            level=messages.SUCCESS
+        )
+
+    def _generate_combinations_for_product(self, product):
+        colours = list(product.colours.filter(is_active=True))
+        sizes = list(product.sizes.filter(is_active=True))
+        if not colours and not sizes:
+            return 0, 0
+
+        c_list = colours if colours else [None]
+        s_list = sizes if sizes else [None]
+        created_count = 0
+        existing_count = 0
+
+        for c in c_list:
+            for s in s_list:
+                var, created = ProductVariant.objects.get_or_create(
+                    product=product,
+                    colour=c,
+                    size=s,
+                    defaults={
+                        "price": product.price,
+                        "original_price": product.original_price or product.price,
+                        "discount_enabled": product.discount_enabled,
+                        "discount_type": product.discount_type,
+                        "discount_value": product.discount_value,
+                        "stock": product.stock,
+                        "is_active": True,
+                        "unit": product.unit or "",
+                        "variant_name": s.name if s else (c.name if c else "Standard"),
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    existing_count += 1
+        return created_count, existing_count
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        bulk_files = request.FILES.getlist("bulk_gallery_images")
+        if bulk_files and form.instance and form.instance.pk:
+            current_max_order = form.instance.gallery_images.count()
+            for idx, f in enumerate(bulk_files):
+                ProductImage.objects.create(
+                    product=form.instance,
+                    image=f,
+                    alt_text=form.instance.name,
+                    display_order=current_max_order + idx + 1,
+                )
+            self.message_user(
+                request,
+                f"📸 Successfully uploaded {len(bulk_files)} gallery image(s) for {form.instance.name}.",
+                level=messages.SUCCESS
+            )
+
+    def generate_variants_view(self, request, product_id):
+        product = self.get_object(request, product_id)
+        if not product:
+            messages.error(request, "Product not found.")
+            return redirect("admin:products_product_changelist")
+
+        if product.product_type != "variable":
+            product.product_type = "variable"
+            product.save(update_fields=["product_type"])
+
+        created, existing = self._generate_combinations_for_product(product)
+        if created == 0 and existing == 0:
+            messages.warning(
+                request,
+                f"Please add at least one Colour or Size in the sections below before generating combinations."
+            )
+        elif created > 0:
+            messages.success(
+                request,
+                f"⚡ Successfully generated {created} new variant combinations for '{product.name}'! (Existing: {existing})"
+            )
+        else:
+            messages.info(
+                request,
+                f"All {existing} variant combinations already exist for '{product.name}'."
+            )
+        return redirect("admin:products_product_change", product_id)
+
     # -----------------------------------------------------------------------
     # CUSTOM URLS
     # -----------------------------------------------------------------------
@@ -734,6 +1025,11 @@ class ProductAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
+            path(
+                "<int:product_id>/generate-variants/",
+                self.admin_site.admin_view(self.generate_variants_view),
+                name="products_product_generate_variants",
+            ),
             path(
                 "import-csv/",
                 self.admin_site.admin_view(self.import_csv),

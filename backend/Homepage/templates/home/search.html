@@ -1,0 +1,324 @@
+{% extends "home/base.html" %}
+{% load static %}
+
+{% block title %}Search Results for "{{ query|default:'Products' }}" | TipsyCart Kanpur{% endblock %}
+
+{% block meta_description %}Find {{ query|default:'products' }} on TipsyCart Kanpur. Fast doorstep delivery of groceries, essentials, personal hygiene and safety products.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'home/css/shop.css' %}?v=3.2">
+<style>
+.tc-search-results-hero {
+    background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 100%);
+    border-bottom: 1px solid #fce7f3;
+    padding: 36px 5% 28px;
+    margin-bottom: 24px;
+}
+.tc-search-results-hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.tc-search-heading-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #a51655;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+}
+.tc-search-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+.tc-search-title span {
+    color: #a51655;
+}
+.tc-search-subtitle {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0;
+}
+.tc-filter-pill-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 0 6px;
+    scrollbar-width: none;
+}
+.tc-filter-pill-bar::-webkit-scrollbar {
+    display: none;
+}
+.tc-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid #f1d5e2;
+    color: #475569;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.tc-filter-pill:hover,
+.tc-filter-pill.active {
+    background: #a51655;
+    color: #ffffff;
+    border-color: #a51655;
+}
+.tc-search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 5% 60px;
+}
+.tc-product-card {
+    background: #ffffff;
+    border: 1px solid #f1e2e9;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+.tc-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(165, 22, 85, 0.08);
+    border-color: #fbcfe8;
+}
+.tc-card-img-wrap {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fdf4f8;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 12px;
+    position: relative;
+}
+.tc-card-img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+}
+.tc-product-card:hover .tc-card-img {
+    transform: scale(1.04);
+}
+.tc-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #a51655;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+.tc-card-brand {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.tc-card-name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px;
+    line-height: 1.35;
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.tc-card-name:hover {
+    color: #a51655;
+}
+.tc-card-pricing {
+    margin-top: auto;
+    padding-top: 10px;
+}
+.tc-card-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.tc-current-price {
+    font-size: 17px;
+    font-weight: 800;
+    color: #a51655;
+}
+.tc-original-price {
+    font-size: 12.5px;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+.tc-card-action-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+.tc-btn-primary {
+    background: #a51655;
+    color: #ffffff;
+}
+.tc-btn-primary:hover {
+    background: #831843;
+}
+.tc-btn-outline {
+    background: #fff0f6;
+    color: #a51655;
+    border: 1.5px solid #fbcfe8;
+}
+.tc-btn-outline:hover {
+    background: #a51655;
+    color: #ffffff;
+    border-color: #a51655;
+}
+.tc-search-empty-box {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.tc-search-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-search-results-page">
+
+    <section class="tc-search-results-hero">
+        <div class="tc-search-results-hero-inner">
+            <span class="tc-search-heading-label">Search Results</span>
+            <h1 class="tc-search-title">
+                {% if query %}
+                    Results for "<span>{{ query }}</span>"
+                {% else %}
+                    Browse All Products
+                {% endif %}
+            </h1>
+            <p class="tc-search-subtitle">
+                Found <strong>{{ results_count }}</strong> item{{ results_count|pluralize }} matching your search.
+            </p>
+
+            <!-- Category Filter Pills -->
+            <div class="tc-filter-pill-bar">
+                <a href="/search/?q={{ query|urlencode }}" class="tc-filter-pill {% if not selected_category %}active{% endif %}">
+                    All Categories
+                </a>
+                {% for cat in categories_list %}
+                <a href="/search/?q={{ query|urlencode }}&category={{ cat.slug }}" class="tc-filter-pill {% if selected_category == cat.slug %}active{% endif %}">
+                    {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {% if products %}
+    <section class="tc-search-grid" aria-label="Search Results Grid">
+        {% for p in products %}
+        <article class="tc-product-card">
+            <div class="tc-card-img-wrap">
+                {% if p.discount_percentage > 0 %}
+                    <span class="tc-discount-badge">{{ p.discount_percentage }}% OFF</span>
+                {% endif %}
+                <a href="/product/{{ p.id }}/">
+                    <img src="{{ p.get_image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy">
+                </a>
+            </div>
+
+            <div>
+                {% if p.brand %}
+                    <div class="tc-card-brand">{{ p.brand }}</div>
+                {% elif p.category %}
+                    <div class="tc-card-brand">{{ p.category }}</div>
+                {% endif %}
+
+                <h3 style="margin: 0;">
+                    <a href="/product/{{ p.id }}/" class="tc-card-name">{{ p.name }}</a>
+                </h3>
+
+                {% if p.unit_value and p.unit %}
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500;">
+                        {{ p.unit_value|floatformat }} {{ p.unit }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="tc-card-pricing">
+                <div class="tc-card-price-row">
+                    {% if p.is_variable and p.has_variants %}
+                        <span class="tc-current-price">{{ p.price_range_display }}</span>
+                    {% else %}
+                        <span class="tc-current-price">₹{{ p.price }}</span>
+                        {% if p.original_price and p.original_price > p.price %}
+                            <span class="tc-original-price">₹{{ p.original_price }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if p.is_variable and p.has_variants %}
+                    <a href="/product/{{ p.id }}/" class="tc-card-action-btn tc-btn-outline">
+                        Select Options →
+                    </a>
+                {% elif p.is_available and p.stock > 0 %}
+                    <button
+                        type="button"
+                        class="tc-card-action-btn tc-btn-primary"
+                        onclick="window.addToCartGlobal('{{ p.id }}', '{{ p.name|escapejs }}', '{{ p.price }}', '{{ p.get_image_url|escapejs }}')"
+                    >
+                        Add to Cart 🛒
+                    </button>
+                {% else %}
+                    <button type="button" class="tc-card-action-btn" style="background: #e2e8f0; color: #94a3b8; cursor: not-allowed;" disabled>
+                        Out of Stock
+                    </button>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+    {% else %}
+    <div class="tc-search-empty-box">
+        <div class="tc-search-empty-icon">🔍</div>
+        <h2 style="font-size: 22px; font-weight: 800; color: #1e293b; margin: 0 0 10px;">No products found</h2>
+        <p style="color: #64748b; font-size: 15px; margin: 0 0 24px;">
+            We couldn't find any products matching "<strong>{{ query }}</strong>". Try checking the spelling or browse our popular categories.
+        </p>
+        <a href="/shop/" class="tc-card-action-btn tc-btn-primary" style="display: inline-block; width: auto; padding: 12px 28px;">
+            Browse All Products →
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

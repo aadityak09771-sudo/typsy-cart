@@ -1,10 +1,41 @@
 {% extends "home/base.html" %}
 {% load static %}
 
-{% block title %}Shop Everyday Essentials | Tipsy Cart{% endblock %}
+{% block title %}{% if selected_category %}{{ selected_category.name }} Online in Kanpur | TipsyCart{% elif selected_subcategory %}{{ selected_subcategory.name }} in Kanpur | TipsyCart{% else %}Shop Online in Kanpur | Groceries, Essentials & Care | TipsyCart{% endif %}{% endblock %}
 
 {% block meta_description %}
-Shop groceries, daily essentials, personal care and safety products at Tipsy Cart. Care, comfort and confidence delivered with care.
+{% if selected_category %}Buy {{ selected_category.name }} online in Kanpur at best prices from TipsyCart. {{ selected_category.description|default:"Everyday essentials delivered fast with comfort and privacy." }}{% elif selected_subcategory %}Shop {{ selected_subcategory.name }} online in Kanpur at best prices from TipsyCart with express delivery.{% else %}Browse and buy fresh groceries, daily essentials, personal hygiene, and safety products online at TipsyCart Kanpur. Fast doorstep delivery.{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ canonical_base_url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Shop",
+      "item": "{{ canonical_base_url }}/shop/"
+    }
+    {% if selected_category %}
+    ,{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ selected_category.name }}",
+      "item": "{{ canonical_base_url }}/shop/?category={{ selected_category.slug }}"
+    }
+    {% endif %}
+  ]
+}
+</script>
 {% endblock %}
 
 {% block extra_css %}

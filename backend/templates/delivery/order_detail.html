@@ -3,6 +3,10 @@
 
 {% block title %}Order #{{ order.id }} Details | Delivery Partner Portal{% endblock %}
 
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'home/css/dashboard.css' %}">
 <style>
@@ -216,7 +220,15 @@
                 <tbody>
                     {% for item in order.items.all %}
                     <tr>
-                        <td><strong>{{ item.product_name }}</strong></td>
+                        <td>
+                            <strong>{{ item.product_name }}</strong>
+                            {% if item.variant_name %}
+                                <br><small style="color: #a52d55; font-weight: 600;">Variant: {{ item.variant_name }}</small>
+                            {% endif %}
+                            {% if item.variant_sku %}
+                                <br><small style="color: #64748b; font-size: 11px;">SKU: {{ item.variant_sku }}</small>
+                            {% endif %}
+                        </td>
                         <td style="text-align: center;">&times; {{ item.quantity }}</td>
                         <td style="text-align: right;">₹{{ item.price }}</td>
                         <td style="text-align: right; font-weight: bold;">₹{{ item.subtotal }}</td>

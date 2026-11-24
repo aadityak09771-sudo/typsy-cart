@@ -1,5 +1,6 @@
 
 import os
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
@@ -49,6 +50,8 @@ if render_host and render_host not in ALLOWED_HOSTS:
 # Automatic Custom Domain Support
 custom_domain = os.getenv("CUSTOM_DOMAIN", "").strip().lower()
 if custom_domain:
+    # Clean protocol and slashes if user pasted a full URL into environment
+    custom_domain = custom_domain.replace("https://", "").replace("http://", "").strip("/")
     for domain_variant in [custom_domain, f"www.{custom_domain}", f".{custom_domain}"]:
         if domain_variant not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(domain_variant)
@@ -126,6 +129,9 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
 ]
+if custom_domain:
+    escaped_domain = re.escape(custom_domain)
+    CORS_ALLOWED_ORIGIN_REGEXES.append(rf"^https://(.*\.)?{escaped_domain}$")
 
 
 ROOT_URLCONF = "config.urls"
@@ -141,6 +147,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "Homepage.context_processors.seo_context",
                 "products.context_processors.admin_ecommerce_context",
             ],
         },
@@ -265,6 +272,9 @@ OTP_MAX_ATTEMPTS = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))
 
 # PRODUCTION SECURITY (RENDER / HTTPS)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True

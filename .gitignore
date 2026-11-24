@@ -51,3 +51,5 @@ tipsy-cart-app/web-build/
 .DS_Store
 Thumbs.db
 *.log
+scratch/
+backend/scratch/

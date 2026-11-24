@@ -1,10 +1,33 @@
 {% extends "home/base.html" %}
 {% load static %}
 
-{% block title %}Shop by Category | Tipsy Cart{% endblock %}
+{% block title %}Shop by Category | Everyday Essentials & Personal Care | TipsyCart{% endblock %}
 
 {% block meta_description %}
-Explore Tipsy Cart categories: Period Care, Personal Safety, Personal Care, Daily Essentials, and Groceries. Everyday essentials delivered with care.
+Explore TipsyCart categories: Daily Essentials, Groceries, Personal Care, Period Care, Safety, and Plastic Items. Quality essentials delivered with care in Kanpur.
+{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ canonical_base_url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Categories",
+      "item": "{{ canonical_base_url }}/categories/"
+    }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block extra_css %}

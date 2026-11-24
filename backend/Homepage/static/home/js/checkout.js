@@ -126,7 +126,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                         "Content-Type": "application/json",
                                         "X-CSRFToken": getCookie("csrftoken") || ""
                                     },
-                                    body: JSON.stringify({ product_id: it.id, quantity: it.quantity })
+                                    body: JSON.stringify({
+                                        product_id: it.id,
+                                        quantity: it.quantity,
+                                        variant_id: it.variant_id || null
+                                    })
                                 });
                             }
                         }
@@ -160,7 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 row.className = "checkout-item";
 
                 const name = document.createElement("span");
-                name.textContent = `${item.name} × ${quantity}`;
+                const itemLabel = item.variant_title ? `${item.name} (${item.variant_title})` : (item.full_name || item.name);
+                name.textContent = `${itemLabel} × ${quantity}`;
 
                 const subtotal = document.createElement("span");
                 subtotal.textContent = `₹${(price * quantity).toFixed(2)}`;
@@ -250,6 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (itemsContainer && itemsToShow.length) {
                     itemsContainer.innerHTML = itemsToShow.map(item => {
                         const itemName = item.name || item.product_name || "Product";
+                        const varLabel = item.variant_title || item.variant_name || "";
+                        const itemDisplayName = varLabel ? `${itemName} (${varLabel})` : itemName;
                         const itemQty = item.quantity || 1;
                         const itemPrice = item.price ? Number(item.price).toFixed(2) : "0.00";
                         const itemSub = item.subtotal ? Number(item.subtotal).toFixed(2) : (Number(itemPrice) * itemQty).toFixed(2);
@@ -261,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div class="modal-item-row">
                                 ${itemImg}
                                 <div class="modal-item-meta">
-                                    <strong>${itemName}</strong>
+                                    <strong>${itemDisplayName}</strong>
                                     <small>Qty: ${itemQty} &bull; ₹${itemPrice} each</small>
                                 </div>
                                 <strong style="color: #a52d55; font-size: 13px;">₹${itemSub}</strong>

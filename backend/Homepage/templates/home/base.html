@@ -15,21 +15,21 @@
     {% endblock %}
 
     <!-- Canonical URL -->
-    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ canonical_url|default:request.build_absolute_uri }}{% endblock %}">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:site_name" content="TipsyCart">
     <meta property="og:title" content="{% block og_title %}{% block title_inner %}TipsyCart — Everyday Essentials & Personal Care{% endblock %}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Shop everyday essentials, personal hygiene, and safety products with comfort, privacy and convenience.{% endblock %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{% block meta_description_inner %}Shop everyday essentials, personal hygiene, and safety products with comfort, privacy and convenience in Kanpur.{% endblock %}{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ canonical_url|default:request.build_absolute_uri }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ canonical_base_url }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
 
     <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
     <meta name="twitter:title" content="{% block twitter_title %}{% block twitter_title_inner %}TipsyCart — Everyday Essentials{% endblock %}{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}Shop everyday essentials, personal care and safety products with comfort and privacy.{% endblock %}">
-    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{% block twitter_description_inner %}Shop everyday essentials, personal care and safety products with comfort and privacy.{% endblock %}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ canonical_base_url }}{% static 'home/images/tipsycart-logo.png' %}{% endblock %}">
 
     <!-- Schema.org JSON-LD Structured Data (Organization & WebSite) -->
     <script type="application/ld+json">
@@ -38,36 +38,44 @@
       "@graph": [
         {
           "@type": "Organization",
-          "@id": "{{ request.scheme }}://{{ request.get_host }}/#organization",
+          "@id": "{{ canonical_base_url }}/#organization",
           "name": "TipsyCart",
-          "url": "{{ request.scheme }}://{{ request.get_host }}/",
-          "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'home/images/tipsycart-logo.png' %}",
-          "description": "Everyday essentials, personal hygiene, period care and safety products delivered with comfort, privacy and convenience.",
+          "url": "{{ canonical_base_url }}/",
+          "logo": "{{ canonical_base_url }}{% static 'home/images/tipsycart-logo.png' %}",
+          "description": "Everyday essentials, fresh groceries, personal hygiene, period care and safety products delivered with comfort, privacy and express convenience in Kanpur.",
+          "telephone": "+91-8000000000",
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "Kanpur",
             "addressRegion": "Uttar Pradesh",
             "postalCode": "208001",
             "addressCountry": "IN"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "areaServed": "IN",
+            "availableLanguage": ["en", "hi"]
           }
         },
         {
           "@type": "WebSite",
-          "@id": "{{ request.scheme }}://{{ request.get_host }}/#website",
-          "url": "{{ request.scheme }}://{{ request.get_host }}/",
+          "@id": "{{ canonical_base_url }}/#website",
+          "url": "{{ canonical_base_url }}/",
           "name": "TipsyCart",
           "publisher": {
-            "@id": "{{ request.scheme }}://{{ request.get_host }}/#organization"
+            "@id": "{{ canonical_base_url }}/#organization"
           },
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "{{ request.scheme }}://{{ request.get_host }}/shop/?search={search_term_string}",
+            "target": "{{ canonical_base_url }}/shop/?search={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         }
       ]
     }
     </script>
+    {% block structured_data %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'home/css/common.css' %}?v=5.2">
     {% block extra_css %}{% endblock %}
@@ -89,6 +97,50 @@
                 <span class="driver-nav-badge">DRIVER</span>
             {% endif %}
         </a>
+
+        {% if not user.delivery_profile %}
+        <!-- Prominent Navbar Search Box (Blinkit Style) -->
+        <div class="nav-search-container" id="nav-search-container">
+            <form action="/search/" method="get" class="nav-search-form" id="nav-search-form" role="search">
+                <span class="nav-search-icon" aria-hidden="true">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input
+                    type="search"
+                    name="q"
+                    id="navbar-search-input"
+                    class="nav-search-input"
+                    placeholder="Search for products, groceries, brands..."
+                    autocomplete="off"
+                    aria-label="Search for products"
+                    value="{{ query|default:'' }}"
+                >
+                <button type="button" class="nav-search-clear-btn" id="nav-search-clear-btn" aria-label="Clear search" style="display: none;">
+                    ✕
+                </button>
+            </form>
+
+            <!-- Real-time Live Autocomplete Suggestions Dropdown -->
+            <div class="nav-search-dropdown" id="navbar-search-dropdown" style="display: none;" role="listbox">
+                <div class="nav-search-loading" id="nav-search-loading" style="display: none;">
+                    <div class="tc-search-spinner"></div>
+                    <span>Searching products...</span>
+                </div>
+                <div class="nav-search-results-list" id="nav-search-results-list"></div>
+                <div class="nav-search-empty" id="nav-search-empty" style="display: none;">
+                    <p>No products found for "<span id="nav-search-empty-query"></span>"</p>
+                </div>
+                <div class="nav-search-footer" id="nav-search-footer" style="display: none;">
+                    <a href="#" id="nav-search-view-all" class="nav-search-view-all-link">
+                        View all results for "<span id="nav-search-view-all-query"></span>" →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         {% if user.is_authenticated and user.delivery_profile %}
             <!-- Delivery Partner Navigation (NO consumer shop/category links) -->
