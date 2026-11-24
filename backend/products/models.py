@@ -629,11 +629,57 @@ class ProductImage(models.Model):
         return "/static/home/images/tipsycart-logo.png"
 
 
+class ColorMaster(models.Model):
+    name = models.CharField(
+        max_length=60,
+        unique=True,
+        db_index=True,
+        help_text="Standard colour name (e.g. Black, White, Navy Blue, Crimson Red)",
+    )
+    hex_code = models.CharField(
+        max_length=20,
+        default="#000000",
+        help_text="HEX color code (e.g. #000000, #FFFFFF, #2563EB)",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers appear first)",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Active colours appear in selection dropdowns",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Global Colour"
+        verbose_name_plural = "Colour Master Library"
+        ordering = ["display_order", "name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.hex_code})"
+
+    def clean(self):
+        if self.hex_code:
+            code = self.hex_code.strip()
+            if not code.startswith("#"):
+                code = f"#{code}"
+            self.hex_code = code.upper()
+
+
 class ProductColour(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name="colours",
+    )
+    color_master = models.ForeignKey(
+        ColorMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="product_colours",
+        help_text="Select from Global Colour Library to auto-fill name and HEX code",
     )
     name = models.CharField(
         max_length=60,
@@ -657,6 +703,14 @@ class ProductColour(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        if self.color_master:
+            if not self.name:
+                self.name = self.color_master.name
+            if not self.color_code or self.color_code == "#000000":
+                self.color_code = self.color_master.hex_code
+        super().save(*args, **kwargs)
 
     def get_primary_image_url(self):
         primary_img = self.images.filter(is_primary=True).first()
@@ -928,11 +982,26 @@ class ProductVariant(models.Model):
         elif self.original_price and self.price and self.original_price > self.price:
             self.discount_enabled = True
 
-        # 3. Auto-generate SKU if empty
+        # 3. Auto-generate readable variant_name if empty
+        if not self.variant_name:
+            parts = []
+            if self.colour:
+                parts.append(self.colour.name)
+            if self.size:
+                parts.append(self.size.name)
+            elif self.unit_value and self.unit:
+                val_str = f"{self.unit_value:g}" if isinstance(self.unit_value, Decimal) else str(self.unit_value)
+                parts.append(f"{val_str} {self.unit}")
+            elif self.unit:
+                parts.append(self.unit)
+            self.variant_name = " / ".join(parts) if parts else "Standard"
+
+        # 4. Auto-generate SKU if empty
         if not self.sku:
             base_sku = self.product.product_number or f"TC-{self.product.id}"
             col_part = slugify(self.colour.name)[:3].upper() if self.colour else "DEF"
-            sz_part = slugify(self.size.name)[:4].upper() if self.size else "STD"
+            sz_source = self.variant_name or (self.size.name if self.size else "STD")
+            sz_part = slugify(sz_source)[:5].upper() or "STD"
             self.sku = f"{base_sku}-{col_part}-{sz_part}"
 
         super().save(*args, **kwargs)

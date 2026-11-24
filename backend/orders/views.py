@@ -321,6 +321,7 @@ def cart_json(request):
                 "cart_item_id": item.id,
                 "name": item.product.name,
                 "variant_title": var_title,
+                "variant_name": var_title,
                 "full_name": f"{item.product.name} ({var_title})" if var_title else item.product.name,
                 "colour": item.variant.colour.name if (item.variant and item.variant.colour) else "",
                 "size": item.variant.size.name if (item.variant and item.variant.size) else "",

@@ -353,6 +353,18 @@ def product_detail(request, pk):
         sizes = list(product.sizes.filter(is_active=True))
         variants = list(product.variants.filter(is_active=True))
 
+        if not sizes and variants:
+            seen_names = set()
+            sizes = []
+            for v in variants:
+                opt_name = v.variant_name or v.get_title()
+                if opt_name and opt_name not in seen_names:
+                    seen_names.add(opt_name)
+                    sizes.append({
+                        "id": v.size_id or v.id,
+                        "name": opt_name,
+                    })
+
         colours_data = [
             {
                 "id": c.id,
@@ -370,8 +382,8 @@ def product_detail(request, pk):
                 "id": v.id,
                 "colour_id": v.colour_id,
                 "colour_name": v.colour.name if v.colour else "",
-                "size_id": v.size_id,
-                "size_name": v.size.name if v.size else "",
+                "size_id": v.size_id or v.id,
+                "size_name": v.size.name if v.size else (v.variant_name or v.get_title()),
                 "variant_name": v.variant_name or "",
                 "unit": v.unit or "",
                 "unit_value": str(v.unit_value) if v.unit_value else "",

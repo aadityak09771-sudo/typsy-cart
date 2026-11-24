@@ -21,6 +21,7 @@ from .models import (
     Category,
     Subcategory,
     Product,
+    ColorMaster,
     ProductImage,
     ProductColour,
     ProductColourImage,
@@ -514,10 +515,72 @@ class ProductColourImageInline(admin.TabularInline):
     image_preview_small.short_description = "Preview"
 
 
+# ---------------------------------------------------------------------------
+# GLOBAL COLOUR MASTER LIBRARY ADMIN
+# ---------------------------------------------------------------------------
+
+@admin.register(ColorMaster)
+class ColorMasterAdmin(admin.ModelAdmin):
+    list_display = (
+        "color_swatch_badge",
+        "name",
+        "hex_code",
+        "display_order",
+        "product_count_badge",
+        "is_active",
+        "created_at",
+    )
+    list_display_links = ("color_swatch_badge", "name")
+    list_editable = ("display_order", "is_active", "hex_code")
+    search_fields = ("name", "hex_code")
+    ordering = ("display_order", "name")
+    list_filter = ("is_active",)
+
+    @admin.display(description="Colour Swatch")
+    def color_swatch_badge(self, obj):
+        code = obj.hex_code or "#000000"
+        return format_html(
+            '<div style="display:inline-flex; align-items:center; gap:8px;">'
+            '<span style="display:inline-block; width:22px; height:22px; border-radius:50%; background-color:{}; border:2px solid #cbd5e1; box-shadow:0 1px 3px rgba(0,0,0,0.12); vertical-align:middle;"></span>'
+            '<span style="font-family:monospace; font-weight:700; font-size:12px; color:#334155;">{}</span>'
+            '</div>',
+            code, code
+        )
+
+    @admin.display(description="Used in Products")
+    def product_count_badge(self, obj):
+        count = obj.product_colours.count()
+        return format_html(
+            '<span style="background:#f0fdf4; color:#166534; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px;">{} assigned</span>',
+            count
+        )
+
+
+# ---------------------------------------------------------------------------
+# VARIANT INLINES & ADMINS
+# ---------------------------------------------------------------------------
+
+class ProductColourImageInline(admin.TabularInline):
+    model = ProductColourImage
+    extra = 1
+    fields = ("image_preview_small", "image", "image_url", "is_primary", "display_order")
+    readonly_fields = ("image_preview_small",)
+
+    def image_preview_small(self, obj):
+        url = obj.get_image_url() if obj and obj.pk else ""
+        if not url:
+            url = "/static/home/images/tipsycart-logo.png"
+        return format_html(
+            '<img src="{}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
+            url
+        )
+    image_preview_small.short_description = "Preview"
+
+
 @admin.register(ProductColour)
 class ProductColourAdmin(admin.ModelAdmin):
-    list_display = ("name", "product", "color_code_badge", "image_count_badge", "display_order", "is_active")
-    list_filter = ("product", "is_active")
+    list_display = ("name", "product", "color_code_badge", "color_master", "image_count_badge", "display_order", "is_active")
+    list_filter = ("product", "is_active", "color_master")
     search_fields = ("name", "product__name", "color_code")
     inlines = [ProductColourImageInline]
 
@@ -548,6 +611,8 @@ class ProductImageInline(admin.TabularInline):
     fields = ("image_preview", "image", "image_url", "alt_text", "is_primary", "display_order")
     readonly_fields = ("image_preview",)
     show_change_link = True
+    verbose_name = "Gallery Image"
+    verbose_name_plural = "5. Additional Gallery Images (Upload & Reorder)"
 
     @admin.display(description="Preview")
     def image_preview(self, obj):
@@ -574,8 +639,19 @@ class ProductImageAdmin(admin.ModelAdmin):
 class ProductColourInline(admin.TabularInline):
     model = ProductColour
     extra = 1
-    fields = ("name", "color_code", "display_order", "is_active")
+    fields = ("color_master", "name", "color_code", "swatch_preview", "display_order", "is_active")
+    readonly_fields = ("swatch_preview",)
     show_change_link = True
+    verbose_name = "Product Colour"
+    verbose_name_plural = "6. Product Colours (Select from Global Colour Library or Type Custom)"
+
+    @admin.display(description="Swatch")
+    def swatch_preview(self, obj):
+        code = (obj.color_code if obj else None) or (obj.color_master.hex_code if obj and obj.color_master else "#000000")
+        return format_html(
+            '<span class="tc-colour-swatch-circle" style="display:inline-block; width:20px; height:20px; border-radius:50%; background-color:{}; border:1px solid #94a3b8; vertical-align:middle;"></span>',
+            code
+        )
 
 
 class ProductSizeInline(admin.TabularInline):
@@ -583,6 +659,8 @@ class ProductSizeInline(admin.TabularInline):
     extra = 1
     fields = ("name", "display_order", "is_active")
     show_change_link = True
+    verbose_name = "Product Size / Weight Option"
+    verbose_name_plural = "6. Product Sizes & Options (e.g. S, M, L, XL or 250 g, 500 g, 1 kg)"
 
 
 class ProductVariantInline(admin.TabularInline):
@@ -603,6 +681,8 @@ class ProductVariantInline(admin.TabularInline):
         "is_active",
     )
     show_change_link = True
+    verbose_name = "Independently Sold Variant"
+    verbose_name_plural = "7. Product Variants (Independent Pricing, Discounts, SKU & Stock)"
 
 
 @admin.register(ProductVariant)
@@ -675,18 +755,29 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (
-            "Product Information",
+            "1. Basic Information",
             {
                 "fields": (
                     "name",
                     "product_number",
                     "brand",
                     "description",
-                )
+                ),
+                "description": "Enter the product name, SKU / product number, brand, and detailed description.",
             },
         ),
         (
-            "Product Type, Units & Variants Mode",
+            "2. Category & Subcategory",
+            {
+                "fields": (
+                    "category_ref",
+                    "subcategory_ref",
+                ),
+                "description": "Assign this product to an active category and matching subcategory from your store database.",
+            },
+        ),
+        (
+            "3. Product Type & Units",
             {
                 "fields": (
                     "product_type",
@@ -697,40 +788,18 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Categorization",
+            "4. Pricing & Inventory",
             {
                 "fields": (
-                    "category_ref",
-                    "subcategory_ref",
+                    ("original_price", "price"),
+                    ("discount_enabled", "discount_type", "discount_value"),
+                    ("stock", "is_available"),
                 ),
-                "description": "Select Category and Subcategory from your database.",
+                "description": "Set MRP, discount rules, and selling price. For simple products, this is the final price charged to shoppers. For variable products, this acts as the base starting price.",
             },
         ),
         (
-            "Pricing & Discounts",
-            {
-                "fields": (
-                    "original_price",
-                    "discount_enabled",
-                    "discount_type",
-                    "discount_value",
-                    "price",
-                ),
-                "description": "Final Selling Price is charged to customers (or used as base starting price for variants). If Discount is enabled, it auto-calculates from Original Price.",
-            },
-        ),
-        (
-            "Inventory & Stock",
-            {
-                "fields": (
-                    "stock",
-                    "is_available",
-                ),
-                "description": "Stock count in units (or base stock). If stock reaches 0, availability is auto-disabled.",
-            },
-        ),
-        (
-            "Product Primary Image & Bulk Gallery Upload",
+            "5. Product Images & Gallery",
             {
                 "fields": (
                     "image",
@@ -738,22 +807,22 @@ class ProductAdmin(admin.ModelAdmin):
                     "image_url",
                     "bulk_gallery_images",
                 ),
-                "description": "Upload a primary image or enter direct image link. Use 'Bulk Upload Gallery Images' to select multiple photos at once. You can also view, edit, and reorder all gallery images in the table below.",
+                "description": "Upload a primary image or enter direct image link. Use 'Bulk Upload Gallery Images' to select multiple photos at once. Additional gallery images can also be reviewed and reordered in the table below.",
             },
         ),
         (
-            "Store Visibility & Status",
+            "8. Store Visibility, Preview & Save",
             {
                 "fields": (
-                    "is_featured",
-                    "is_active",
+                    ("is_featured", "is_active"),
+                    "live_product_preview",
                 ),
-                "description": "Featured products appear on homepage showcases. Inactive products are hidden from the store.",
+                "description": "Featured products appear on homepage showcases. Inactive products are hidden from the store. Review the live product card preview before saving.",
             },
         ),
     )
 
-    readonly_fields = ("image_preview_large", "variant_generator_link", "created_at")
+    readonly_fields = ("image_preview_large", "variant_generator_link", "live_product_preview", "created_at")
 
     class Media:
         js = ("products/admin_dynamic.js",)
@@ -799,6 +868,47 @@ class ProductAdmin(admin.ModelAdmin):
             url,
             url,
             source_badge,
+        )
+
+    @admin.display(description="Product Card Live Preview")
+    def live_product_preview(self, obj):
+        url = obj.get_image_url() if obj and obj.pk else "/static/home/images/tipsycart-logo.png"
+        p_name = obj.name if obj and obj.pk else "Product Name"
+        p_brand = obj.brand if obj and obj.pk else "TipsyCart"
+        p_price = f"₹{obj.price}" if obj and obj.pk and obj.price else "₹0.00"
+        p_mrp = f"₹{obj.original_price}" if obj and obj.pk and obj.original_price and obj.original_price > (obj.price or 0) else ""
+        p_disc = f"{obj.discount_percentage}% OFF" if obj and obj.pk and obj.discount_percentage else ""
+        p_stock = "In Stock" if (not obj or not obj.pk or obj.is_available) else "Out of Stock"
+        unit_disp = f"{obj.unit_value:g} {obj.unit}" if (obj and obj.pk and obj.unit_value and obj.unit) else (obj.unit if obj and obj.pk and obj.unit else "")
+
+        return format_html(
+            '<div class="tc-admin-preview-container">'
+            '  <div class="tc-preview-card">'
+            '    <div class="tc-preview-card-img-wrap">'
+            '      <img id="tc-card-preview-img" src="{}" alt="{}" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />'
+            '      <span id="tc-card-preview-discount" class="tc-preview-badge-disc" style="{}">{}</span>'
+            '    </div>'
+            '    <div class="tc-preview-card-body">'
+            '      <span id="tc-card-preview-brand" class="tc-preview-brand">{}</span>'
+            '      <div id="tc-card-preview-name" class="tc-preview-title">{}</div>'
+            '      <div id="tc-card-preview-unit" class="tc-preview-unit" style="{}">{}</div>'
+            '      <div class="tc-preview-price-row">'
+            '        <span id="tc-card-preview-price" class="tc-preview-price">{}</span>'
+            '        <del id="tc-card-preview-mrp" class="tc-preview-mrp" style="{}">{}</del>'
+            '      </div>'
+            '      <div id="tc-card-preview-stock" class="tc-preview-stock">{}</div>'
+            '    </div>'
+            '  </div>'
+            '  <p class="tc-preview-note">💡 Real-time card preview of how your product will be displayed to shoppers across the store.</p>'
+            '</div>',
+            url, p_name,
+            "display:inline-block;" if p_disc else "display:none;", p_disc,
+            p_brand or "TipsyCart",
+            p_name,
+            "display:inline-block;" if unit_disp else "display:none;", unit_disp,
+            p_price,
+            "display:inline-block;" if p_mrp else "display:none;", p_mrp,
+            p_stock,
         )
 
     @admin.display(description="Category", ordering="category")
