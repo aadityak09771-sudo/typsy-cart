@@ -136,14 +136,18 @@ def home(request):
         ]
         categories_data = homepage_categories
 
-        # Today's Deals: Fetch real discounted active products
+        # Today's Deals: Priority to is_deal_of_the_day, then discounted products
+        deals_end_iso = ""
+        if store_setting and getattr(store_setting, "deals_timer_mode", "") == "fixed_datetime" and getattr(store_setting, "deals_end_datetime", None):
+            deals_end_iso = store_setting.deals_end_datetime.isoformat()
+
         deals_qs = Product.objects.filter(
             is_active=True
         ).filter(
-            Q(discount_enabled=True) | Q(original_price__gt=F("price"))
+            Q(is_deal_of_the_day=True) | Q(discount_enabled=True) | Q(original_price__gt=F("price"))
         ).select_related("category_ref", "subcategory_ref").prefetch_related(
             "gallery_images", "variants", "colours", "sizes"
-        ).order_by("-discount_value", "-created_at")[:10]
+        ).order_by("-is_deal_of_the_day", "-discount_value", "-created_at")[:10]
 
         todays_deals = [serialize_homepage_product(p) for p in deals_qs]
 
@@ -270,6 +274,7 @@ def home(request):
         todays_deals = []
         top_categories_tabs = []
         store_setting = None
+        deals_end_iso = ""
 
     return render(request, "home/index.html", {
         "featured_products": featured_products,
@@ -279,6 +284,8 @@ def home(request):
         "categories_list": categories_list,
         "categories_data": categories_data,
         "todays_deals": todays_deals,
+        "deals_end_iso": deals_end_iso,
+        "deals_title": getattr(store_setting, "deals_title", "Today's Deals") if store_setting else "Today's Deals",
         "top_categories_tabs": top_categories_tabs,
         "store_setting": store_setting,
     })

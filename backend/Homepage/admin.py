@@ -105,6 +105,10 @@ class StoreSettingAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Store Identity", {"fields": ("store_name", "tagline", "is_store_open", "announcement_text", "operating_hours")}),
+        ("Today's Deals Settings (Homepage)", {
+            "fields": ("deals_title", "deals_timer_mode", "deals_end_datetime"),
+            "description": "Configure the countdown timer heading and expiry schedule for Today's Deals section on the homepage.",
+        }),
         ("Contact & Location", {"fields": ("contact_email", "contact_phone", "store_address")}),
         ("Delivery & Checkout Fees", {"fields": ("delivery_fee", "free_delivery_threshold")}),
         ("Social Media Links", {"fields": ("instagram_url", "facebook_url")}),

@@ -378,6 +378,11 @@ class Product(models.Model):
         default=False,
         help_text="Display in Featured Products section on Homepage and Shop",
     )
+    is_deal_of_the_day = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Prominently feature this product in Today's Deals section on Homepage",
+    )
     is_active = models.BooleanField(default=True)
 
     # Linked similar products / styles (Meesho / Amazon style design/style switcher)

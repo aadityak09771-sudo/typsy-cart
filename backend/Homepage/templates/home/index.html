@@ -172,8 +172,8 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
         <div class="tc-home-container">
             <div class="tc-section-header">
                 <div class="tc-section-title-wrap">
-                    <h2 class="tc-section-title">⚡ Today's Deals</h2>
-                    <span class="tc-countdown-badge">Ends in <span id="tc-deals-countdown">08 : 24 : 36</span></span>
+                    <h2 class="tc-section-title">⚡ {{ deals_title|default:"Today's Deals" }}</h2>
+                    <span class="tc-countdown-badge" data-deals-mode="{{ store_setting.deals_timer_mode }}" data-deals-end="{{ deals_end_iso }}">Ends in <span id="tc-deals-countdown">08 : 24 : 36</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <a href="/shop/?sort=discount" class="tc-view-all-link">View All Deals <span>→</span></a>

@@ -31,24 +31,44 @@ document.addEventListener("DOMContentLoaded", () => {
     setupRailControls("#tc-deals-rail", "#tc-deals-prev", "#tc-deals-next", 340);
     setupRailControls("#tc-explore-rail", "#tc-explore-prev", "#tc-explore-next", 340);
 
-    // 2. TODAY'S DEALS COUNTDOWN TIMER
+    // 2. TODAY'S DEALS COUNTDOWN TIMER (ADMIN-CONTROLLED & DYNAMIC)
     const countdownEl = document.getElementById("tc-deals-countdown");
     if (countdownEl) {
+        const badgeEl = countdownEl.closest(".tc-countdown-badge");
+        const dealsMode = badgeEl?.getAttribute("data-deals-mode") || "daily_midnight";
+        const dealsEndStr = badgeEl?.getAttribute("data-deals-end") || "";
+
         function updateCountdown() {
             const now = new Date();
-            // Calculate time remaining until midnight
-            const midnight = new Date(now);
-            midnight.setHours(24, 0, 0, 0);
+            let targetTime;
 
-            let diffMs = midnight - now;
-            if (diffMs < 0) diffMs = 0;
+            if (dealsMode === "fixed_datetime" && dealsEndStr) {
+                targetTime = new Date(dealsEndStr);
+            } else {
+                // Default: Daily midnight reset
+                targetTime = new Date(now);
+                targetTime.setHours(24, 0, 0, 0);
+            }
+
+            let diffMs = targetTime - now;
+            if (diffMs <= 0) {
+                countdownEl.textContent = "00 : 00 : 00";
+                return;
+            }
 
             const totalSec = Math.floor(diffMs / 1000);
-            const hours = String(Math.floor(totalSec / 3600)).padStart(2, "0");
-            const minutes = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
-            const seconds = String(totalSec % 60).padStart(2, "0");
+            const days = Math.floor(totalSec / 86400);
+            const hours = Math.floor((totalSec % 86400) / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
 
-            countdownEl.textContent = `${hours} : ${minutes} : ${seconds}`;
+            const pad = (n) => String(n).padStart(2, "0");
+
+            if (days > 0) {
+                countdownEl.textContent = `${days}d : ${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`;
+            } else {
+                countdownEl.textContent = `${pad(hours)} : ${pad(minutes)} : ${pad(seconds)}`;
+            }
         }
         updateCountdown();
         setInterval(updateCountdown, 1000);

@@ -17,6 +17,28 @@ class StoreSetting(models.Model):
     announcement_text = models.CharField(max_length=255, blank=True, default="⚡ Fast 30-45 min delivery in Kanpur • Order your everyday essentials now!")
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Today's Deals Admin Controls
+    DEALS_TIMER_MODES = [
+        ("daily_midnight", "Daily Midnight Reset (24-Hour Cycle)"),
+        ("fixed_datetime", "Fixed End Date & Time (Custom Offer Deadline)"),
+    ]
+    deals_title = models.CharField(
+        max_length=100,
+        default="Today's Deals",
+        help_text="Heading shown on the homepage for deals section"
+    )
+    deals_timer_mode = models.CharField(
+        max_length=30,
+        choices=DEALS_TIMER_MODES,
+        default="daily_midnight",
+        help_text="Choose how the countdown timer operates on the homepage"
+    )
+    deals_end_datetime = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Custom deal expiry date & time (used when Fixed End Date & Time is selected)"
+    )
+
     class Meta:
         verbose_name = "Store Settings"
         verbose_name_plural = "Store Settings"

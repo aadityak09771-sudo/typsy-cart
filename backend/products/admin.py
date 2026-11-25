@@ -784,6 +784,7 @@ class ProductAdmin(admin.ModelAdmin):
         "pricing_display",
         "stock_badge",
         "is_available",
+        "is_deal_of_the_day",
         "is_featured",
         "is_active",
         "created_at",
@@ -794,6 +795,7 @@ class ProductAdmin(admin.ModelAdmin):
         "category_ref",
         "subcategory_ref",
         "is_available",
+        "is_deal_of_the_day",
         "is_featured",
         "discount_enabled",
         "is_active",
@@ -813,6 +815,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     list_editable = (
         "is_available",
+        "is_deal_of_the_day",
         "is_featured",
         "is_active",
     )
@@ -895,10 +898,10 @@ class ProductAdmin(admin.ModelAdmin):
             "8. Store Visibility, Preview & Save",
             {
                 "fields": (
-                    ("is_featured", "is_active"),
+                    ("is_deal_of_the_day", "is_featured", "is_active"),
                     "live_product_preview",
                 ),
-                "description": "Featured products appear on homepage showcases. Inactive products are hidden from the store. Review the live product card preview before saving.",
+                "description": "Mark 'Deal of the day' to feature in Today's Deals. 'Featured' products appear on homepage showcases. Inactive products are hidden from the store. Review the live product card preview before saving.",
             },
         ),
     )
