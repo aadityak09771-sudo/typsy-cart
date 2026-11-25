@@ -397,11 +397,17 @@ def product_detail(request, pk):
     has_active_variants = product.variants.filter(is_active=True).exists()
     is_variable = bool(product.is_variable and has_active_variants)
 
+    # -------------------------------------------------------------------------
+    # LINKED SIMILAR PRODUCTS / STYLES (MEESHO / AMAZON STYLE)
+    # -------------------------------------------------------------------------
+    style_options = product.get_all_style_options(limit=10)
+
     context = {
         "product": product,
         "is_variable": is_variable,
         "gallery_images": all_gallery_images,
         "gallery_images_json": json.dumps(all_gallery_images),
+        "style_options": style_options,
         "similar_products": similar_products,
         "unit_selector_label": product.unit_selector_label,
     }

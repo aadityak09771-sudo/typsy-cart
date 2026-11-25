@@ -319,6 +319,16 @@ class Product(models.Model):
         help_text="Display in Featured Products section on Homepage and Shop",
     )
     is_active = models.BooleanField(default=True)
+
+    # Linked similar products / styles (Meesho / Amazon style design/style switcher)
+    similar_products = models.ManyToManyField(
+        "self",
+        blank=True,
+        symmetrical=True,
+        verbose_name="Similar Products / Styles",
+        help_text="Link other styles, pendant designs, or similar products. They will appear as clickable style thumbnails on the product page.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -540,6 +550,44 @@ class Product(models.Model):
                 "source": "default",
             })
         return images
+
+    def get_similar_styles(self, limit=12):
+        """
+        Returns manually linked styles if defined; otherwise falls back to active products in same subcategory.
+        """
+        try:
+            manual = list(self.similar_products.filter(is_active=True).select_related("category_ref", "subcategory_ref")[:limit])
+            if manual:
+                return manual
+        except Exception:
+            pass
+
+        try:
+            qs = Product.objects.filter(is_active=True).exclude(pk=self.pk).select_related("category_ref", "subcategory_ref")
+            if self.subcategory_ref_id:
+                matches = list(qs.filter(subcategory_ref_id=self.subcategory_ref_id)[:limit])
+                if matches:
+                    return matches
+            elif self.subcategory:
+                matches = list(qs.filter(subcategory__iexact=self.subcategory)[:limit])
+                if matches:
+                    return matches
+            if self.category_ref_id:
+                return list(qs.filter(category_ref_id=self.category_ref_id)[:limit])
+            elif self.category:
+                return list(qs.filter(category__iexact=self.category)[:limit])
+        except Exception:
+            pass
+        return []
+
+    def get_all_style_options(self, limit=12):
+        """
+        Returns list of style options (self + linked styles) for the Meesho-style thumbnail picker.
+        """
+        linked = self.get_similar_styles(limit=limit)
+        if not linked:
+            return []
+        return [self] + [p for p in linked if p.id != self.id]
 
 
 class ProductImage(models.Model):

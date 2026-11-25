@@ -750,6 +750,7 @@ class ProductAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 25
     date_hierarchy = "created_at"
+    filter_horizontal = ("similar_products",)
 
     change_list_template = "admin/products/product/change_list.html"
 
@@ -808,6 +809,15 @@ class ProductAdmin(admin.ModelAdmin):
                     "bulk_gallery_images",
                 ),
                 "description": "Upload a primary image or enter direct image link. Use 'Bulk Upload Gallery Images' to select multiple photos at once. Additional gallery images can also be reviewed and reordered in the table below.",
+            },
+        ),
+        (
+            "6. Similar Products & Linked Styles (Meesho / Amazon Style Designs)",
+            {
+                "fields": (
+                    "similar_products",
+                ),
+                "description": "Select different styles, pendant designs, or matching products. These will appear as clickable style thumbnail cards under the product image on the customer site (just like Meesho / Amazon), allowing shoppers to switch between designs with their own images and prices.",
             },
         ),
         (
