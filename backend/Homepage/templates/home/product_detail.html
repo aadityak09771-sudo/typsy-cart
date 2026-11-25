@@ -94,21 +94,30 @@
     margin: 36px auto 70px;
     padding: 0 20px;
     font-family: inherit;
+    box-sizing: border-box;
+    width: 100%;
 }
 .tc-product-detail-card {
     display: grid;
-    grid-template-columns: 1.05fr 1.15fr;
-    gap: 44px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 40px;
     background: #ffffff;
     border: 1px solid #fce7f3;
     border-radius: 24px;
-    padding: 36px;
+    padding: 32px;
     box-shadow: 0 10px 30px rgba(165, 45, 85, 0.06);
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
 }
 .tc-gallery-section {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
 }
 .tc-product-img-box {
     position: relative;
@@ -117,30 +126,34 @@
     border: 1px solid #fbcfe8;
     overflow: hidden;
     padding: 0;
-    min-height: 380px;
-    height: 440px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 460px;
+    min-height: 400px;
+    width: 100%;
+    box-sizing: border-box;
 }
 .tc-detail-slider-track {
     display: flex;
     width: 100%;
     height: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 .tc-detail-slider-track::-webkit-scrollbar {
     display: none;
 }
 .tc-detail-slide {
     flex: 0 0 100%;
+    min-width: 100%;
+    max-width: 100%;
     width: 100%;
     height: 100%;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     scroll-snap-stop: always;
     display: flex;
     align-items: center;
@@ -148,6 +161,7 @@
     padding: 16px;
     box-sizing: border-box;
     user-select: none;
+    margin: 0;
 }
 .tc-slide-img {
     max-width: 100%;
@@ -157,6 +171,8 @@
     object-fit: contain;
     border-radius: 12px;
     cursor: zoom-in;
+    display: block;
+    margin: auto;
     transition: transform 0.25s ease;
 }
 /* Left / Right Arrows for Desktop / Hover */
@@ -326,6 +342,12 @@
 .tc-product-info {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 .tc-cat-badge {
     display: inline-block;
@@ -341,11 +363,13 @@
     text-transform: uppercase;
 }
 .tc-product-title {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
     color: #1e293b;
     margin: 0 0 8px;
-    line-height: 1.3;
+    line-height: 1.35;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 .tc-product-brand-sku {
     color: #64748b;
@@ -516,6 +540,8 @@
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 24px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 .tc-action-row {
     display: flex;
@@ -523,6 +549,8 @@
     align-items: center;
     flex-wrap: wrap;
     margin-top: auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 .tc-qty-picker {
     display: flex;
@@ -605,6 +633,11 @@
     border: 1px solid #fce7f3;
     border-radius: 16px;
     box-shadow: 0 2px 10px rgba(165, 22, 85, 0.04);
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .tc-styles-header {
     display: flex;
@@ -630,6 +663,10 @@
     padding: 4px 2px 8px;
     scroll-behavior: smooth;
     scrollbar-width: thin;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
 }
 .tc-styles-scroll::-webkit-scrollbar {
     height: 4px;
@@ -716,13 +753,111 @@
 }
 
 @media (max-width: 820px) {
+    .tc-product-detail-container {
+        margin: 14px auto 50px;
+        padding: 0 12px;
+    }
     .tc-product-detail-card {
-        grid-template-columns: 1fr;
-        padding: 22px;
-        gap: 26px;
+        grid-template-columns: minmax(0, 1fr);
+        padding: 18px 16px;
+        gap: 20px;
+        border-radius: 18px;
+    }
+    .tc-product-title {
+        font-size: 22px;
+        line-height: 1.3;
+    }
+    .tc-product-price-box {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+    .tc-price-current {
+        font-size: 28px;
     }
     .tc-product-img-box {
+        height: auto;
         min-height: 280px;
+        aspect-ratio: 1 / 1;
+        max-height: 400px;
+        border-radius: 16px;
+    }
+    .tc-detail-slide {
+        padding: 10px;
+    }
+    .tc-detail-arrow {
+        width: 34px;
+        height: 34px;
+        font-size: 22px;
+    }
+    .tc-detail-prev { left: 8px; }
+    .tc-detail-next { right: 8px; }
+    .tc-thumb-btn {
+        flex: 0 0 56px;
+        height: 56px;
+        border-radius: 10px;
+    }
+    .tc-gallery-thumbnails {
+        gap: 8px;
+        padding: 4px 2px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tc-product-detail-container {
+        margin: 10px auto 40px;
+        padding: 0 8px;
+    }
+    .tc-product-detail-card {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 14px 12px;
+        gap: 16px;
+        border-radius: 14px;
+    }
+    .tc-product-title {
+        font-size: 19px;
+    }
+    .tc-product-brand-sku {
+        font-size: 12px;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .tc-product-price-box {
+        padding: 10px 12px;
+        margin-bottom: 14px;
+    }
+    .tc-price-current {
+        font-size: 24px;
+    }
+    .tc-price-original {
+        font-size: 15px;
+    }
+    .tc-product-desc {
+        font-size: 13.5px;
+        line-height: 1.55;
+        margin-bottom: 18px;
+    }
+    .tc-product-img-box {
+        max-height: 340px;
+    }
+    .tc-detail-slide {
+        padding: 6px;
+    }
+    .tc-thumb-btn {
+        flex: 0 0 46px;
+        height: 46px;
+        border-radius: 8px;
+    }
+    .tc-thumb-btn img {
+        border-radius: 4px;
+    }
+    .tc-action-row {
+        gap: 10px;
+    }
+    .tc-add-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 14px;
     }
 }
 /* Similar Products Section */
@@ -1312,11 +1447,19 @@ function initGalleryCarousel() {
     }
 
     function scrollToIndex(index) {
-        const slideW = getSlideWidth();
-        sliderTrack.scrollTo({
-            left: index * slideW,
-            behavior: "smooth"
-        });
+        const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
+        if (slides && slides[index]) {
+            sliderTrack.scrollTo({
+                left: slides[index].offsetLeft,
+                behavior: "smooth"
+            });
+        } else {
+            const slideW = getSlideWidth();
+            sliderTrack.scrollTo({
+                left: index * slideW,
+                behavior: "smooth"
+            });
+        }
         updateActiveState(index);
     }
 
@@ -1324,17 +1467,36 @@ function initGalleryCarousel() {
     sliderTrack.addEventListener("scroll", () => {
         if (isScrollingTimeout) clearTimeout(isScrollingTimeout);
         isScrollingTimeout = setTimeout(() => {
-            const slideW = getSlideWidth();
-            const index = Math.round(sliderTrack.scrollLeft / slideW);
-            updateActiveState(index);
+            const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
+            if (!slides || !slides.length) return;
+            const currentScroll = sliderTrack.scrollLeft;
+            let closestIdx = 0;
+            let minDiff = Infinity;
+            slides.forEach((sl, i) => {
+                const diff = Math.abs(sl.offsetLeft - currentScroll);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIdx = i;
+                }
+            });
+            updateActiveState(closestIdx);
         }, 35);
     }, { passive: true });
 
     // Arrow navigation
     if (prevBtn) {
         prevBtn.addEventListener("click", () => {
-            const slideW = getSlideWidth();
-            const curIdx = Math.round(sliderTrack.scrollLeft / slideW);
+            const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
+            const currentScroll = sliderTrack.scrollLeft;
+            let curIdx = 0;
+            let minDiff = Infinity;
+            slides.forEach((sl, i) => {
+                const diff = Math.abs(sl.offsetLeft - currentScroll);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    curIdx = i;
+                }
+            });
             const targetIdx = Math.max(0, curIdx - 1);
             scrollToIndex(targetIdx);
         });
@@ -1342,10 +1504,18 @@ function initGalleryCarousel() {
 
     if (nextBtn) {
         nextBtn.addEventListener("click", () => {
-            const slideW = getSlideWidth();
-            const slidesCount = sliderTrack.querySelectorAll(".tc-detail-slide").length;
-            const curIdx = Math.round(sliderTrack.scrollLeft / slideW);
-            const targetIdx = Math.min(slidesCount - 1, curIdx + 1);
+            const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
+            const currentScroll = sliderTrack.scrollLeft;
+            let curIdx = 0;
+            let minDiff = Infinity;
+            slides.forEach((sl, i) => {
+                const diff = Math.abs(sl.offsetLeft - currentScroll);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    curIdx = i;
+                }
+            });
+            const targetIdx = Math.min(slides.length - 1, curIdx + 1);
             scrollToIndex(targetIdx);
         });
     }
@@ -1386,15 +1556,30 @@ function initGalleryCarousel() {
 
     if (expandBtn) {
         expandBtn.addEventListener("click", () => {
-            const slideW = getSlideWidth();
-            const index = Math.round(sliderTrack.scrollLeft / slideW);
-            const slides = sliderTrack.querySelectorAll(".tc-detail-slide img");
-            const currentImg = slides[index] || sliderTrack.querySelector(".tc-detail-slide img");
+            const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
+            const currentScroll = sliderTrack.scrollLeft;
+            let curIdx = 0;
+            let minDiff = Infinity;
+            slides.forEach((sl, i) => {
+                const diff = Math.abs(sl.offsetLeft - currentScroll);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    curIdx = i;
+                }
+            });
+            const activeSlide = slides[curIdx];
+            const currentImg = activeSlide ? activeSlide.querySelector("img") : sliderTrack.querySelector(".tc-detail-slide img");
             if (currentImg && currentImg.src) {
                 openLightbox(currentImg.src);
             }
         });
     }
+
+    // Single click or tap on slide image opens lightbox
+    sliderTrack.addEventListener("click", (e) => {
+        const img = e.target.closest(".tc-slide-img");
+        if (img && img.src) openLightbox(img.src);
+    });
 
     sliderTrack.addEventListener("dblclick", (e) => {
         const img = e.target.closest("img");
