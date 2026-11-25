@@ -56,6 +56,20 @@ def serialize_homepage_product(p):
         except Exception:
             return str(val)
 
+    variants_list = []
+    if is_var and active_variants:
+        for v in active_variants:
+            v_title = v.size.name if v.size else (v.variant_name or v.get_title())
+            variants_list.append({
+                "id": v.id,
+                "title": v_title,
+                "price": clean_curr(v.price),
+                "original_price": clean_curr(v.original_price or v.price),
+                "discount": v.discount_percentage,
+                "stock": v.stock,
+                "image": v.get_image_url(),
+            })
+
     return {
         "id": p.id,
         "name": p.name,
@@ -72,6 +86,7 @@ def serialize_homepage_product(p):
         "unit_value": str(p.unit_value) if p.unit_value is not None else "",
         "unit_name": p.unit or "",
         "is_variable": is_var,
+        "variants": variants_list,
         "selected_variant_id": first_var.id if first_var else "",
         "in_stock": in_stock,
         "image_url": p.get_image_url(),

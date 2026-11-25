@@ -1787,6 +1787,14 @@ document.addEventListener("DOMContentLoaded", function () {
             savingsDisplay.style.display = "none";
         }
 
+        // Update gallery photo if this specific weight/variant has a custom image
+        if (match.image_url && galleryCtrl && typeof galleryCtrl.rebuildGallery === "function") {
+            const currentImg = document.querySelector(".tc-detail-slide img");
+            if (currentImg && currentImg.src !== match.image_url) {
+                galleryCtrl.rebuildGallery([match.image_url]);
+            }
+        }
+
         // Update Stock Status
         if (match.stock > 0) {
             stockIndicator.className = "tc-stock-indicator in-stock";

@@ -789,6 +789,22 @@ class ProductVariantInlineForm(forms.ModelForm):
             if self.fields["discount_value"].initial is None:
                 self.fields["discount_value"].initial = Decimal("0.00")
             self.fields["discount_value"].widget.attrs.update({"placeholder": "Discount", "style": "min-width: 70px;"})
+        if "image" in self.fields:
+            self.fields["image"].required = False
+            self.fields["image"].help_text = "Optional"
+        if "image_url" in self.fields:
+            self.fields["image_url"].required = False
+            self.fields["image_url"].widget.attrs.update({"placeholder": "Image URL (opt)", "style": "min-width: 110px;"})
+
+    def clean_image(self):
+        uploaded_image = self.cleaned_data.get("image")
+        if uploaded_image and isinstance(uploaded_image, UploadedFile):
+            if uploaded_image.size > 12 * 1024 * 1024:
+                raise forms.ValidationError("Variant image must be smaller than 12 MB.")
+            ext = os.path.splitext(uploaded_image.name)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                raise forms.ValidationError("Supported formats: JPG, PNG, WEBP, GIF.")
+        return uploaded_image
 
     def clean(self):
         cleaned_data = super().clean()
@@ -805,14 +821,11 @@ class ProductVariantInline(admin.TabularInline):
         "colour",
         "size",
         "variant_name",
-        "unit_value",
-        "unit",
-        "sku",
+        "image",
         "original_price",
-        "discount_enabled",
-        "discount_value",
         "price",
         "stock",
+        "sku",
         "is_active",
     )
     show_change_link = True

@@ -296,6 +296,24 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                             <div class="tc-card-content">
                                 <a href="{{ p.detail_url }}" class="tc-card-title">{{ p.name }}</a>
                                 {% if p.unit %}<div class="tc-card-unit">{{ p.unit }}</div>{% endif %}
+                                {% if p.is_variable and p.variants %}
+                                    <div class="tc-card-variants">
+                                        {% for v in p.variants %}
+                                            <span
+                                                class="tc-variant-chip {% if forloop.first %}active{% endif %}"
+                                                data-variant-id="{{ v.id }}"
+                                                data-price="{{ v.price }}"
+                                                data-orig-price="{{ v.original_price }}"
+                                                data-discount="{{ v.discount }}"
+                                                data-stock="{{ v.stock }}"
+                                                data-image="{{ v.image|default:'' }}"
+                                                data-title="{{ v.title }}"
+                                            >
+                                                {{ v.title }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                                 <div class="tc-card-bottom">
                                     <div class="tc-card-price-row">
                                         <span class="tc-card-curr-price">₹{{ p.price }}</span>

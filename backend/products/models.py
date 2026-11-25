@@ -988,6 +988,18 @@ class ProductVariant(models.Model):
         default="",
         help_text="Optional EAN/UPC barcode",
     )
+    image = models.ImageField(
+        upload_to="products/variants/",
+        null=True,
+        blank=True,
+        help_text="Optional custom photo for this variant (e.g. 250g pack photo, 1kg pack photo). If blank, uses main product photo.",
+    )
+    image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Optional external direct image URL for this variant",
+    )
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -1058,6 +1070,13 @@ class ProductVariant(models.Model):
         return round(self.original_price - self.price, 2)
 
     def get_image_url(self):
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                pass
+        if self.image_url:
+            return self.image_url
         if self.colour:
             c_url = self.colour.get_primary_image_url()
             if c_url:

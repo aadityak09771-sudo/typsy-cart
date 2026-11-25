@@ -832,12 +832,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const variantId = chip.dataset.variantId || "";
             card.dataset.selectedVariantId = variantId;
 
-            const priceEl = card.querySelector(".tc-current-price, .tc-price-current");
+            const priceEl = card.querySelector(".tc-current-price, .tc-price-current, .tc-card-curr-price");
             if (priceEl && chip.dataset.price) {
                 priceEl.textContent = `₹${chip.dataset.price}`;
             }
 
-            const origPriceEl = card.querySelector(".tc-original-price, .tc-price-original");
+            const origPriceEl = card.querySelector(".tc-original-price, .tc-price-original, .tc-card-orig-price");
             if (origPriceEl) {
                 if (chip.dataset.origPrice && Number(chip.dataset.origPrice) > Number(chip.dataset.price)) {
                     origPriceEl.textContent = `₹${chip.dataset.origPrice}`;
@@ -873,6 +873,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         const imgEl = slider.querySelector(".tc-slider-img");
                         if (imgEl) imgEl.src = chip.dataset.image;
                     }
+                } else {
+                    const imgEl = card.querySelector(".tc-card-img, .product-image");
+                    if (imgEl) imgEl.src = chip.dataset.image;
                 }
             }
 
