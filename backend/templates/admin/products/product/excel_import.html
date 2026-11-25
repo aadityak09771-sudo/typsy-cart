@@ -1,0 +1,167 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  :root {
+    --tc-primary: #a51655;
+    --tc-primary-hover: #880e43;
+    --tc-primary-light: #fdf2f8;
+  }
+  .tc-import-box {
+    max-width: 900px;
+    margin: 20px auto;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  }
+  .tc-import-header {
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+  }
+  .tc-import-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 6px 0;
+  }
+  .tc-import-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  .tc-guidelines-box {
+    background: #fdf2f8;
+    border: 1px solid #fbcfe8;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .tc-guidelines-box h4 {
+    margin: 0 0 10px 0;
+    color: #831843;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .tc-guidelines-box ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .tc-upload-area {
+    border: 2px dashed #fbcfe8;
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    background: #fffdfd;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+  }
+  .tc-upload-area:hover {
+    border-color: #a51655;
+    background: #fff5f8;
+  }
+  .tc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: all 0.2s;
+  }
+  .tc-btn-primary {
+    background: linear-gradient(135deg, #ec4899, #a51655);
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 4px 12px rgba(165, 22, 85, 0.2);
+  }
+  .tc-btn-primary:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+  }
+  .tc-btn-secondary {
+    background: #ffffff;
+    color: #374151 !important;
+    border: 1px solid #d1d5db;
+  }
+  .tc-btn-secondary:hover {
+    background: #f9fafb;
+  }
+  .tc-alert-error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-import-box">
+
+  <div class="tc-import-header">
+    <h1>📥 Import Products from Excel (.xlsx)</h1>
+    <p>Upload a spreadsheet to batch create new products or safely update existing product pricing and stock.</p>
+  </div>
+
+  {% if error_message %}
+    <div class="tc-alert-error">
+      ⚠️ {{ error_message }}
+    </div>
+  {% endif %}
+
+  <!-- GUIDELINES & SAFETY RULES -->
+  <div class="tc-guidelines-box">
+    <h4>📋 Import Guidelines &amp; Data Safety Rules</h4>
+    <ul>
+      <li><strong>Supported Formats:</strong> Microsoft Excel (.xlsx).</li>
+      <li><strong>Column Headers:</strong> Product Name *, SKU / Product Code, Brand, Category *, Subcategory, Selling Price (₹) *, MRP (₹), Stock Quantity *, Unit, Unit Value, Status, Description.</li>
+      <li><strong>Automatic Detection:</strong> If a row's SKU or Product Name matches an existing store product, it will be marked for <strong>Safe Update</strong> (updating stock, price, etc.). Otherwise, it will be created as a <strong>New Product</strong>.</li>
+      <li><strong>Safety Guarantee:</strong> Existing products and past sales/orders are <strong>never deleted or modified</strong>. Cloudinary product images remain intact.</li>
+      <li><strong>Two-Step Verification:</strong> Uploading presents a complete validation preview first. Nothing is committed to the database until you click "Confirm Import".</li>
+    </ul>
+    <div style="margin-top: 14px;">
+      <a href="{% url 'admin:products_product_sample_excel' %}" class="tc-btn tc-btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+        📄 Download Sample Excel Template (.xlsx)
+      </a>
+    </div>
+  </div>
+
+  <!-- UPLOAD FORM -->
+  <form method="POST" enctype="multipart/form-data" action="{% url 'admin:products_product_import_excel' %}">
+    {% csrf_token %}
+    <div class="tc-upload-area">
+      <div style="font-size: 40px; margin-bottom: 12px;">📊</div>
+      <label for="excel_file_input" style="display: block; font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 8px; cursor: pointer;">
+        Choose an Excel file or click to browse
+      </label>
+      <input type="file" id="excel_file_input" name="excel_file" accept=".xlsx" required style="margin: 10px auto; display: block; font-size: 13px;">
+      <p style="margin: 8px 0 0; color: #9ca3af; font-size: 12px;">Supported extension: .xlsx (Max size: 10 MB)</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="{% url 'admin:products_product_changelist' %}" class="tc-btn tc-btn-secondary">
+        &larr; Back to Products
+      </a>
+      <button type="submit" class="tc-btn tc-btn-primary">
+        🔍 Upload &amp; Validate Preview &rarr;
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

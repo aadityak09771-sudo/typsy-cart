@@ -1,0 +1,336 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  :root {
+    --tc-primary: #a51655;
+    --tc-primary-hover: #880e43;
+    --tc-primary-light: #fdf2f8;
+  }
+  .tc-preview-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding-bottom: 40px;
+  }
+  .tc-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  .tc-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .tc-stat-box {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+  .tc-stat-box.success {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+  }
+  .tc-stat-box.danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  .tc-stat-box.info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+  .tc-stat-num {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #111827;
+  }
+  .tc-stat-lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+  }
+  .tc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: all 0.2s;
+  }
+  .tc-btn-primary {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  }
+  .tc-btn-primary:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+  }
+  .tc-btn-danger {
+    background: #ef4444;
+    color: #ffffff !important;
+    border: none;
+  }
+  .tc-btn-secondary {
+    background: #ffffff;
+    color: #374151 !important;
+    border: 1px solid #d1d5db;
+  }
+  .tc-table-wrap {
+    overflow-x: auto;
+    margin-top: 14px;
+  }
+  .tc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tc-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  .tc-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+  }
+  .tc-badge {
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+  }
+  .tc-badge-create {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .tc-badge-update {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+  .tc-badge-error {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-preview-container">
+
+  <!-- TOP SUMMARY CARD -->
+  <div class="tc-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h1 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 4px 0;">
+          📊 Excel Import Preview &amp; Verification
+        </h1>
+        <p style="margin: 0; color: #6b7280; font-size: 13px;">
+          Review the parsed product rows below. Valid items will be imported safely upon your confirmation.
+        </p>
+      </div>
+      <div>
+        <a href="{% url 'admin:products_product_import_excel' %}" class="tc-btn tc-btn-secondary">
+          &larr; Re-Upload Another File
+        </a>
+      </div>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="tc-summary-grid">
+      <div class="tc-stat-box">
+        <div class="tc-stat-num">{{ preview.total_rows }}</div>
+        <div class="tc-stat-lbl">Total Rows Scanned</div>
+      </div>
+      <div class="tc-stat-box success">
+        <div class="tc-stat-num" style="color: #059669;">{{ preview.valid_rows_count }}</div>
+        <div class="tc-stat-lbl" style="color: #047857;">Ready to Import</div>
+      </div>
+      <div class="tc-stat-box info">
+        <div class="tc-stat-num" style="color: #0284c7;">{{ preview.create_count }} New / {{ preview.update_count }} Update</div>
+        <div class="tc-stat-lbl" style="color: #0369a1;">Operation Breakdown</div>
+      </div>
+      <div class="tc-stat-box danger">
+        <div class="tc-stat-num" style="color: #dc2626;">{{ preview.invalid_rows_count }}</div>
+        <div class="tc-stat-lbl" style="color: #b91c1c;">Rejected / Error Rows</div>
+      </div>
+    </div>
+
+    <!-- MISSING CATEGORIES WARNING IF ANY -->
+    {% if preview.missing_categories %}
+      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;">
+        <strong style="color: #92400e; font-size: 13px;">📁 New Categories Detected:</strong>
+        <p style="margin: 4px 0 0; color: #b45309; font-size: 12px;">
+          The following categories in your Excel file do not currently exist in your database:
+          <strong>{{ preview.missing_categories|join:", " }}</strong>.
+        </p>
+      </div>
+    {% endif %}
+
+    <!-- CONFIRMATION ACTION FORM -->
+    <form method="POST" action="{% url 'admin:products_product_import_excel_confirm' %}">
+      {% csrf_token %}
+      <input type="hidden" name="token" value="{{ preview.token }}">
+
+      <div style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: #831843;">
+          <input type="checkbox" name="auto_create_categories" checked style="width: 18px; height: 18px;">
+          <span>Automatically create any missing categories and subcategories in the store</span>
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          {% if preview.invalid_rows_count > 0 %}
+            <a href="{% url 'admin:products_product_import_errors' %}?token={{ preview.token }}" class="tc-btn tc-btn-secondary" style="border-color: #fca5a5; color: #dc2626 !important;">
+              📥 Download Rejected Rows (.xlsx)
+            </a>
+          {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <a href="{% url 'admin:products_product_changelist' %}" class="tc-btn tc-btn-secondary">
+            Cancel
+          </a>
+          {% if preview.valid_rows_count > 0 %}
+            <button type="submit" class="tc-btn tc-btn-primary" onclick="return confirm('Are you sure you want to import {{ preview.valid_rows_count }} products? Existing product images will be preserved and no data will be deleted.');">
+              ✅ Confirm &amp; Import {{ preview.valid_rows_count }} Products
+            </button>
+          {% else %}
+            <button type="button" class="tc-btn tc-btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">
+              No Valid Rows to Import
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLE 1: VALID ROWS PREVIEW -->
+  <div class="tc-card">
+    <h2 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 4px 0;">
+      ✅ Valid Products Preview (First {{ preview.preview_valid|length }} Rows)
+    </h2>
+    <p style="margin: 0; color: #6b7280; font-size: 12px;">
+      These rows passed all format, pricing, and stock validation rules.
+    </p>
+
+    <div class="tc-table-wrap">
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Row #</th>
+            <th>Action</th>
+            <th>Product Name</th>
+            <th>SKU</th>
+            <th>Brand</th>
+            <th>Category</th>
+            <th style="text-align: right;">Selling Price</th>
+            <th style="text-align: right;">MRP</th>
+            <th style="text-align: center;">Stock</th>
+            <th style="text-align: center;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in preview.preview_valid %}
+            <tr>
+              <td style="color: #94a3b8; font-weight: 600;">#{{ r.row_num }}</td>
+              <td>
+                {% if r.action == 'create' %}
+                  <span class="tc-badge tc-badge-create">+ Create New</span>
+                {% else %}
+                  <span class="tc-badge tc-badge-update">⚡ Update Existing</span>
+                {% endif %}
+              </td>
+              <td><strong>{{ r.name }}</strong></td>
+              <td><code style="color: #475569;">{{ r.sku|default:"Auto-generated" }}</code></td>
+              <td>{{ r.brand }}</td>
+              <td>{{ r.category|default:"General" }}</td>
+              <td style="text-align: right; font-weight: 700; color: #10b981;">₹{{ r.price|floatformat:2 }}</td>
+              <td style="text-align: right; color: #94a3b8;">₹{{ r.mrp|floatformat:2 }}</td>
+              <td style="text-align: center; font-weight: 700;">{{ r.stock }}</td>
+              <td style="text-align: center;">
+                {% if r.is_active %}
+                  <span class="tc-badge tc-badge-create">Active</span>
+                {% else %}
+                  <span class="tc-badge" style="background: #f1f5f9; color: #64748b;">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="10" style="text-align: center; color: #9ca3af; padding: 24px;">
+                No valid rows found in the uploaded file.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TABLE 2: REJECTED ROWS PREVIEW (IF ANY) -->
+  {% if preview.invalid_rows_count > 0 %}
+    <div class="tc-card" style="border-color: #fecaca;">
+      <h2 style="font-size: 16px; font-weight: 700; color: #dc2626; margin: 0 0 4px 0;">
+        ⚠️ Rejected / Invalid Rows ({{ preview.invalid_rows_count }} Total)
+      </h2>
+      <p style="margin: 0; color: #6b7280; font-size: 12px;">
+        These rows failed validation checks and will be skipped. You can download the complete Error Report spreadsheet above.
+      </p>
+
+      <div class="tc-table-wrap">
+        <table class="tc-table">
+          <thead>
+            <tr>
+              <th>Row #</th>
+              <th>Product Name</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th style="color: #dc2626;">Reason for Rejection / Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in preview.preview_invalid %}
+              <tr>
+                <td style="color: #94a3b8; font-weight: 600;">#{{ r.row_num }}</td>
+                <td><strong>{{ r.name|default:"[Missing Name]" }}</strong></td>
+                <td><code>{{ r.sku }}</code></td>
+                <td>{{ r.price }}</td>
+                <td>{{ r.stock }}</td>
+                <td style="color: #dc2626; font-weight: 600;">
+                  {{ r.errors|join:" &bull; " }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

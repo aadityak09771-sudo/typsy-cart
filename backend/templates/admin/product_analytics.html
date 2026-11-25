@@ -1,0 +1,638 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  :root {
+    --tc-primary: #a51655;
+    --tc-primary-hover: #880e43;
+    --tc-primary-light: #fdf2f8;
+    --tc-border: #fce7f3;
+  }
+
+  .tc-analytics-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+  }
+
+  /* Admin Nav Strip */
+  .tc-admin-nav-bar {
+    display: flex;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  }
+  .tc-nav-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    color: #4b5563 !important;
+    text-decoration: none !important;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .tc-nav-item:hover, .tc-nav-item.active {
+    background: var(--tc-primary-light);
+    color: var(--tc-primary) !important;
+  }
+  .tc-nav-item.active {
+    font-weight: 700;
+    border-bottom: 2px solid var(--tc-primary);
+  }
+
+  /* Page Header & Action Bar */
+  .tc-header-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+  .tc-header-title h1 {
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+  }
+  .tc-header-title p {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .tc-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .tc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tc-btn-primary {
+    background: linear-gradient(135deg, #ec4899, #a51655);
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 3px 10px rgba(165, 22, 85, 0.2);
+  }
+  .tc-btn-primary:hover {
+    opacity: 0.94;
+    transform: translateY(-1px);
+  }
+  .tc-btn-secondary {
+    background: #ffffff;
+    color: #374151 !important;
+    border: 1px solid #d1d5db;
+  }
+  .tc-btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  /* Filter Controls Card */
+  .tc-filter-bar {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  }
+  .tc-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tc-filter-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.5px;
+    margin-right: 4px;
+  }
+  .tc-pill-link {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563 !important;
+    background: #f3f4f6;
+    text-decoration: none !important;
+    transition: all 0.2s;
+  }
+  .tc-pill-link:hover {
+    background: #e5e7eb;
+  }
+  .tc-pill-link.active {
+    background: #a51655;
+    color: #ffffff !important;
+  }
+  .tc-select {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+    background: #ffffff;
+    color: #111827;
+  }
+
+  /* KPI Summary Grid */
+  .tc-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .tc-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .tc-kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #a51655;
+  }
+  .tc-kpi-card.warning::before {
+    background: #f59e0b;
+  }
+  .tc-kpi-card.danger::before {
+    background: #ef4444;
+  }
+  .tc-kpi-card.success::before {
+    background: #10b981;
+  }
+  .tc-kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tc-kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  .tc-kpi-sub {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  /* Section Box & Tables */
+  .tc-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 26px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  }
+  .tc-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 12px;
+  }
+  .tc-card-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tc-table-wrap {
+    overflow-x: auto;
+  }
+  .tc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tc-table th {
+    background: #fdf2f8;
+    color: #831843;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #fbcfe8;
+    white-space: nowrap;
+  }
+  .tc-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    vertical-align: middle;
+  }
+  .tc-table tr:hover td {
+    background: #fdfbf7;
+  }
+  .tc-badge {
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+  }
+  .tc-badge-in-stock {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .tc-badge-low-stock {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  .tc-badge-out-stock {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+  .tc-badge-active {
+    background: #ecfdf5;
+    color: #047857;
+  }
+  .tc-badge-inactive {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  /* Two column layout for alerts & tops */
+  .tc-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 26px;
+  }
+  @media (max-width: 992px) {
+    .tc-grid-2col {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tc-progress-bg {
+    background: #f3f4f6;
+    border-radius: 6px;
+    height: 8px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .tc-progress-fill {
+    background: #a51655;
+    height: 100%;
+    border-radius: 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc-analytics-container">
+
+  <!-- MODULE NAVIGATION BAR -->
+  <nav class="tc-admin-nav-bar" aria-label="TipsyCart Navigation">
+    <a href="{% url 'admin:index' %}" class="tc-nav-item">📊 Overview</a>
+    <a href="{% url 'admin:products_product_changelist' %}" class="tc-nav-item">🛍️ Products</a>
+    <a href="{% url 'admin_product_analytics' %}" class="tc-nav-item active">📈 Product Analytics</a>
+    <a href="{% url 'admin_inventory' %}" class="tc-nav-item">📦 Inventory</a>
+    <a href="{% url 'admin:products_category_changelist' %}" class="tc-nav-item">📁 Categories</a>
+    <a href="{% url 'admin:products_subcategory_changelist' %}" class="tc-nav-item">🏷️ Subcategories</a>
+    <a href="{% url 'admin:orders_order_changelist' %}" class="tc-nav-item">📋 Orders</a>
+    <a href="{% url 'admin_analytics' %}" class="tc-nav-item">📊 Sales &amp; General Reports</a>
+  </nav>
+
+  <!-- HEADER & ACTIONS -->
+  <div class="tc-header-banner">
+    <div class="tc-header-title">
+      <h1>🛍️ Product Management, Inventory &amp; Sales Analytics</h1>
+      <p>Real-time analytics aggregated directly from live database products and completed order records.</p>
+    </div>
+    <div class="tc-header-actions">
+      <a href="?{{ request.GET.urlencode }}&export=excel" class="tc-btn tc-btn-primary">
+        📥 Export Analytics to Excel (.xlsx)
+      </a>
+      <a href="{% url 'admin:products_product_changelist' %}" class="tc-btn tc-btn-secondary">
+        🛍️ View Products Table
+      </a>
+    </div>
+  </div>
+
+  <!-- FILTER CONTROLS BAR -->
+  <div class="tc-filter-bar">
+    <!-- Date Presets -->
+    <div class="tc-filter-group">
+      <span class="tc-filter-label">📅 Date Range:</span>
+      <a href="?date_range=today{% if category_id %}&category_id={{ category_id }}{% endif %}" class="tc-pill-link {% if date_filter == 'today' %}active{% endif %}">Today</a>
+      <a href="?date_range=7days{% if category_id %}&category_id={{ category_id }}{% endif %}" class="tc-pill-link {% if date_filter == '7days' %}active{% endif %}">Last 7 Days</a>
+      <a href="?date_range=30days{% if category_id %}&category_id={{ category_id }}{% endif %}" class="tc-pill-link {% if date_filter == '30days' %}active{% endif %}">Last 30 Days</a>
+      <a href="?date_range=this_month{% if category_id %}&category_id={{ category_id }}{% endif %}" class="tc-pill-link {% if date_filter == 'this_month' %}active{% endif %}">This Month</a>
+      <a href="?date_range=all_time{% if category_id %}&category_id={{ category_id }}{% endif %}" class="tc-pill-link {% if date_filter == 'all_time' %}active{% endif %}">All Time</a>
+    </div>
+
+    <!-- Category Dropdown Filter -->
+    <div class="tc-filter-group">
+      <span class="tc-filter-label">📁 Category:</span>
+      <form method="GET" action="" style="display: inline-flex; gap: 8px;">
+        <input type="hidden" name="date_range" value="{{ date_filter }}">
+        <select name="category_id" class="tc-select" onchange="this.form.submit()">
+          <option value="">All Categories ({{ categories.count }})</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if category_id|stringformat:"s" == cat.id|stringformat:"s" %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <!-- KPI METRICS SUMMARY GRID -->
+  <div class="tc-kpi-grid">
+    <!-- Total Products -->
+    <div class="tc-kpi-card">
+      <div class="tc-kpi-label">
+        <span>Total Products</span>
+        <span>📦</span>
+      </div>
+      <div class="tc-kpi-value">{{ summary.total_products|default:"0" }}</div>
+      <div class="tc-kpi-sub">{{ summary.active_products }} Active &bull; {{ summary.inactive_products }} Inactive</div>
+    </div>
+
+    <!-- Total Variants -->
+    <div class="tc-kpi-card">
+      <div class="tc-kpi-label">
+        <span>Total Variants</span>
+        <span>🎨</span>
+      </div>
+      <div class="tc-kpi-value">{{ summary.total_variants|default:"0" }}</div>
+      <div class="tc-kpi-sub">Across variable product catalog</div>
+    </div>
+
+    <!-- Total Stock Units -->
+    <div class="tc-kpi-card success">
+      <div class="tc-kpi-label">
+        <span>Available Stock</span>
+        <span>📊</span>
+      </div>
+      <div class="tc-kpi-value">{{ summary.total_stock|default:"0" }}</div>
+      <div class="tc-kpi-sub">Total physical units ready to ship</div>
+    </div>
+
+    <!-- Inventory Valuation -->
+    <div class="tc-kpi-card success">
+      <div class="tc-kpi-label">
+        <span>Inventory Valuation</span>
+        <span>₹</span>
+      </div>
+      <div class="tc-kpi-value">₹{{ summary.inventory_valuation|floatformat:2 }}</div>
+      <div class="tc-kpi-sub">Estimated stock value (Price &times; Units)</div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    <div class="tc-kpi-card warning">
+      <div class="tc-kpi-label">
+        <span>Low Stock Alert</span>
+        <span>⚠️</span>
+      </div>
+      <div class="tc-kpi-value" style="color: #b45309;">{{ summary.low_stock_count|default:"0" }}</div>
+      <div class="tc-kpi-sub">Products with 1 &ndash; 10 units remaining</div>
+    </div>
+
+    <!-- Out of Stock -->
+    <div class="tc-kpi-card danger">
+      <div class="tc-kpi-label">
+        <span>Out of Stock</span>
+        <span>🚫</span>
+      </div>
+      <div class="tc-kpi-value" style="color: #b91c1c;">{{ summary.out_of_stock_count|default:"0" }}</div>
+      <div class="tc-kpi-sub">Zero inventory items</div>
+    </div>
+
+    <!-- Units Sold -->
+    <div class="tc-kpi-card">
+      <div class="tc-kpi-label">
+        <span>Units Sold</span>
+        <span>📈</span>
+      </div>
+      <div class="tc-kpi-value" style="color: #0284c7;">{{ summary.total_units_sold|default:"0" }}</div>
+      <div class="tc-kpi-sub">Calculated from valid customer orders</div>
+    </div>
+
+    <!-- Total Sales Revenue -->
+    <div class="tc-kpi-card">
+      <div class="tc-kpi-label">
+        <span>Product Revenue</span>
+        <span>💰</span>
+      </div>
+      <div class="tc-kpi-value" style="color: #a51655;">₹{{ summary.total_revenue|floatformat:2 }}</div>
+      <div class="tc-kpi-sub">Excludes cancelled &amp; failed orders</div>
+    </div>
+  </div>
+
+  <!-- TWO COLUMN GRIDS: TOP SELLING & LOW STOCK REORDER ALERTS -->
+  <div class="tc-grid-2col">
+    <!-- Top Selling Products -->
+    <div class="tc-card">
+      <div class="tc-card-header">
+        <h2>🔥 Top Selling Products</h2>
+        <span style="font-size: 12px; color: #6b7280;">Ranked by Gross Revenue</span>
+      </div>
+      <div class="tc-table-wrap">
+        <table class="tc-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th style="text-align: right;">Units Sold</th>
+              <th style="text-align: right;">Revenue</th>
+              <th style="text-align: center;">Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in top_products %}
+              <tr>
+                <td style="font-weight: 700; color: #a51655;">{{ item.rank }}</td>
+                <td>
+                  <a href="{% if item.id %}{% url 'admin:products_product_change' item.id %}{% else %}#{% endif %}" style="font-weight: 600; color: #111827; text-decoration: none;">
+                    {{ item.name }}
+                  </a>
+                  <br><small style="color: #9ca3af; font-family: monospace;">{{ item.sku }}</small>
+                </td>
+                <td><small style="color: #6b7280; font-weight: 600;">{{ item.category }}</small></td>
+                <td style="text-align: right; font-weight: 700; color: #0284c7;">{{ item.units_sold }}</td>
+                <td style="text-align: right; font-weight: 700; color: #a51655;">₹{{ item.revenue|floatformat:2 }}</td>
+                <td style="text-align: center;">
+                  {% if item.stock == 0 %}
+                    <span class="tc-badge tc-badge-out-stock">0</span>
+                  {% elif item.stock <= 10 %}
+                    <span class="tc-badge tc-badge-low-stock">{{ item.stock }}</span>
+                  {% else %}
+                    <span class="tc-badge tc-badge-in-stock">{{ item.stock }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" style="text-align: center; color: #9ca3af; padding: 24px;">
+                  No sales recorded in the selected period.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Low Stock & Reorder Alert -->
+    <div class="tc-card">
+      <div class="tc-card-header">
+        <h2>⚠️ Low Stock &amp; Reorder Alert</h2>
+        <span style="font-size: 12px; color: #b45309; font-weight: 600;">Stock &le; 10 Units</span>
+      </div>
+      <div class="tc-table-wrap">
+        <table class="tc-table">
+          <thead>
+            <tr>
+              <th>SKU / Product</th>
+              <th>Variant</th>
+              <th>Category</th>
+              <th style="text-align: right;">Price</th>
+              <th style="text-align: center;">Stock</th>
+              <th style="text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in low_stock_products %}
+              <tr>
+                <td>
+                  <a href="{% url 'admin:products_product_change' p.id %}" style="font-weight: 600; color: #111827; text-decoration: none;">
+                    {{ p.name }}
+                  </a>
+                  <br><small style="color: #9ca3af; font-family: monospace;">{{ p.sku }}</small>
+                </td>
+                <td><small style="color: #4b5563;">{{ p.variant_name }}</small></td>
+                <td><small style="color: #6b7280;">{{ p.category }}</small></td>
+                <td style="text-align: right; font-weight: 600;">₹{{ p.price|floatformat:2 }}</td>
+                <td style="text-align: center;">
+                  {% if p.is_out_of_stock %}
+                    <span class="tc-badge tc-badge-out-stock">Out of Stock</span>
+                  {% else %}
+                    <span class="tc-badge tc-badge-low-stock">{{ p.stock }} left</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  <a href="{% url 'admin:products_product_change' p.id %}" class="tc-btn tc-btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+                    Update Stock
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" style="text-align: center; color: #10b981; padding: 24px; font-weight: 600;">
+                  🎉 All products have healthy inventory levels (> 10 units)!
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY PERFORMANCE BREAKDOWN TABLE -->
+  <div class="tc-card">
+    <div class="tc-card-header">
+      <h2>📁 Category Inventory &amp; Revenue Performance</h2>
+      <span style="font-size: 12px; color: #6b7280;">Aggregated across all store categories</span>
+    </div>
+    <div class="tc-table-wrap">
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            <th style="text-align: right;">Products Listed</th>
+            <th style="text-align: right;">Current Stock Units</th>
+            <th style="text-align: right;">Units Sold</th>
+            <th style="text-align: right;">Sales Revenue</th>
+            <th style="width: 180px;">Revenue Share (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cp in category_performance %}
+            <tr>
+              <td>
+                <strong style="color: #111827;">{{ cp.name }}</strong>
+              </td>
+              <td style="text-align: right; font-weight: 600; color: #4b5563;">{{ cp.product_count }}</td>
+              <td style="text-align: right; font-weight: 600; color: #047857;">{{ cp.stock }}</td>
+              <td style="text-align: right; font-weight: 700; color: #0284c7;">{{ cp.units_sold }}</td>
+              <td style="text-align: right; font-weight: 700; color: #a51655;">₹{{ cp.revenue|floatformat:2 }}</td>
+              <td>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6b7280;">
+                  <span>{{ cp.share_percentage }}%</span>
+                </div>
+                <div class="tc-progress-bg">
+                  <div class="tc-progress-fill" style="width: {{ cp.share_percentage }}%;"></div>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: #9ca3af; padding: 24px;">
+                No category performance data found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

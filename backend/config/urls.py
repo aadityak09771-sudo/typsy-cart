@@ -22,6 +22,7 @@ urlpatterns = [
 
     # Custom Admin Management Views (Staff/Superuser protected)
     path("admin/inventory/", admin.site.admin_view(admin_views.inventory_view), name="admin_inventory"),
+    path("admin/product-analytics/", admin.site.admin_view(admin_views.product_analytics_view), name="admin_product_analytics"),
     path("admin/cart-overview/", admin.site.admin_view(admin_views.cart_overview_view), name="admin_cart_overview"),
     path("admin/analytics/", admin.site.admin_view(admin_views.analytics_view), name="admin_analytics"),
     path("admin/products/api/subcategories/", admin.site.admin_view(admin_views.subcategories_api_view), name="admin_products_subcategories_api_alias"),

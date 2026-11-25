@@ -11,9 +11,12 @@ from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import transaction
-from django.http import JsonResponse
+from django.db.models import Sum, F, Q, Value, DecimalField
+from django.db.models.functions import Coalesce
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -29,6 +32,13 @@ from .models import (
     ProductVariant,
 )
 from .services.zip_importer import ZipProductImporter
+from .services.excel_exporter import generate_products_excel, VALID_ORDER_STATUSES
+from .services.excel_importer import (
+    parse_and_validate_excel,
+    commit_excel_import,
+    generate_import_error_excel,
+    generate_sample_excel_template,
+)
 
 
 MAX_CSV_SIZE = 10 * 1024 * 1024
@@ -107,6 +117,43 @@ class DiscountStatusFilter(admin.SimpleListFilter):
             return queryset.filter(discount_enabled=True, discount_value__gt=0)
         if self.value() == "regular":
             return queryset.filter(discount_enabled=False)
+        return queryset
+
+
+class ProductQuickFilter(admin.SimpleListFilter):
+    title = "Quick Filter"
+    parameter_name = "quick_filter"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("all", "All Products"),
+            ("simple", "Simple Products"),
+            ("variable", "Variable Products"),
+            ("in_stock", "In Stock (> 10)"),
+            ("low_stock", "Low Stock (1 – 10)"),
+            ("out_of_stock", "Out of Stock (0)"),
+            ("active", "Active Products"),
+            ("inactive", "Inactive Products"),
+        ]
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val == "all":
+            return queryset
+        elif val == "simple":
+            return queryset.filter(product_type="simple")
+        elif val == "variable":
+            return queryset.filter(product_type="variable")
+        elif val == "in_stock":
+            return queryset.filter(stock__gt=10)
+        elif val == "low_stock":
+            return queryset.filter(stock__gt=0, stock__lte=10)
+        elif val == "out_of_stock":
+            return queryset.filter(stock=0)
+        elif val == "active":
+            return queryset.filter(is_active=True)
+        elif val == "inactive":
+            return queryset.filter(is_active=False)
         return queryset
 
 
@@ -773,33 +820,43 @@ class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
 
     inlines = [ProductImageInline, ProductColourInline, ProductSizeInline, ProductVariantInline]
-    actions = ["activate_products", "deactivate_products", "generate_variants_action"]
+    actions = [
+        "export_selected_to_excel",
+        "activate_products",
+        "deactivate_products",
+        "mark_available",
+        "mark_unavailable",
+        "generate_variants_action",
+    ]
 
     list_display = (
         "image_preview",
-        "product_number",
+        "product_number_display",
         "name",
+        "brand_display",
         "category_badge",
         "product_type_badge",
         "pricing_display",
         "stock_badge",
+        "units_sold_display",
+        "sales_revenue_display",
+        "status_badge",
         "is_available",
         "is_deal_of_the_day",
         "is_featured",
-        "is_active",
-        "created_at",
+        "updated_at_display",
     )
 
     list_filter = (
+        ProductQuickFilter,
+        ("category_ref", admin.RelatedOnlyFieldListFilter),
+        ("subcategory_ref", admin.RelatedOnlyFieldListFilter),
+        StockLevelFilter,
         "product_type",
-        "category_ref",
-        "subcategory_ref",
+        "is_active",
         "is_available",
         "is_deal_of_the_day",
         "is_featured",
-        "discount_enabled",
-        "is_active",
-        StockLevelFilter,
         DiscountStatusFilter,
         "created_at",
     )
@@ -807,20 +864,21 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = (
         "product_number",
         "name",
-        "description",
         "brand",
-        "subcategory",
+        "description",
         "category",
+        "subcategory",
+        "variants__sku",
+        "variants__variant_name",
     )
 
     list_editable = (
         "is_available",
         "is_deal_of_the_day",
         "is_featured",
-        "is_active",
     )
 
-    list_display_links = ("image_preview", "name")
+    list_display_links = ("image_preview", "product_number_display", "name")
     ordering = ("-created_at",)
     list_per_page = 25
     date_hierarchy = "created_at"
@@ -995,7 +1053,30 @@ class ProductAdmin(admin.ModelAdmin):
             p_stock,
         )
 
-    @admin.display(description="Category", ordering="category")
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            units_sold_annotated=Coalesce(
+                Sum("orderitem__quantity", filter=Q(orderitem__order__status__in=VALID_ORDER_STATUSES)),
+                Value(0)
+            ),
+            sales_revenue_annotated=Coalesce(
+                Sum(F("orderitem__price") * F("orderitem__quantity"), filter=Q(orderitem__order__status__in=VALID_ORDER_STATUSES)),
+                Decimal("0.00"),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            )
+        ).select_related("category_ref", "subcategory_ref").prefetch_related("variants", "variants__size", "variants__colour")
+
+    @admin.display(description="Product ID / SKU", ordering="product_number")
+    def product_number_display(self, obj):
+        sku = obj.product_number or f"TC-PRD-{obj.id}"
+        return format_html('<span style="font-family: monospace; font-weight: 700; color: #475569; font-size: 11px;">{}</span>', sku)
+
+    @admin.display(description="Brand", ordering="brand")
+    def brand_display(self, obj):
+        return obj.brand or "TipsyCart"
+
+    @admin.display(description="Category & Subcategory", ordering="category")
     def category_badge(self, obj):
         cat_name = obj.category_ref.name if obj.category_ref else (obj.category or "Unassigned")
         sub_name = obj.subcategory_ref.name if obj.subcategory_ref else (obj.subcategory or "")
@@ -1006,6 +1087,29 @@ class ProductAdmin(admin.ModelAdmin):
         return format_html(
             '<span style="background: #fdf2f8; color: #a51655; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">{}</span>{}',
             cat_name, sub_element
+        )
+
+    @admin.display(description="Type & Variants", ordering="product_type")
+    def product_type_badge(self, obj):
+        if obj.is_variable:
+            variants = list(obj.variants.all())
+            count = len(variants)
+            preview = []
+            for v in variants[:3]:
+                s_name = v.size.name if v.size else (f"{v.unit_value} {v.unit}".strip() if v.unit_value else (v.unit or ""))
+                if s_name:
+                    preview.append(s_name)
+            preview_str = ", ".join(preview)
+            if count > 3:
+                preview_str += f" +{count - 3} more"
+            return format_html(
+                '<span style="background: #fdf2f8; color: #a51655; border: 1px solid #fbcfe8; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">Variable ({})</span><br><small style="color: #64748b; font-size: 10px;">{}</small>',
+                count, preview_str if preview_str else "Configured"
+            )
+        unit_str = f"{obj.unit_value:g} {obj.unit}".strip() if obj.unit_value else (obj.unit or "")
+        return format_html(
+            '<span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;">Simple</span><br><small style="color: #64748b; font-size: 10px;">{}</small>',
+            unit_str or "Standard"
         )
 
     @admin.display(description="Pricing (MRP / Sell)")
@@ -1038,18 +1142,49 @@ class ProductAdmin(admin.ModelAdmin):
             obj.stock,
         )
 
+    @admin.display(description="Units Sold", ordering="units_sold_annotated")
+    def units_sold_display(self, obj):
+        qty = getattr(obj, "units_sold_annotated", 0)
+        return format_html(
+            '<span style="font-weight: 700; color: #0284c7; font-size: 12px;">{}</span>',
+            f"{qty:,}"
+        )
+
+    @admin.display(description="Sales Revenue", ordering="sales_revenue_annotated")
+    def sales_revenue_display(self, obj):
+        rev = getattr(obj, "sales_revenue_annotated", Decimal("0.00"))
+        return format_html(
+            '<strong style="color: #a51655; font-size: 12px;">₹{}</strong>',
+            f"{rev:,.2f}"
+        )
+
+    @admin.display(description="Status", ordering="is_active")
+    def status_badge(self, obj):
+        if obj.is_active:
+            return mark_safe('<span style="background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 8px; font-weight: 700; font-size: 11px;">Active</span>')
+        return mark_safe('<span style="background: #f3f4f6; color: #6b7280; padding: 2px 7px; border-radius: 8px; font-weight: 600; font-size: 11px;">Inactive</span>')
+
+    @admin.display(description="Created Date", ordering="created_at")
+    def updated_at_display(self, obj):
+        dt = getattr(obj, "updated_at", None) or getattr(obj, "created_at", None)
+        if dt:
+            return timezone.localtime(dt).strftime("%d %b %Y, %I:%M %p")
+        return "—"
+
     # -----------------------------------------------------------------------
     # BULK ADMIN ACTIONS
     # -----------------------------------------------------------------------
 
-    actions = [
-        "mark_available",
-        "mark_unavailable",
-        "mark_featured",
-        "unmark_featured",
-        "activate_products",
-        "deactivate_products",
-    ]
+    @admin.action(description="📥 Export selected products to Excel (.xlsx)")
+    def export_selected_to_excel(self, request, queryset):
+        buffer = generate_products_excel(queryset, filter_description=f"Admin Selected ({queryset.count()} Products)")
+        filename = f"tipsycart_selected_products_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
     @admin.action(description="✓ Mark selected products as In Stock / Available")
     def mark_available(self, request, queryset):
@@ -1220,6 +1355,31 @@ class ProductAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
+                "export-excel/",
+                self.admin_site.admin_view(self.export_excel_view),
+                name="products_product_export_excel",
+            ),
+            path(
+                "import-excel/",
+                self.admin_site.admin_view(self.import_excel_view),
+                name="products_product_import_excel",
+            ),
+            path(
+                "import-excel/confirm/",
+                self.admin_site.admin_view(self.confirm_import_excel_view),
+                name="products_product_import_excel_confirm",
+            ),
+            path(
+                "import-excel/download-sample/",
+                self.admin_site.admin_view(self.download_sample_excel_view),
+                name="products_product_sample_excel",
+            ),
+            path(
+                "import-excel/download-errors/",
+                self.admin_site.admin_view(self.download_import_errors_view),
+                name="products_product_import_errors",
+            ),
+            path(
                 "<int:product_id>/generate-variants/",
                 self.admin_site.admin_view(self.generate_variants_view),
                 name="products_product_generate_variants",
@@ -1241,6 +1401,156 @@ class ProductAdmin(admin.ModelAdmin):
             ),
         ]
         return custom_urls + urls
+
+    def export_excel_view(self, request):
+        """
+        Dynamically exports current filtered products to a styled Excel (.xlsx) file.
+        Respects any active category, subcategory, search, or status filter.
+        """
+        cl = self.get_changelist_instance(request)
+        queryset = cl.get_queryset(request)
+
+        filter_parts = []
+        q_filter = request.GET.get("quick_filter")
+        if q_filter:
+            filter_parts.append(f"Filter: {q_filter.replace('_', ' ').title()}")
+        cat_id = request.GET.get("category_ref__id__exact")
+        if cat_id:
+            c = Category.objects.filter(id=cat_id).first()
+            if c:
+                filter_parts.append(f"Category: {c.name}")
+        subcat_id = request.GET.get("subcategory_ref__id__exact")
+        if subcat_id:
+            s = Subcategory.objects.filter(id=subcat_id).first()
+            if s:
+                filter_parts.append(f"Subcategory: {s.name}")
+        search_query = request.GET.get("q")
+        if search_query:
+            filter_parts.append(f"Search: '{search_query}'")
+
+        filter_desc = " | ".join(filter_parts) if filter_parts else "All Filtered Products"
+
+        buffer = generate_products_excel(queryset, filter_description=filter_desc)
+        filename = f"tipsycart_products_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    def download_sample_excel_view(self, request):
+        """Downloads a formatted sample template for importing products."""
+        buffer = generate_sample_excel_template()
+        filename = "tipsycart_products_import_template.xlsx"
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    def download_import_errors_view(self, request):
+        """Downloads rejected rows from the last Excel validation in .xlsx format."""
+        token = request.GET.get("token")
+        import_data = request.session.get(f"excel_import_{token}") if token else None
+        if not import_data or not import_data.get("invalid_rows"):
+            self.message_user(request, "No rejected rows found or import session expired.", level=messages.WARNING)
+            return redirect("admin:products_product_changelist")
+
+        buffer = generate_import_error_excel(import_data["invalid_rows"])
+        filename = f"tipsycart_import_rejected_rows_{token[:8]}.xlsx"
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    def import_excel_view(self, request):
+        """Handles upload and validation preview of product Excel files."""
+        if request.method == "POST":
+            uploaded_file = request.FILES.get("excel_file")
+            if not uploaded_file:
+                return render(
+                    request,
+                    "admin/products/product/excel_import.html",
+                    {
+                        **self.admin_site.each_context(request),
+                        "title": "Import Products from Excel",
+                        "opts": self.model._meta,
+                        "error_message": "Please select a valid .xlsx file to upload.",
+                    }
+                )
+
+            preview_res = parse_and_validate_excel(uploaded_file)
+            if not preview_res.get("success"):
+                return render(
+                    request,
+                    "admin/products/product/excel_import.html",
+                    {
+                        **self.admin_site.each_context(request),
+                        "title": "Import Products from Excel",
+                        "opts": self.model._meta,
+                        "error_message": preview_res.get("error"),
+                    }
+                )
+
+            token = preview_res["token"]
+            request.session[f"excel_import_{token}"] = preview_res
+            request.session.modified = True
+
+            context = {
+                **self.admin_site.each_context(request),
+                "title": "Excel Import Preview & Verification",
+                "opts": self.model._meta,
+                "preview": preview_res,
+            }
+            return render(request, "admin/products/product/excel_import_preview.html", context)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Import Products from Excel (.xlsx)",
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/products/product/excel_import.html", context)
+
+    def confirm_import_excel_view(self, request):
+        """Executes the verified rows into the database atomically upon admin confirmation."""
+        if request.method != "POST":
+            return redirect("admin:products_product_changelist")
+
+        token = request.POST.get("token")
+        auto_cats = request.POST.get("auto_create_categories") == "on"
+
+        import_data = request.session.get(f"excel_import_{token}") if token else None
+        if not import_data or not import_data.get("valid_rows"):
+            self.message_user(request, "Import session expired. Please re-upload your Excel file.", level=messages.ERROR)
+            return redirect("admin:products_product_import_excel")
+
+        valid_rows = import_data["valid_rows"]
+        stats = commit_excel_import(valid_rows, auto_create_missing_categories=auto_cats)
+
+        if f"excel_import_{token}" in request.session:
+            del request.session[f"excel_import_{token}"]
+
+        created = stats.get("created", 0)
+        updated = stats.get("updated", 0)
+        errors = stats.get("errors", [])
+
+        if errors:
+            self.message_user(
+                request,
+                f"Import completed with warnings: {created} products created, {updated} updated. {len(errors)} items failed.",
+                level=messages.WARNING
+            )
+        else:
+            self.message_user(
+                request,
+                f"🎉 Successfully imported! {created} new products created, {updated} existing products safely updated.",
+                level=messages.SUCCESS
+            )
+        return redirect("admin:products_product_changelist")
 
     def subcategories_api(self, request):
         category_id = request.GET.get("category_id")

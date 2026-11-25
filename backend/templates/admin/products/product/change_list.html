@@ -1,7 +1,93 @@
-
 {% extends "admin/change_list.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .tc-cl-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  }
+  .tc-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tc-pill {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563 !important;
+    background: #f3f4f6;
+    text-decoration: none !important;
+    transition: all 0.2s;
+  }
+  .tc-pill:hover {
+    background: #e5e7eb;
+  }
+  .tc-pill.active {
+    background: #a51655;
+    color: #ffffff !important;
+  }
+  .tc-count-badge {
+    font-size: 13px;
+    font-weight: 700;
+    color: #831843;
+    background: #fdf2f8;
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid #fbcfe8;
+  }
+  /* Style object-tools buttons */
+  .object-tools li a.tc-tool-analytics {
+    background: linear-gradient(135deg, #ec4899, #a51655) !important;
+    color: #ffffff !important;
+    border-color: #880e43 !important;
+    font-weight: 700 !important;
+  }
+  .object-tools li a.tc-tool-export {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    font-weight: 700 !important;
+  }
+  .object-tools li a.tc-tool-import {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0369a1 !important;
+    font-weight: 700 !important;
+  }
+</style>
+{% endblock %}
 
 {% block object-tools-items %}
+    <li>
+        <a href="{% url 'admin_product_analytics' %}" class="tc-tool-analytics addlink">
+            📊 Product Analytics
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:products_product_export_excel' %}?{{ request.GET.urlencode }}" class="tc-tool-export addlink">
+            📥 Export to Excel (.xlsx)
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:products_product_import_excel' %}" class="tc-tool-import addlink">
+            📤 Import from Excel (.xlsx)
+        </a>
+    </li>
     <li>
         <a href="{% url 'admin:products_product_zip_import' %}" class="addlink" style="background: #a51655; color: #ffffff; border-color: #880e43;">
             📦 Import Products (ZIP + Images)
@@ -13,4 +99,43 @@
         </a>
     </li>
     {{ block.super }}
+{% endblock %}
+
+{% block search %}
+{{ block.super }}
+
+<!-- QUICK FILTER & TOTAL MATCHING BAR -->
+<div class="tc-cl-toolbar">
+  <div class="tc-filter-pills">
+    <span style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-right: 4px;">Quick Filters:</span>
+    <a href="?{% if request.GET.category_ref__id__exact %}category_ref__id__exact={{ request.GET.category_ref__id__exact }}&{% endif %}{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}" class="tc-pill {% if not request.GET.quick_filter or request.GET.quick_filter == 'all' %}active{% endif %}">
+      All Products
+    </a>
+    <a href="?quick_filter=simple{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'simple' %}active{% endif %}">
+      Simple Products
+    </a>
+    <a href="?quick_filter=variable{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'variable' %}active{% endif %}">
+      Variable Products
+    </a>
+    <a href="?quick_filter=in_stock{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'in_stock' %}active{% endif %}">
+      In Stock (>10)
+    </a>
+    <a href="?quick_filter=low_stock{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'low_stock' %}active{% endif %}">
+      Low Stock (1–10)
+    </a>
+    <a href="?quick_filter=out_of_stock{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'out_of_stock' %}active{% endif %}">
+      Out of Stock (0)
+    </a>
+    <a href="?quick_filter=active{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'active' %}active{% endif %}">
+      Active
+    </a>
+    <a href="?quick_filter=inactive{% if request.GET.category_ref__id__exact %}&category_ref__id__exact={{ request.GET.category_ref__id__exact }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="tc-pill {% if request.GET.quick_filter == 'inactive' %}active{% endif %}">
+      Inactive
+    </a>
+  </div>
+
+  <div class="tc-count-badge">
+    Total Matching Products: <strong>{{ cl.result_count }}</strong>
+  </div>
+</div>
 {% endblock %}
