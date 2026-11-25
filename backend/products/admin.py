@@ -149,17 +149,35 @@ class CategoryAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "display_order",
+        "show_on_homepage",
+        "homepage_display_order",
+        "homepage_card_size",
+        "homepage_display_style",
+        "is_featured",
         "product_count_badge",
         "subcategory_count_badge",
         "is_active",
         "created_at",
     )
     list_display_links = ("image_thumb", "name")
-    list_editable = ("display_order", "is_active")
-    list_filter = ("is_active", "created_at")
+    list_editable = (
+        "display_order",
+        "show_on_homepage",
+        "homepage_display_order",
+        "is_featured",
+        "is_active",
+    )
+    list_filter = (
+        "show_on_homepage",
+        "is_featured",
+        "homepage_card_size",
+        "homepage_display_style",
+        "is_active",
+        "created_at",
+    )
     search_fields = ("name", "description", "slug")
     prepopulated_fields = {"slug": ("name",)}
-    ordering = ("display_order", "name")
+    ordering = ("homepage_display_order", "display_order", "name")
     readonly_fields = ("image_preview_large", "created_at")
 
     fieldsets = (
@@ -172,7 +190,17 @@ class CategoryAdmin(admin.ModelAdmin):
             "fields": ("image_url",),
             "description": "Or enter a public direct image link (e.g. https://.../photo.jpg). Leave blank if uploading an image file above.",
         }),
-        ("Display & Status", {"fields": ("display_order", "is_active")}),
+        ("Homepage Display Controls (Homepage Only)", {
+            "fields": (
+                "show_on_homepage",
+                "homepage_display_order",
+                "homepage_card_size",
+                "homepage_display_style",
+                "is_featured",
+            ),
+            "description": "Control whether and how this category appears on the TipsyCart Home Page. These settings only affect the Home Page and do not change the Categories or Shop pages.",
+        }),
+        ("Global Display & Status", {"fields": ("display_order", "is_active")}),
     )
 
     class Media:

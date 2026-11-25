@@ -15,6 +15,43 @@ class Category(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Homepage-specific display controls
+    show_on_homepage = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Show or hide this category on the homepage category rail/grid."
+    )
+    homepage_display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order on the homepage (lower numbers appear first)."
+    )
+    HOMEPAGE_CARD_SIZES = [
+        ("small", "Small"),
+        ("medium", "Medium"),
+        ("large", "Large"),
+    ]
+    homepage_card_size = models.CharField(
+        max_length=20,
+        choices=HOMEPAGE_CARD_SIZES,
+        default="medium",
+        help_text="Card size preference on the homepage."
+    )
+    HOMEPAGE_STYLES = [
+        ("compact", "Compact Card"),
+        ("standard", "Standard Card"),
+        ("featured", "Featured Card"),
+    ]
+    homepage_display_style = models.CharField(
+        max_length=20,
+        choices=HOMEPAGE_STYLES,
+        default="compact",
+        help_text="Homepage visual card presentation style."
+    )
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="Mark as a featured category on the homepage."
+    )
+
     class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Categories"
@@ -41,6 +78,8 @@ class Category(models.Model):
         return self.products.filter(is_active=True).count()
 
     def get_image_url(self):
+        slug = (self.slug or "").lower()
+        name = (self.name or "").lower()
         slug_map = {
             "period-care": "/static/home/images/cat-period-care.jpg",
             "personal-safety": "/static/home/images/cat-personal-safety.jpg",
@@ -50,10 +89,31 @@ class Category(models.Model):
             "groceries": "/static/home/images/cat-groceries.jpg",
             "plastic-items": "/static/home/images/cat-plastic-items.jpg",
         }
-        fallback = slug_map.get(
-            self.slug,
-            "/static/home/images/cat-plastic-items.jpg" if "plastic" in (self.slug or "") else "/static/home/images/tipsycart-logo.png"
-        )
+        fallback = slug_map.get(slug)
+        if not fallback:
+            if "plastic" in slug or "plastic" in name:
+                fallback = "/static/home/images/cat-plastic-items.jpg"
+            elif any(k in slug or k in name for k in ["period", "menstrual", "sanitary", "pad"]):
+                fallback = "/static/home/images/cat-period-care.jpg"
+            elif any(k in slug or k in name for k in ["safe", "alarm", "protect"]):
+                fallback = "/static/home/images/cat-personal-safety.jpg"
+            elif any(k in slug or k in name for k in ["personal", "skin", "body", "hair", "bath"]):
+                fallback = "/static/home/images/cat-personal-care.jpg"
+            elif any(k in slug or k in name for k in ["grocer", "vegetable", "fruit", "atta", "rice", "dal"]):
+                fallback = "/static/home/images/cat-groceries.jpg"
+            elif any(k in slug or k in name for k in ["daily", "essential", "household", "home", "clean"]):
+                fallback = "/static/home/images/cat-daily-essentials.jpg"
+            elif any(k in slug or k in name for k in ["sweet", "confectionery", "gajak", "chikki", "mithai"]):
+                fallback = "/static/home/images/cat-daily-essentials.jpg"
+            elif any(k in slug or k in name for k in ["fashion", "jewel", "apparel", "earring", "necklace"]):
+                fallback = "/static/home/images/cat-daily-essentials.jpg"
+            elif any(k in slug or k in name for k in ["cut", "meat", "fish", "chicken"]):
+                fallback = "/static/home/images/cat-groceries.jpg"
+            elif any(k in slug or k in name for k in ["mobile", "gadget", "accessori", "headphone"]):
+                fallback = "/static/home/images/cat-daily-essentials.jpg"
+            else:
+                fallback = "/static/home/images/tipsycart-logo.png"
+
         if self.image:
             try:
                 url = self.image.url

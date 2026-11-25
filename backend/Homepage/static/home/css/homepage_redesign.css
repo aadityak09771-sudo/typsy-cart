@@ -1,0 +1,1187 @@
+/* ==========================================================================
+   TIPSYCART HOMEPAGE REDESIGN — SCOPED STYLING
+   Brand Palette: Deep Magenta/Pink (#a51655, #be185d, #ec4899, #fff0f5)
+   Scope: Exclusively applies to the Home Page (tc-home-redesign)
+   ========================================================================== */
+
+/* ---------- RESET & CONTAINER HELPERS FOR HOMEPAGE ---------- */
+.tc-home-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .tc-home-container {
+        padding: 0 14px;
+    }
+}
+
+/* ---------- 1. TOP ANNOUNCEMENT BAR ---------- */
+.tc-top-announcement {
+    background: linear-gradient(90deg, #9f1239 0%, #be185d 45%, #9d174d 80%, #831843 100%);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 9px 16px;
+    text-align: center;
+    position: relative;
+    z-index: 50;
+    letter-spacing: 0.2px;
+}
+
+.tc-top-announcement-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tc-announce-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.tc-announce-icon {
+    font-size: 14px;
+    display: inline-block;
+}
+
+.tc-announce-divider {
+    opacity: 0.45;
+    font-weight: 300;
+    color: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .tc-top-announcement {
+        font-size: 11.5px;
+        padding: 7px 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .tc-top-announcement::-webkit-scrollbar {
+        display: none;
+    }
+    .tc-top-announcement-inner {
+        flex-wrap: nowrap;
+        gap: 12px;
+        width: max-content;
+        margin: 0 auto;
+    }
+}
+
+/* ---------- 2. HERO BANNER SECTION ---------- */
+.tc-hero-section {
+    padding: 24px 0 16px;
+}
+
+.tc-hero-card {
+    position: relative;
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 40%, #fae8ff 100%);
+    border-radius: 28px;
+    overflow: hidden;
+    padding: 48px 56px;
+    box-shadow: 0 10px 30px rgba(190, 24, 93, 0.08);
+    border: 1px solid rgba(244, 114, 182, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 380px;
+}
+
+.tc-hero-left {
+    max-width: 540px;
+    z-index: 2;
+}
+
+.tc-hero-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    color: #be185d;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 6px 16px;
+    border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(190, 24, 93, 0.12);
+    margin-bottom: 18px;
+    border: 1px solid #fbcfe8;
+}
+
+.tc-hero-title {
+    font-size: 42px;
+    font-weight: 850;
+    color: #1e293b;
+    line-height: 1.15;
+    margin: 0 0 16px;
+    letter-spacing: -0.8px;
+}
+
+.tc-hero-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #475569;
+    margin: 0 0 28px;
+    max-width: 480px;
+}
+
+.tc-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #be185d 0%, #a21caf 100%);
+    color: #ffffff !important;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px 34px;
+    border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(190, 24, 93, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tc-hero-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(190, 24, 93, 0.45);
+}
+
+.tc-hero-right {
+    position: relative;
+    max-width: 460px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.tc-hero-img-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.tc-hero-img {
+    max-width: 100%;
+    height: auto;
+    max-height: 320px;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.12));
+}
+
+.tc-hero-badge-float {
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    background: #be185d;
+    color: #ffffff;
+    padding: 8px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(190, 24, 93, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    border: 2px solid #ffffff;
+}
+
+.tc-hero-nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    color: #475569;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+    transition: all 0.2s;
+}
+
+.tc-hero-nav-arrow:hover {
+    background: #be185d;
+    color: #ffffff;
+}
+
+.tc-hero-prev {
+    left: 14px;
+}
+
+.tc-hero-next {
+    right: 14px;
+}
+
+.tc-hero-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.tc-hero-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.25s;
+}
+
+.tc-hero-dot.active {
+    width: 24px;
+    border-radius: 12px;
+    background: #be185d;
+}
+
+@media (max-width: 991px) {
+    .tc-hero-card {
+        padding: 36px 32px;
+    }
+    .tc-hero-title {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tc-hero-section {
+        padding: 14px 0 10px;
+    }
+    .tc-hero-card {
+        flex-direction: column;
+        padding: 24px 20px 20px;
+        border-radius: 20px;
+        text-align: left;
+        min-height: auto;
+    }
+    .tc-hero-title {
+        font-size: 24px;
+        line-height: 1.2;
+        margin-bottom: 10px;
+    }
+    .tc-hero-desc {
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+    .tc-hero-btn {
+        font-size: 13.5px;
+        padding: 10px 24px;
+    }
+    .tc-hero-right {
+        margin-top: 20px;
+        width: 100%;
+    }
+    .tc-hero-img {
+        max-height: 190px;
+    }
+    .tc-hero-nav-arrow {
+        display: none;
+    }
+}
+
+/* ---------- 3. SHOPPING BENEFITS STRIP ---------- */
+.tc-benefits-strip {
+    padding: 14px 0 28px;
+}
+
+.tc-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.tc-benefit-card {
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tc-benefit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(190, 24, 93, 0.08);
+}
+
+.tc-benefit-icon-box {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    background: #fdf2f8;
+    color: #be185d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.tc-benefit-info h4 {
+    margin: 0 0 2px;
+    font-size: 14.5px;
+    font-weight: 750;
+    color: #1e293b;
+}
+
+.tc-benefit-info p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+@media (max-width: 991px) {
+    .tc-benefits-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .tc-benefits-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .tc-benefit-card {
+        padding: 12px 12px;
+        border-radius: 12px;
+        gap: 10px;
+    }
+    .tc-benefit-icon-box {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 16px;
+    }
+    .tc-benefit-info h4 {
+        font-size: 12.5px;
+    }
+    .tc-benefit-info p {
+        font-size: 10.5px;
+    }
+}
+
+/* ---------- COMMON SECTION HEADINGS ---------- */
+.tc-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.tc-section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.tc-section-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tc-view-all-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #be185d;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: gap 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+}
+
+.tc-view-all-link:hover {
+    color: #9d174d;
+    gap: 9px;
+}
+
+.tc-rail-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tc-rail-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tc-rail-btn:hover {
+    background: #be185d;
+    color: #ffffff;
+    border-color: #be185d;
+}
+
+@media (max-width: 768px) {
+    .tc-section-header {
+        margin-bottom: 14px;
+    }
+    .tc-section-title {
+        font-size: 19px;
+    }
+    .tc-view-all-link {
+        font-size: 12.5px;
+    }
+    .tc-rail-controls {
+        display: none;
+    }
+}
+
+/* ---------- 4. SHOP BY CATEGORY SECTION (CRITICAL) ---------- */
+.tc-section-category {
+    padding: 16px 0 32px;
+}
+
+.tc-category-rail-wrap {
+    position: relative;
+}
+
+.tc-category-rail {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 4px 16px;
+    scrollbar-width: none;
+}
+
+.tc-category-rail::-webkit-scrollbar {
+    display: none;
+}
+
+.tc-cat-card-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    flex: 0 0 auto;
+    width: 104px;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+.tc-cat-card-item:hover {
+    transform: translateY(-4px);
+}
+
+.tc-cat-icon-container {
+    width: 92px;
+    height: 92px;
+    border-radius: 22px;
+    background: #fdf2f8;
+    border: 1px solid #fce7f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.05);
+    transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.tc-cat-card-item:hover .tc-cat-icon-container {
+    background: #fce7f3;
+    border-color: #f472b6;
+    box-shadow: 0 8px 18px rgba(190, 24, 93, 0.15);
+}
+
+.tc-cat-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
+
+.tc-cat-card-item:hover .tc-cat-icon-img {
+    transform: scale(1.08);
+}
+
+.tc-cat-name {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 650;
+    color: #1e293b;
+    text-align: center;
+    line-height: 1.25;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tc-cat-card-item:hover .tc-cat-name {
+    color: #be185d;
+}
+
+/* Admin Card Size Modifiers */
+.tc-cat-size-small {
+    width: 86px;
+}
+.tc-cat-size-small .tc-cat-icon-container {
+    width: 76px;
+    height: 76px;
+    border-radius: 18px;
+    padding: 10px;
+}
+.tc-cat-size-small .tc-cat-name {
+    font-size: 12px;
+}
+
+.tc-cat-size-large {
+    width: 120px;
+}
+.tc-cat-size-large .tc-cat-icon-container {
+    width: 108px;
+    height: 108px;
+    border-radius: 26px;
+    padding: 18px;
+}
+.tc-cat-size-large .tc-cat-name {
+    font-size: 14px;
+}
+
+/* Admin Display Style Modifiers */
+.tc-cat-style-featured .tc-cat-icon-container {
+    background: linear-gradient(135deg, #fce7f3 0%, #fae8ff 100%);
+    border: 1.5px solid #ec4899;
+}
+.tc-cat-style-featured::after {
+    content: "★";
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 11px;
+    color: #be185d;
+}
+
+@media (max-width: 768px) {
+    .tc-section-category {
+        padding: 10px 0 22px;
+    }
+    .tc-category-rail {
+        display: grid;
+        grid-template-rows: repeat(2, auto);
+        grid-auto-flow: column;
+        grid-auto-columns: 82px;
+        gap: 12px 10px;
+        padding-bottom: 8px;
+    }
+    .tc-cat-card-item {
+        width: 82px;
+    }
+    .tc-cat-icon-container {
+        width: 74px;
+        height: 74px;
+        border-radius: 18px;
+        padding: 10px;
+    }
+    .tc-cat-name {
+        font-size: 11.5px;
+        margin-top: 6px;
+    }
+}
+
+/* ---------- 5. TODAY'S DEALS SECTION ---------- */
+.tc-section-deals {
+    padding: 24px 0 32px;
+}
+
+.tc-countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #be185d;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 750;
+    padding: 5px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 10px rgba(190, 24, 93, 0.25);
+}
+
+.tc-deals-rail {
+    display: flex;
+    gap: 18px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 4px 18px;
+    scrollbar-width: none;
+}
+
+.tc-deals-rail::-webkit-scrollbar {
+    display: none;
+}
+
+/* ---------- PRODUCT CARD COMPONENT (SHARED ACROSS HOMEPAGE) ---------- */
+.tc-product-card-wrap {
+    flex: 0 0 226px;
+    width: 226px;
+    box-sizing: border-box;
+}
+
+.tc-product-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tc-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(190, 24, 93, 0.1);
+    border-color: #fbcfe8;
+}
+
+.tc-card-discount-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 5;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.tc-card-img-box {
+    position: relative;
+    width: 100%;
+    height: 165px;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    box-sizing: border-box;
+}
+
+.tc-card-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
+
+.tc-product-card:hover .tc-card-img {
+    transform: scale(1.06);
+}
+
+.tc-card-content {
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.tc-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px;
+    line-height: 1.35;
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 38px;
+}
+
+.tc-card-title:hover {
+    color: #be185d;
+}
+
+.tc-card-unit {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.tc-card-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tc-card-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.tc-card-curr-price {
+    font-size: 18px;
+    font-weight: 850;
+    color: #0f172a;
+}
+
+.tc-card-orig-price {
+    font-size: 13px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.tc-card-add-btn {
+    width: 100%;
+    background: #ffffff;
+    border: 1.5px solid #be185d;
+    color: #be185d;
+    font-size: 13.5px;
+    font-weight: 750;
+    padding: 9px 12px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.tc-card-add-btn:hover {
+    background: #be185d;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.25);
+}
+
+.tc-card-add-btn.disabled,
+.tc-card-add-btn:disabled {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .tc-section-deals {
+        padding: 16px 0 24px;
+    }
+    .tc-product-card-wrap {
+        flex: 0 0 160px;
+        width: 160px;
+    }
+    .tc-card-img-box {
+        height: 125px;
+        padding: 10px;
+    }
+    .tc-card-content {
+        padding: 10px 12px 12px;
+    }
+    .tc-card-title {
+        font-size: 12.5px;
+        min-height: 34px;
+    }
+    .tc-card-unit {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    .tc-card-curr-price {
+        font-size: 15px;
+    }
+    .tc-card-orig-price {
+        font-size: 11.5px;
+    }
+    .tc-card-add-btn {
+        font-size: 12px;
+        padding: 7px 10px;
+    }
+    .tc-countdown-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+}
+
+/* ---------- 6. DUAL PROMOTIONAL BANNERS ---------- */
+.tc-promo-dual {
+    padding: 20px 0 32px;
+}
+
+.tc-promo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.tc-promo-banner-card {
+    border-radius: 24px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    overflow: hidden;
+    position: relative;
+    min-height: 170px;
+    box-sizing: border-box;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tc-promo-banner-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.tc-promo-banner-1 {
+    background: linear-gradient(135deg, #fdf2f8 0%, #fae8ff 50%, #f3e8ff 100%);
+    border: 1px solid #f3e8ff;
+}
+
+.tc-promo-banner-2 {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fce7f3 100%);
+    border: 1px solid #fef3c7;
+}
+
+.tc-promo-text {
+    max-width: 280px;
+    z-index: 2;
+}
+
+.tc-promo-text h3 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 6px;
+    line-height: 1.2;
+}
+
+.tc-promo-text p {
+    font-size: 14px;
+    color: #475569;
+    margin: 0 0 16px;
+}
+
+.tc-promo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #be185d;
+    color: #ffffff !important;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 9px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.3);
+    transition: background 0.2s;
+}
+
+.tc-promo-banner-card:hover .tc-promo-btn {
+    background: #9d174d;
+}
+
+.tc-promo-visual {
+    width: 150px;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.tc-promo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.1));
+    transition: transform 0.25s ease;
+}
+
+.tc-promo-banner-card:hover .tc-promo-img {
+    transform: scale(1.08);
+}
+
+@media (max-width: 900px) {
+    .tc-promo-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .tc-promo-banner-card {
+        padding: 22px 24px;
+        min-height: auto;
+    }
+}
+
+@media (max-width: 600px) {
+    .tc-promo-dual {
+        padding: 14px 0 24px;
+    }
+    .tc-promo-text h3 {
+        font-size: 19px;
+    }
+    .tc-promo-text p {
+        font-size: 12.5px;
+        margin-bottom: 12px;
+    }
+    .tc-promo-btn {
+        font-size: 12px;
+        padding: 7px 16px;
+    }
+    .tc-promo-visual {
+        width: 110px;
+        height: 95px;
+    }
+}
+
+/* ---------- 7. EXPLORE OUR TOP CATEGORIES ---------- */
+.tc-section-explore {
+    padding: 20px 0 36px;
+}
+
+.tc-tab-chips-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 2px 18px;
+    margin-bottom: 6px;
+}
+
+.tc-tab-chips-wrap::-webkit-scrollbar {
+    display: none;
+}
+
+.tc-tab-chip {
+    flex: 0 0 auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tc-tab-chip:hover {
+    border-color: #f472b6;
+    color: #be185d;
+}
+
+.tc-tab-chip.active {
+    background: #be185d;
+    border-color: #be185d;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(190, 24, 93, 0.25);
+}
+
+.tc-explore-panel {
+    display: none;
+}
+
+.tc-explore-panel.active {
+    display: block;
+    animation: tcFadeIn 0.3s ease;
+}
+
+@keyframes tcFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tc-explore-rail {
+    display: flex;
+    gap: 18px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 4px 18px;
+    scrollbar-width: none;
+}
+
+.tc-explore-rail::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .tc-section-explore {
+        padding: 14px 0 24px;
+    }
+    .tc-tab-chip {
+        font-size: 12px;
+        padding: 6px 14px;
+    }
+}
+
+/* ---------- 8. WHY SHOP WITH TIPSYCART? ---------- */
+.tc-section-why {
+    padding: 32px 0 48px;
+}
+
+.tc-why-card-outer {
+    background: linear-gradient(180deg, #ffffff 0%, #fff0f5 100%);
+    border: 1px solid #fce7f3;
+    border-radius: 28px;
+    padding: 40px 36px;
+    box-shadow: 0 6px 24px rgba(190, 24, 93, 0.05);
+}
+
+.tc-why-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.tc-why-title {
+    font-size: 26px;
+    font-weight: 850;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+
+.tc-why-subtitle {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0;
+}
+
+.tc-why-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.tc-why-item {
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tc-why-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(190, 24, 93, 0.08);
+}
+
+.tc-why-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #fdf2f8;
+    color: #be185d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 16px;
+}
+
+.tc-why-item h4 {
+    font-size: 16px;
+    font-weight: 750;
+    color: #1e293b;
+    margin: 0 0 6px;
+}
+
+.tc-why-item p {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.45;
+    margin: 0;
+}
+
+@media (max-width: 991px) {
+    .tc-why-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+}
+
+@media (max-width: 600px) {
+    .tc-section-why {
+        padding: 20px 0 32px;
+    }
+    .tc-why-card-outer {
+        padding: 24px 18px;
+        border-radius: 20px;
+    }
+    .tc-why-title {
+        font-size: 20px;
+    }
+    .tc-why-subtitle {
+        font-size: 13px;
+    }
+    .tc-why-item {
+        padding: 16px 14px;
+        border-radius: 14px;
+    }
+    .tc-why-icon-box {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+    .tc-why-item h4 {
+        font-size: 13.5px;
+    }
+    .tc-why-item p {
+        font-size: 11.5px;
+    }
+}

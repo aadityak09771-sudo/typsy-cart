@@ -8,126 +8,357 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/style.css' %}?v=4.8">
+<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.1">
+{% endblock %}
+
+{% block announcement_bar %}
+<!-- 1. TOP ANNOUNCEMENT BAR (PINK GRADIENT) -->
+<div class="tc-top-announcement">
+    <div class="tc-top-announcement-inner">
+        <span class="tc-announce-item"><span class="tc-announce-icon">🚚</span> Free Delivery on Orders Above ₹{{ store_setting.free_delivery_threshold|default:"499"|floatformat:0 }}</span>
+        <span class="tc-announce-divider">|</span>
+        <span class="tc-announce-item"><span class="tc-announce-icon">🌿</span> Fresh Products</span>
+        <span class="tc-announce-divider">|</span>
+        <span class="tc-announce-item"><span class="tc-announce-icon">🔒</span> Secure Payments</span>
+        <span class="tc-announce-divider">|</span>
+        <span class="tc-announce-item"><span class="tc-announce-icon">🔄</span> Easy Returns</span>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
-<section class="hero home-hero" id="home-hero" {% if hero_banner and hero_banner.get_image_url %}style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.45)), url('{{ hero_banner.get_image_url }}'); background-size: cover; background-position: center;"{% endif %}>
-    <div class="hero-content">
-        {% if hero_banner and hero_banner.badge %}<span style="display:inline-block; background:rgba(255,255,255,0.25); backdrop-filter:blur(4px); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:10px; color:#fff; letter-spacing:1px; text-transform:uppercase;">{{ hero_banner.badge }}</span>{% endif %}
-        {% if hero_banner %}
-            <h1>{{ hero_banner.title|linebreaksbr }}</h1>
-            <p>{{ hero_banner.subtitle }}</p>
-            <a class="cta" href="{{ hero_banner.link|default:'#products' }}">{{ hero_banner.button_text|default:'Explore Products' }}</a>
-        {% else %}
-            <h1>Everyday essentials,<br><span>delivered with care.</span></h1>
-            <p>
-                Shop everyday essentials and personal care products
-                with comfort, privacy and convenience.
-            </p>
-            <a class="cta" href="#products">Explore Products</a>
-        {% endif %}
-    </div>
-</section>
+<div class="tc-home-redesign">
 
-<section class="tc-home-categories" id="shop-by-category">
-    <div class="tc-home-category-container">
-        <div class="tc-home-category-intro">
-            <p class="tc-cat-eyebrow">CARE • COMFORT • CONFIDENCE</p>
-            <h2 class="tc-cat-main-title">Shop by Category</h2>
-            <p class="tc-cat-subtitle">Thoughtfully selected essentials for your everyday needs.</p>
-        </div>
-
-        <div class="tc-home-category-grid">
-            {% for cat in categories_list %}
-            <article class="tc-home-category-card tc-cat-card-{{ cat.slug|default:'default' }}">
-                <div class="tc-cat-card-body">
-                    <div class="tc-cat-icon-badge tc-badge-{{ cat.slug|default:'default' }}" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
+    <!-- 2. MAIN HERO BANNER SECTION -->
+    <section class="tc-hero-section">
+        <div class="tc-home-container">
+            <div class="tc-hero-slider">
+                {% if hero_banners %}
+                    {% for banner in hero_banners %}
+                    <div class="tc-hero-card tc-hero-slide" style="{% if not forloop.first %}display:none;{% endif %}">
+                        <div class="tc-hero-left">
+                            <span class="tc-hero-tag-pill">{{ banner.badge_text|default:"Your Everyday Shopping Partner" }}</span>
+                            <h1 class="tc-hero-title">{{ banner.title|linebreaksbr|default:"Daily Essentials<br>Delivered to Your<br>Doorstep" }}</h1>
+                            <p class="tc-hero-desc">{{ banner.subtitle|default:"Groceries, Personal Care, Home Needs, Accessories & Much More" }}</p>
+                            <a href="{{ banner.button_link|default:'/shop/' }}" class="tc-hero-btn">
+                                <span>{{ banner.button_text|default:"Shop Now" }}</span>
+                                <span class="tc-arrow">→</span>
+                            </a>
+                        </div>
+                        <div class="tc-hero-right">
+                            <div class="tc-hero-img-wrap">
+                                <img src="{{ banner.get_image_url }}" alt="TipsyCart Essentials" class="tc-hero-img" loading="eager" onerror="this.onerror=null;this.src='{% static 'home/images/hero-banner.png' %}';">
+                                <div class="tc-hero-badge-float">
+                                    <span>⚡</span> Fast Delivery in Kanpur
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="tc-cat-title">{{ cat.name }}</h3>
-                    <p class="tc-cat-desc">{{ cat.description|default:"Thoughtfully selected essentials for your everyday routine." }}</p>
-                    <a href="/shop/?category={{ cat.slug }}" class="tc-cat-btn">
-                        <span>Shop Now</span>
-                        <span class="tc-cat-btn-arrow">→</span>
+                    {% endfor %}
+                {% else %}
+                    <div class="tc-hero-card tc-hero-slide">
+                        <div class="tc-hero-left">
+                            <span class="tc-hero-tag-pill">Your Everyday Shopping Partner</span>
+                            <h1 class="tc-hero-title">Daily Essentials<br>Delivered to Your<br>Doorstep</h1>
+                            <p class="tc-hero-desc">Groceries, Personal Care, Home Needs, Accessories & Much More</p>
+                            <a href="/shop/" class="tc-hero-btn">
+                                <span>Shop Now</span>
+                                <span class="tc-arrow">→</span>
+                            </a>
+                        </div>
+                        <div class="tc-hero-right">
+                            <div class="tc-hero-img-wrap">
+                                <img src="{% static 'home/images/hero-banner.png' %}" alt="TipsyCart Essentials" class="tc-hero-img" loading="eager" onerror="this.onerror=null;this.src='{% static 'home/images/shop-banner-desktop.png' %}';">
+                                <div class="tc-hero-badge-float">
+                                    <span>⚡</span> Fast Delivery in Kanpur
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if hero_banners|length > 1 %}
+                <button type="button" class="tc-hero-nav-arrow tc-hero-prev" aria-label="Previous Banner">‹</button>
+                <button type="button" class="tc-hero-nav-arrow tc-hero-next" aria-label="Next Banner">›</button>
+                <div class="tc-hero-dots">
+                    {% for banner in hero_banners %}
+                    <span class="tc-hero-dot{% if forloop.first %} active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. SHOPPING BENEFITS SECTION (4 CARDS) -->
+    <section class="tc-benefits-strip">
+        <div class="tc-home-container">
+            <div class="tc-benefits-grid">
+                <div class="tc-benefit-card">
+                    <div class="tc-benefit-icon-box">🚚</div>
+                    <div class="tc-benefit-info">
+                        <h4>Fast Delivery</h4>
+                        <p>In Kanpur</p>
+                    </div>
+                </div>
+                <div class="tc-benefit-card">
+                    <div class="tc-benefit-icon-box">🛡️</div>
+                    <div class="tc-benefit-info">
+                        <h4>Quality Products</h4>
+                        <p>Always</p>
+                    </div>
+                </div>
+                <div class="tc-benefit-card">
+                    <div class="tc-benefit-icon-box">💳</div>
+                    <div class="tc-benefit-info">
+                        <h4>Secure Payments</h4>
+                        <p>100% Safe</p>
+                    </div>
+                </div>
+                <div class="tc-benefit-card">
+                    <div class="tc-benefit-icon-box">🔄</div>
+                    <div class="tc-benefit-info">
+                        <h4>Easy Returns</h4>
+                        <p>Hassle Free</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. SHOP BY CATEGORY SECTION (ADMIN CONTROLLED & MOST IMPORTANT) -->
+    <section class="tc-section-category" id="shop-by-category">
+        <div class="tc-home-container">
+            <div class="tc-section-header">
+                <div class="tc-section-title-wrap">
+                    <h2 class="tc-section-title">Shop by Category</h2>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/categories/" class="tc-view-all-link">View All Categories <span>→</span></a>
+                    <div class="tc-rail-controls">
+                        <button type="button" class="tc-rail-btn" id="tc-cat-prev" aria-label="Scroll Categories Left">‹</button>
+                        <button type="button" class="tc-rail-btn" id="tc-cat-next" aria-label="Scroll Categories Right">›</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tc-category-rail-wrap">
+                <div class="tc-category-rail" id="tc-category-rail">
+                    {% for cat in homepage_categories %}
+                    <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item tc-cat-size-{{ cat.card_size|default:'medium' }} tc-cat-style-{{ cat.display_style|default:'compact' }}{% if cat.is_featured %} tc-cat-featured{% endif %}" title="{{ cat.name }}">
+                        <div class="tc-cat-icon-container">
+                            <img src="{{ cat.image_url }}" alt="{{ cat.name }}" class="tc-cat-icon-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/tipsycart-logo.png' %}';">
+                        </div>
+                        <span class="tc-cat-name">{{ cat.name }}</span>
                     </a>
+                    {% empty %}
+                        {% for cat in categories_list %}
+                        <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item" title="{{ cat.name }}">
+                            <div class="tc-cat-icon-container">
+                                <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-icon-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/tipsycart-logo.png' %}';">
+                            </div>
+                            <span class="tc-cat-name">{{ cat.name }}</span>
+                        </a>
+                        {% endfor %}
+                    {% endfor %}
                 </div>
-                <div class="tc-cat-visual-wrap">
-                    <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-img" loading="lazy" onerror="this.onerror=null;this.src='/static/home/images/cat-plastic-items.jpg';">
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. TODAY'S DEALS SECTION -->
+    {% if todays_deals %}
+    <section class="tc-section-deals" id="todays-deals">
+        <div class="tc-home-container">
+            <div class="tc-section-header">
+                <div class="tc-section-title-wrap">
+                    <h2 class="tc-section-title">⚡ Today's Deals</h2>
+                    <span class="tc-countdown-badge">Ends in <span id="tc-deals-countdown">08 : 24 : 36</span></span>
                 </div>
-            </article>
-            {% empty %}
-            <p class="tc-empty-notice">No active categories yet.</p>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/shop/?sort=discount" class="tc-view-all-link">View All Deals <span>→</span></a>
+                    <div class="tc-rail-controls">
+                        <button type="button" class="tc-rail-btn" id="tc-deals-prev" aria-label="Scroll Deals Left">‹</button>
+                        <button type="button" class="tc-rail-btn" id="tc-deals-next" aria-label="Scroll Deals Right">›</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tc-deals-rail" id="tc-deals-rail">
+                {% for p in todays_deals %}
+                <div class="tc-product-card-wrap">
+                    <article class="tc-product-card" data-card-product-id="{{ p.id }}" data-product-name="{{ p.name }}" data-selected-variant-id="{{ p.selected_variant_id }}" data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
+                        {% if p.has_discount and p.discount_percentage > 0 %}
+                            <span class="tc-card-discount-badge">{{ p.discount_percentage }}% OFF</span>
+                        {% endif %}
+                        <div class="tc-card-img-box">
+                            <a href="{{ p.detail_url }}">
+                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                            </a>
+                        </div>
+                        <div class="tc-card-content">
+                            <a href="{{ p.detail_url }}" class="tc-card-title">{{ p.name }}</a>
+                            {% if p.unit %}<div class="tc-card-unit">{{ p.unit }}</div>{% endif %}
+                            <div class="tc-card-bottom">
+                                <div class="tc-card-price-row">
+                                    <span class="tc-card-curr-price">₹{{ p.price }}</span>
+                                    {% if p.has_discount %}
+                                        <span class="tc-card-orig-price">₹{{ p.original_price }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if p.in_stock %}
+                                    <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
+                                {% else %}
+                                    <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 6. PROMOTIONAL BANNER CARDS (DUAL) -->
+    <section class="tc-promo-dual">
+        <div class="tc-home-container">
+            <div class="tc-promo-grid">
+                <!-- Banner 1: Mobile Accessories -->
+                <a href="/shop/?search=mobile" class="tc-promo-banner-card tc-promo-banner-1">
+                    <div class="tc-promo-text">
+                        <h3>Mobile Accessories</h3>
+                        <p>Latest Gadgets & Essentials</p>
+                        <span class="tc-promo-btn">Shop Now →</span>
+                    </div>
+                    <div class="tc-promo-visual">
+                        <img src="{% static 'home/images/shop-banner-mobile.png' %}" alt="Mobile Accessories" class="tc-promo-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/hero-banner.png' %}';">
+                    </div>
+                </a>
+
+                <!-- Banner 2: Fashion & Jewellery -->
+                <a href="/shop/?category=apparel-fashion" class="tc-promo-banner-card tc-promo-banner-2">
+                    <div class="tc-promo-text">
+                        <h3>Fashion & Jewellery</h3>
+                        <p>Style for Every Occasion</p>
+                        <span class="tc-promo-btn">Shop Now →</span>
+                    </div>
+                    <div class="tc-promo-visual">
+                        <img src="{% static 'home/images/cat-daily-essentials.jpg' %}" alt="Fashion & Jewellery" class="tc-promo-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/tipsycart-logo.png' %}';">
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. EXPLORE OUR TOP CATEGORIES -->
+    {% if top_categories_tabs %}
+    <section class="tc-section-explore" id="explore-top-categories">
+        <div class="tc-home-container">
+            <div class="tc-section-header">
+                <div class="tc-section-title-wrap">
+                    <h2 class="tc-section-title">Explore Our Top Categories</h2>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <a href="/shop/?category={{ top_categories_tabs.0.slug }}" class="tc-view-all-link tc-explore-view-all">View All <span>→</span></a>
+                    <div class="tc-rail-controls">
+                        <button type="button" class="tc-rail-btn" id="tc-explore-prev" aria-label="Scroll Explore Left">‹</button>
+                        <button type="button" class="tc-rail-btn" id="tc-explore-next" aria-label="Scroll Explore Right">›</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Filter Chips -->
+            <div class="tc-tab-chips-wrap">
+                {% for tab in top_categories_tabs %}
+                <button type="button" class="tc-tab-chip{% if forloop.first %} active{% endif %}" data-category-slug="{{ tab.slug }}">
+                    {{ tab.name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Tabbed Product Panels -->
+            {% for tab in top_categories_tabs %}
+            <div class="tc-explore-panel{% if forloop.first %} active{% endif %}" data-panel-slug="{{ tab.slug }}">
+                <div class="tc-explore-rail" id="tc-explore-rail">
+                    {% for p in tab.products %}
+                    <div class="tc-product-card-wrap">
+                        <article class="tc-product-card" data-card-product-id="{{ p.id }}" data-product-name="{{ p.name }}" data-selected-variant-id="{{ p.selected_variant_id }}" data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
+                            {% if p.has_discount and p.discount_percentage > 0 %}
+                                <span class="tc-card-discount-badge">{{ p.discount_percentage }}% OFF</span>
+                            {% endif %}
+                            <div class="tc-card-img-box">
+                                <a href="{{ p.detail_url }}">
+                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                                </a>
+                            </div>
+                            <div class="tc-card-content">
+                                <a href="{{ p.detail_url }}" class="tc-card-title">{{ p.name }}</a>
+                                {% if p.unit %}<div class="tc-card-unit">{{ p.unit }}</div>{% endif %}
+                                <div class="tc-card-bottom">
+                                    <div class="tc-card-price-row">
+                                        <span class="tc-card-curr-price">₹{{ p.price }}</span>
+                                        {% if p.has_discount %}
+                                            <span class="tc-card-orig-price">₹{{ p.original_price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if p.in_stock %}
+                                        <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
+                                    {% else %}
+                                        <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
             {% endfor %}
         </div>
-    </div>
-</section>
+    </section>
+    {% endif %}
 
-<section id="products" class="shop-section">
-    <p class="eyebrow">THE TIPSY CART COLLECTION</p>
-    <h2>Shop your essentials</h2>
-    <p>Discover everyday products, thoughtfully selected for you.</p>
-
-    <div class="filters">
-        <input
-            id="searchInput"
-            type="search"
-            placeholder="Search products..."
-            aria-label="Search products"
-        >
-
-        <select id="categoryFilter" aria-label="Filter by category">
-            <option value="all">All categories</option>
-            {% for cat in categories_list %}
-            <option value="{{ cat.slug }}">{{ cat.name }}</option>
-            {% endfor %}
-        </select>
-
-        <select id="sortFilter" aria-label="Sort products">
-            <option value="default">Sort by</option>
-            <option value="low">Price: Low to High</option>
-            <option value="high">Price: High to Low</option>
-            <option value="name">Name: A to Z</option>
-        </select>
-    </div>
-
-    <div id="categoryShelves" class="tc-home-shelves">
-        <p class="tc-shelves-loading">Getting your categories ready...</p>
-    </div>
-
-    <div id="filteredProductsSection" hidden>
-        <div class="tc-filtered-heading">
-            <h2 id="filteredProductsTitle">Matching Products</h2>
-            <p id="filteredProductsCount"></p>
+    <!-- 8. WHY SHOP WITH TIPSYCART? SECTION -->
+    <section class="tc-section-why">
+        <div class="tc-home-container">
+            <div class="tc-why-card-outer">
+                <div class="tc-why-header">
+                    <h2 class="tc-why-title">Why Shop with TipsyCart?</h2>
+                    <p class="tc-why-subtitle">Delivering comfort, convenience and genuine quality right to your doorstep in Kanpur.</p>
+                </div>
+                <div class="tc-why-grid">
+                    <div class="tc-why-item">
+                        <div class="tc-why-icon-box">🚚</div>
+                        <h4>Same Day Delivery</h4>
+                        <p>In Kanpur</p>
+                    </div>
+                    <div class="tc-why-item">
+                        <div class="tc-why-icon-box">🛍️</div>
+                        <h4>Wide Range</h4>
+                        <p>Groceries to Gadgets</p>
+                    </div>
+                    <div class="tc-why-item">
+                        <div class="tc-why-icon-box">🏷️</div>
+                        <h4>Best Prices</h4>
+                        <p>Great Deals & Offers</p>
+                    </div>
+                    <div class="tc-why-item">
+                        <div class="tc-why-icon-box">🎧</div>
+                        <h4>Support</h4>
+                        <p>Dedicated Customer Support</p>
+                    </div>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div id="productGrid" class="product-grid"></div>
-        <p id="emptyMessage" hidden>No matching products found.</p>
-    </div>
-</section>
-
-<section id="about" class="about-section">
-    <h2>Care comes first</h2>
-    <p>
-        Tipsy Cart aims to make everyday essentials and personal
-        care products easier and more comfortable to shop for.
-    </p>
-    <a class="cta" href="/about/">Learn More About Us</a>
-</section>
-
-<section class="home-contact">
-    <h2>Need Help?</h2>
-    <p>Have a question about products or delivery?</p>
-    <a class="cta" href="/contact/">Contact Us</a>
-</section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ featured_products|json_script:"homepage-products-data" }}
 {{ categories_data|json_script:"homepage-categories-data" }}
-<script src="{% static 'home/js/script.js' %}?v=2.4"></script>
+<script src="{% static 'home/js/homepage_redesign.js' %}?v=1.1"></script>
 {% endblock %}

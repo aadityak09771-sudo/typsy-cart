@@ -1,13 +1,82 @@
 
 import logging
+from decimal import Decimal
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q, F
 
 from products.models import Product, Category, Subcategory
 from Homepage.models import StoreSetting, HeroBanner, FAQItem
 
 logger = logging.getLogger(__name__)
+
+
+def serialize_homepage_product(p):
+    """Serialize a Product object for homepage components with full discount and variant support."""
+    is_var = p.is_variable
+    active_variants = [v for v in p.variants.all() if v.is_active] if is_var else []
+    first_var = next((v for v in active_variants if v.is_in_stock and v.stock > 0), active_variants[0] if active_variants else None)
+
+    current_price = first_var.price if first_var else (p.min_price if is_var else p.price)
+    orig_price = first_var.original_price if (first_var and first_var.original_price) else (p.original_price or current_price)
+
+    discount_pct = 0
+    if first_var and getattr(first_var, "discount_percentage", None):
+        discount_pct = first_var.discount_percentage
+    elif getattr(p, "discount_percentage", None):
+        discount_pct = p.discount_percentage
+    elif orig_price and current_price and orig_price > current_price:
+        try:
+            discount_pct = int(round(((float(orig_price) - float(current_price)) / float(orig_price)) * 100))
+        except Exception:
+            discount_pct = 0
+
+    has_discount = bool(discount_pct > 0 and orig_price > current_price)
+
+    unit_str = ""
+    if p.unit_value and p.unit:
+        try:
+            u_val = int(p.unit_value) if p.unit_value % 1 == 0 else p.unit_value
+            unit_str = f"{u_val} {p.unit}"
+        except Exception:
+            unit_str = f"{p.unit_value} {p.unit}"
+    elif p.unit:
+        unit_str = p.unit
+    elif first_var and first_var.unit:
+        unit_str = first_var.unit
+
+    in_stock = (first_var.is_in_stock and first_var.stock > 0) if first_var else (p.total_stock > 0 if is_var else p.stock > 0)
+
+    # Format prices for clean display (e.g. ₹149 rather than ₹149.00 when whole)
+    def clean_curr(val):
+        try:
+            v = Decimal(str(val))
+            return str(int(v)) if v % 1 == 0 else str(v.quantize(Decimal("0.01")))
+        except Exception:
+            return str(val)
+
+    return {
+        "id": p.id,
+        "name": p.name,
+        "category": p.category,
+        "category_slug": p.category_ref.slug if p.category_ref else "",
+        "subcategory": p.subcategory,
+        "price": clean_curr(current_price),
+        "price_raw": str(current_price),
+        "original_price": clean_curr(orig_price),
+        "original_price_raw": str(orig_price),
+        "has_discount": has_discount,
+        "discount_percentage": discount_pct,
+        "unit": unit_str,
+        "unit_value": str(p.unit_value) if p.unit_value is not None else "",
+        "unit_name": p.unit or "",
+        "is_variable": is_var,
+        "selected_variant_id": first_var.id if first_var else "",
+        "in_stock": in_stock,
+        "image_url": p.get_image_url(),
+        "detail_url": f"/product/{p.id}/",
+    }
 
 
 def ensure_categories_exist():
@@ -30,10 +99,27 @@ def home(request):
             except Exception as se:
                 logger.warning("Could not auto-seed initial products: %s", se)
 
-        hero_banner = HeroBanner.objects.filter(is_active=True).first()
-        categories_qs = Category.objects.filter(is_active=True).order_by("display_order")
+        store_setting = StoreSetting.get_settings()
+
+        # Hero Banners: support multiple active banners ordered by admin
+        hero_banners_qs = HeroBanner.objects.filter(is_active=True).order_by("display_order", "-created_at")
+        hero_banners = list(hero_banners_qs)
+        hero_banner = hero_banners[0] if hero_banners else None
+
+        # Admin-controlled Categories: Fetch all active categories where show_on_homepage=True
+        # Ordered by homepage_display_order, display_order, name
+        categories_qs = Category.objects.filter(
+            is_active=True,
+            show_on_homepage=True
+        ).order_by("homepage_display_order", "display_order", "name")
+
+        # Safe fallback: if show_on_homepage filter is empty, fallback to all active
+        if not categories_qs.exists():
+            categories_qs = Category.objects.filter(is_active=True).order_by("display_order", "name")
+
         categories_list = list(categories_qs)
-        categories_data = [
+
+        homepage_categories = [
             {
                 "id": c.id,
                 "title": c.name,
@@ -41,11 +127,60 @@ def home(request):
                 "slug": c.slug,
                 "description": c.description or f"{c.name} essentials at TipsyCart.",
                 "image_url": c.get_image_url(),
+                "card_size": getattr(c, "homepage_card_size", "medium"),
+                "display_style": getattr(c, "homepage_display_style", "compact"),
+                "is_featured": getattr(c, "is_featured", False),
+                "product_count": c.product_count,
             }
             for c in categories_list
         ]
+        categories_data = homepage_categories
 
-        # Prioritize featured products, fallback to recent
+        # Today's Deals: Fetch real discounted active products
+        deals_qs = Product.objects.filter(
+            is_active=True
+        ).filter(
+            Q(discount_enabled=True) | Q(original_price__gt=F("price"))
+        ).select_related("category_ref", "subcategory_ref").prefetch_related(
+            "gallery_images", "variants", "colours", "sizes"
+        ).order_by("-discount_value", "-created_at")[:10]
+
+        todays_deals = [serialize_homepage_product(p) for p in deals_qs]
+
+        # If database has fewer than 5 discounted items, pad with popular active items
+        if len(todays_deals) < 5:
+            existing_ids = {d["id"] for d in todays_deals}
+            pad_qs = Product.objects.filter(
+                is_active=True
+            ).exclude(
+                id__in=existing_ids
+            ).select_related("category_ref", "subcategory_ref").prefetch_related(
+                "gallery_images", "variants", "colours", "sizes"
+            ).order_by("-is_featured", "-created_at")[:(8 - len(todays_deals))]
+            for p in pad_qs:
+                todays_deals.append(serialize_homepage_product(p))
+
+        # Explore Our Top Categories: Tabs of products grouped by category
+        top_categories_tabs = []
+        for cat in categories_list:
+            cat_products_qs = Product.objects.filter(
+                is_active=True
+            ).filter(
+                Q(category_ref=cat) | Q(category__iexact=cat.name)
+            ).select_related("category_ref", "subcategory_ref").prefetch_related(
+                "gallery_images", "variants", "colours", "sizes"
+            ).order_by("-is_featured", "-created_at")[:8]
+
+            if cat_products_qs.exists():
+                top_categories_tabs.append({
+                    "id": cat.id,
+                    "name": cat.name,
+                    "slug": cat.slug,
+                    "image_url": cat.get_image_url(),
+                    "products": [serialize_homepage_product(p) for p in cat_products_qs]
+                })
+
+        # Featured products (kept for compatibility with any legacy hooks)
         featured_qs = Product.objects.filter(is_active=True, is_featured=True).prefetch_related(
             "gallery_images", "variants", "colours", "sizes"
         )
@@ -125,17 +260,27 @@ def home(request):
                 ] if is_var else [],
             })
     except Exception as e:
-        logger.exception("Error fetching featured products for homepage: %s", e)
+        logger.exception("Error fetching homepage data: %s", e)
         featured_products = []
         hero_banner = None
+        hero_banners = []
         categories_list = []
         categories_data = []
+        homepage_categories = []
+        todays_deals = []
+        top_categories_tabs = []
+        store_setting = None
 
     return render(request, "home/index.html", {
         "featured_products": featured_products,
         "hero_banner": hero_banner,
+        "hero_banners": hero_banners,
+        "homepage_categories": homepage_categories,
         "categories_list": categories_list,
         "categories_data": categories_data,
+        "todays_deals": todays_deals,
+        "top_categories_tabs": top_categories_tabs,
+        "store_setting": store_setting,
     })
 
 

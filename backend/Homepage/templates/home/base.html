@@ -81,7 +81,8 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock %}">
+    {% block announcement_bar %}
     <div class="announcement-bar">
         {% if user.is_authenticated and user.delivery_profile %}
             <p>🛵 Tipsy Cart Delivery Partner Network — Order Dispatch & Real-Time Delivery Management</p>
@@ -89,6 +90,7 @@
             <p>Care • Comfort • Confidence — Everyday essentials, delivered with care.</p>
         {% endif %}
     </div>
+    {% endblock %}
 
     <header class="site-header">
         <a href="{% if user.is_authenticated and user.delivery_profile %}{% url 'delivery:dashboard' %}{% else %}/{% endif %}" class="site-logo" aria-label="TipsyCart home">
