@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Sum, F, Q, Value, DecimalField
@@ -168,7 +169,7 @@ class CategoryAdminForm(forms.ModelForm):
 
     def clean_image(self):
         img = self.cleaned_data.get("image")
-        if img and hasattr(img, "size"):
+        if img and isinstance(img, UploadedFile):
             if img.size > 12 * 1024 * 1024:
                 raise forms.ValidationError("Category image file must be smaller than 12 MB.")
             ext = os.path.splitext(img.name)[1].lower()
@@ -350,7 +351,7 @@ class SubcategoryAdminForm(forms.ModelForm):
 
     def clean_image(self):
         img = self.cleaned_data.get("image")
-        if img and hasattr(img, "size"):
+        if img and isinstance(img, UploadedFile):
             if img.size > 12 * 1024 * 1024:
                 raise forms.ValidationError("Subcategory image file must be smaller than 12 MB.")
             ext = os.path.splitext(img.name)[1].lower()
@@ -518,9 +519,16 @@ class ProductAdminForm(forms.ModelForm):
         model = Product
         fields = "__all__"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "discount_value" in self.fields:
+            self.fields["discount_value"].required = False
+            if self.fields["discount_value"].initial is None:
+                self.fields["discount_value"].initial = Decimal("0.00")
+
     def clean_image(self):
         uploaded_image = self.cleaned_data.get("image")
-        if uploaded_image and hasattr(uploaded_image, "size"):
+        if uploaded_image and isinstance(uploaded_image, UploadedFile):
             if uploaded_image.size > 12 * 1024 * 1024:
                 raise forms.ValidationError("Product image file must be smaller than 12 MB.")
             ext = os.path.splitext(uploaded_image.name)[1].lower()
@@ -559,6 +567,9 @@ class ProductAdminForm(forms.ModelForm):
                 self.add_error("discount_value", "Percentage discount cannot exceed 99%.")
             elif discount_type == "fixed" and orig_price and discount_val >= orig_price:
                 self.add_error("discount_value", "Fixed discount cannot equal or exceed original price.")
+
+        if cleaned_data.get("discount_value") is None:
+            cleaned_data["discount_value"] = Decimal("0.00")
 
         # Clean up redundant /media/ string from external image_url if a local image exists
         image = cleaned_data.get("image") or (self.instance and self.instance.image)
@@ -729,13 +740,29 @@ class ProductColourInline(admin.TabularInline):
         )
 
 
+class ProductSizeInlineForm(forms.ModelForm):
+    class Meta:
+        model = ProductSize
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "name" in self.fields:
+            self.fields["name"].widget.attrs.update({
+                "placeholder": "e.g. 250g, 500g, 1kg, S, M, L",
+                "style": "min-width: 180px; font-weight: 600;",
+            })
+            self.fields["name"].help_text = "Enter weight or size only (e.g. 250g, 1kg). Do not enter product name."
+
+
 class ProductSizeInline(admin.TabularInline):
     model = ProductSize
+    form = ProductSizeInlineForm
     extra = 1
     fields = ("name", "display_order", "is_active")
     show_change_link = True
     verbose_name = "Product Size / Weight Option"
-    verbose_name_plural = "6. Product Sizes & Options (e.g. S, M, L, XL or 250 g, 500 g, 1 kg)"
+    verbose_name_plural = "6. Product Sizes & Weight Options (e.g. 250g, 500g, 1kg, S, M, L) — Enter units/weights ONLY, do NOT enter product names"
 
 
 class ProductVariantInlineForm(forms.ModelForm):
@@ -747,7 +774,27 @@ class ProductVariantInlineForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if "price" in self.fields:
             self.fields["price"].required = False
-            self.fields["price"].help_text = "Leave blank to inherit product price"
+            self.fields["price"].help_text = "Variant Selling Price (₹)"
+            self.fields["price"].widget.attrs.update({"placeholder": "Selling Price (₹)", "style": "min-width: 100px;"})
+        if "original_price" in self.fields:
+            self.fields["original_price"].widget.attrs.update({"placeholder": "MRP (₹)", "style": "min-width: 90px;"})
+        if "stock" in self.fields:
+            self.fields["stock"].widget.attrs.update({"placeholder": "Stock", "style": "min-width: 70px;"})
+        if "sku" in self.fields:
+            self.fields["sku"].widget.attrs.update({"placeholder": "Variant SKU", "style": "min-width: 120px;"})
+        if "variant_name" in self.fields:
+            self.fields["variant_name"].widget.attrs.update({"placeholder": "Variant Title", "style": "min-width: 130px;"})
+        if "discount_value" in self.fields:
+            self.fields["discount_value"].required = False
+            if self.fields["discount_value"].initial is None:
+                self.fields["discount_value"].initial = Decimal("0.00")
+            self.fields["discount_value"].widget.attrs.update({"placeholder": "Discount", "style": "min-width: 70px;"})
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("discount_value") is None:
+            cleaned_data["discount_value"] = Decimal("0.00")
+        return cleaned_data
 
 
 class ProductVariantInline(admin.TabularInline):
@@ -1221,7 +1268,19 @@ class ProductAdmin(admin.ModelAdmin):
     @admin.display(description="Variant Tools")
     def variant_generator_link(self, obj):
         if not obj or not obj.pk:
-            return "Save this product first to configure colours, sizes and auto-generate variants."
+            return mark_safe(
+                '<div style="background: #eff6ff; padding: 14px 18px; border-radius: 10px; border: 1px solid #bfdbfe; margin-top: 6px;">'
+                '<div style="font-weight: 700; color: #1e40af; font-size: 13px; margin-bottom: 6px;">'
+                'ℹ️ Variable Product Setup Guide:'
+                '</div>'
+                '<ol style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 12px; line-height: 1.6;">'
+                '<li>Select <strong>Variable Product</strong> above, then enter Basic Info (Name, Category, Base Price).</li>'
+                '<li>Click <strong>"Save and continue editing"</strong> at the bottom of the page.</li>'
+                '<li>In <strong>Section 6</strong> below, add your Sizes/Weights (e.g. <code>250g</code>, <code>500g</code>, <code>1 kg</code>).</li>'
+                '<li>Click <strong>"⚡ Auto-Generate All Variant Combinations"</strong> here to automatically create all variant rows!</li>'
+                '</ol>'
+                '</div>'
+            )
         url = reverse("admin:products_product_generate_variants", args=[obj.pk])
         var_count = obj.variants.count()
         col_count = obj.colours.count()

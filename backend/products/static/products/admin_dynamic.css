@@ -236,3 +236,205 @@
   display: inline-block;
   margin-left: 4px;
 }
+
+/* -------------------------------------------------------------
+   FILE ATTACHMENT STATUS BANNERS & INLINE STYLING
+   ------------------------------------------------------------- */
+.tc-file-attachment-banner {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  max-width: 540px;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);
+}
+
+.tc-file-attachment-banner.tc-file-new-selected {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.08);
+}
+
+.tc-file-attachment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #166534;
+  flex-wrap: wrap;
+}
+
+.tc-file-new-selected .tc-file-attachment-header {
+  color: #1e40af;
+}
+
+.tc-status-dot-green {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.tc-status-dot-blue {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.tc-attached-filename {
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #065f46;
+  word-break: break-all;
+}
+
+.tc-file-new-selected .tc-attached-filename {
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.tc-file-attachment-note {
+  font-size: 12px;
+  color: #15803d;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.tc-file-replace-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #bbf7d0;
+}
+
+.tc-file-new-selected .tc-file-replace-hint {
+  border-top-color: #bfdbfe;
+}
+
+/* Gallery inline file badge */
+.tc-inline-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 4px;
+}
+
+.tc-inline-file-badge.new {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.tc-inline-keep-note {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* -------------------------------------------------------------
+   VARIABLE PRODUCTS & TEAM GUIDE STYLES
+   ------------------------------------------------------------- */
+.tc-guide-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 14px 0 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.tc-guide-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #831843;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tc-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+  .tc-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tc-guide-box {
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.tc-guide-box.simple {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.tc-guide-box h5 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tc-guide-box.simple h5 {
+  color: #166534;
+}
+
+.tc-guide-box.variable h5 {
+  color: #831843;
+}
+
+.tc-guide-box p {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.tc-guide-box ul, .tc-guide-box ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.tc-step-num {
+  display: inline-block;
+  background: #a51655;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  margin-right: 4px;
+}

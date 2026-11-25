@@ -1,6 +1,7 @@
 import os
 from django import forms
 from django.contrib import admin
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from .models import StoreSetting, HeroBanner, FAQItem
@@ -14,7 +15,7 @@ class HeroBannerAdminForm(forms.ModelForm):
 
     def clean_image(self):
         img = self.cleaned_data.get("image")
-        if img and hasattr(img, "size"):
+        if img and isinstance(img, UploadedFile):
             if img.size > 12 * 1024 * 1024:
                 raise forms.ValidationError("Banner image file must be smaller than 12 MB.")
             ext = os.path.splitext(img.name)[1].lower()

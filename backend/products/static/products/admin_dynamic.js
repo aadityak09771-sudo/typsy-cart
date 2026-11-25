@@ -59,6 +59,53 @@ document.addEventListener("DOMContentLoaded", function () {
       return "";
     }
 
+    function updateFileAttachmentBanner(fileOrUrl, isNew) {
+      if (!fileInput) return;
+      const fileRow = fileInput.closest(".form-row.field-image, .field-image") || fileInput.parentElement;
+      if (!fileRow) return;
+
+      let banner = document.getElementById("tc-file-attachment-banner");
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "tc-file-attachment-banner";
+        fileRow.insertBefore(banner, fileRow.firstChild);
+      }
+
+      if (isNew && fileOrUrl) {
+        banner.style.display = "block";
+        banner.className = "tc-file-attachment-banner tc-file-new-selected";
+        banner.innerHTML = `
+          <div class="tc-file-attachment-header">
+            <span class="tc-status-dot-blue"></span>
+            <strong>New Replacement File Selected:</strong>
+            <code class="tc-attached-filename">${escapeHtml(fileOrUrl.name)} (${(fileOrUrl.size / 1024).toFixed(1)} KB)</code>
+          </div>
+          <div class="tc-file-attachment-note">
+            ✨ This new image will replace the previous photo when you click <em>Save</em>.
+          </div>
+        `;
+      } else if (fileOrUrl) {
+        banner.style.display = "block";
+        banner.className = "tc-file-attachment-banner";
+        const fname = String(fileOrUrl).split("/").pop();
+        banner.innerHTML = `
+          <div class="tc-file-attachment-header">
+            <span class="tc-status-dot-green"></span>
+            <strong>File Currently Attached &amp; Saved on Server:</strong>
+            <code class="tc-attached-filename">${escapeHtml(decodeURIComponent(fname))}</code>
+          </div>
+          <div class="tc-file-attachment-note">
+            🛡️ <strong>No re-upload needed!</strong> Your existing image is active and safely stored. It will remain attached when you click <em>Save</em>.
+          </div>
+          <div class="tc-file-replace-hint">
+            🔄 <em>To replace with a new image, select a new file below:</em>
+          </div>
+        `;
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
     function renderLivePreview() {
       const clearChecked = clearCheckbox ? clearCheckbox.checked : false;
       const savedUrl = getSavedUploadedUrl();
@@ -69,6 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
         currentMode = "file";
         const file = fileInput.files[0];
+        updateFileAttachmentBanner(file, true);
         const reader = new FileReader();
         reader.onload = function (e) {
           previewImg.src = e.target.result;
@@ -86,6 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
         previewImg.src = rawUrl;
         previewImg.style.display = "block";
         previewStatus.innerHTML = `<span style="color: #4b5563;">Loading external image link...</span>`;
+        updateFileAttachmentBanner(null, false);
         updateCardPreview();
         return;
       }
@@ -97,6 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
         previewImg.style.display = "block";
         const filename = savedUrl.split("/").pop();
         previewStatus.innerHTML = `<span style="color: #0284c7; font-weight: 700;">✓ Current Saved Image:</span> ${escapeHtml(decodeURIComponent(filename))}`;
+        updateFileAttachmentBanner(savedUrl, false);
         updateCardPreview();
         return;
       }
@@ -106,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
         currentMode = "none";
         previewImg.style.display = "none";
         previewStatus.innerHTML = `<span style="color: #d97706; font-weight: 600;">Image marked for removal on Save.</span>`;
+        updateFileAttachmentBanner(null, false);
         updateCardPreview();
         return;
       }
@@ -114,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
       currentMode = "none";
       previewImg.style.display = "none";
       previewStatus.innerHTML = `<span style="color: #6b7280;">No image chosen or URL entered.</span>`;
+      updateFileAttachmentBanner(null, false);
       updateCardPreview();
     }
 
@@ -268,7 +320,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // -------------------------------------------------------------
-  // 4. CONDITIONAL SIMPLE VS VARIABLE PRODUCT INTERFACE
+  // 4. CONDITIONAL SIMPLE VS VARIABLE PRODUCT INTERFACE & TEAM GUIDE
   // -------------------------------------------------------------
   const productTypeSelect = document.querySelector("#id_product_type");
   const coloursGroup = document.querySelector("#colours-group");
@@ -277,8 +329,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (productTypeSelect) {
     const step3Fieldset = productTypeSelect.closest("fieldset");
-    let noticeBanner = document.getElementById("tc-product-mode-banner");
 
+    // Inject permanent team guide card
+    let guideCard = document.getElementById("tc-team-guide-card");
+    if (!guideCard && step3Fieldset) {
+      guideCard = document.createElement("div");
+      guideCard.id = "tc-team-guide-card";
+      guideCard.className = "tc-guide-card";
+      guideCard.innerHTML = `
+        <div class="tc-guide-title">
+          <span>📖 Product Types Guide for Store Managers &amp; Team</span>
+        </div>
+        <div class="tc-guide-grid">
+          <div class="tc-guide-box simple">
+            <h5>📦 Simple Product (Single Standard Item)</h5>
+            <p>Sold as 1 standalone item with <strong>1 fixed price &amp; 1 stock</strong>. No sizes or colours needed.</p>
+            <p><strong>Examples:</strong> 1 Bottle of Sauce, 1 Box of Gajak, 1 Mobile Charger.</p>
+            <p><strong>Setup:</strong> Select <em>Simple Product</em> above, then set MRP, Price, and Stock in <strong>Section 4</strong>. Sections 6 &amp; 7 are hidden.</p>
+          </div>
+          <div class="tc-guide-box variable">
+            <h5>⚡ Variable Product (Multiple Sizes, Weights or Colours)</h5>
+            <p>Sold in <strong>multiple size/weight options</strong> where each option has its own independent price, discount, SKU, and stock.</p>
+            <p><strong>Examples:</strong> Basa Fish (250g, 500g, 1 kg), Atta (1 kg, 5 kg, 10 kg), T-Shirt (S, M, L, XL).</p>
+            <p><strong>Setup Workflow:</strong></p>
+            <ol>
+              <li>Select <strong>Variable Product</strong> &amp; click <strong>"Save and continue editing"</strong> below.</li>
+              <li>In <strong>Section 6</strong>, add your Sizes/Weights (e.g. <code>250g</code>, <code>500g</code>, <code>1 kg</code>). <em>(⚠️ Enter weights only, not product name!)</em></li>
+              <li>In <strong>Section 7</strong>, click <strong>"⚡ Auto-Generate All Variant Combinations"</strong>.</li>
+              <li>Enter independent Selling Price, MRP, and Stock for each size in Section 7!</li>
+            </ol>
+          </div>
+        </div>
+      `;
+      step3Fieldset.appendChild(guideCard);
+    }
+
+    let noticeBanner = document.getElementById("tc-product-mode-banner");
     if (!noticeBanner && step3Fieldset) {
       noticeBanner = document.createElement("div");
       noticeBanner.id = "tc-product-mode-banner";
@@ -298,8 +384,8 @@ document.addEventListener("DOMContentLoaded", function () {
           noticeBanner.innerHTML = `
             <span>💡</span>
             <div>
-              <strong>Simple Product Mode Active:</strong> This product is sold as a standard item with a single price & stock.
-              You only need to complete Pricing in Step 4. Variant tables (Colours, Sizes, and Product Variants) are cleanly hidden.
+              <strong>Simple Product Mode Active:</strong> Standard single-item product.
+              Configure price and stock in <strong>Section 4 (Pricing &amp; Inventory)</strong>. Variant tables (Colours, Sizes, and Product Variants) are cleanly hidden.
             </div>
           `;
         }
@@ -313,8 +399,8 @@ document.addEventListener("DOMContentLoaded", function () {
           noticeBanner.innerHTML = `
             <span>⚡</span>
             <div>
-              <strong>Variable Product Mode Active:</strong> This product has multiple options (e.g. Weights, Volumes, Colours, or Sizes).
-              Configure options in Steps 6 & 7. Each variant will have its own independent price, discount, SKU, and stock.
+              <strong>Variable Product Mode Active:</strong> This product offers multiple options (e.g. Weights, Volumes, Colours, or Sizes).
+              Configure options in <strong>Section 6 (Sizes)</strong> &amp; <strong>Section 7 (Variants)</strong> below. Each variant has its own independent price, discount, SKU, and stock.
             </div>
           `;
         }
@@ -324,6 +410,59 @@ document.addEventListener("DOMContentLoaded", function () {
     productTypeSelect.addEventListener("change", updateProductTypeUI);
     updateProductTypeUI();
   }
+
+  // -------------------------------------------------------------
+  // GALLERY IMAGES INLINE FILE STATUS BADGES
+  // -------------------------------------------------------------
+  function enhanceGalleryInlineRows() {
+    const galleryGroup = document.querySelector("#gallery_images-group");
+    if (!galleryGroup) return;
+
+    const rows = galleryGroup.querySelectorAll("tr.form-row, tr[id^='gallery_images-']");
+    rows.forEach(function (row) {
+      const fileInp = row.querySelector("input[type='file'][name$='-image']");
+      if (!fileInp) return;
+
+      const existingLink = row.querySelector(".file-upload a") || row.querySelector("td.field-image a");
+      const urlInput = row.querySelector("input[name$='-image_url']");
+      const existingUrl = existingLink ? existingLink.getAttribute("href") : (urlInput && urlInput.value ? urlInput.value : "");
+
+      let badge = row.querySelector(".tc-inline-file-badge");
+      if (existingUrl && !badge) {
+        const fname = existingUrl.split("/").pop();
+        badge = document.createElement("div");
+        badge.className = "tc-inline-file-badge";
+        badge.innerHTML = `<span>✅ File Attached:</span> <code style="font-size: 11px;">${escapeHtml(decodeURIComponent(fname))}</code>`;
+
+        const cell = fileInp.parentElement;
+        cell.insertBefore(badge, fileInp);
+
+        const tip = document.createElement("small");
+        tip.className = "tc-inline-keep-note";
+        tip.textContent = "Preserved automatically. Choose file only to replace.";
+        cell.appendChild(tip);
+      }
+
+      if (!fileInp.dataset.hasListener) {
+        fileInp.dataset.hasListener = "true";
+        fileInp.addEventListener("change", function () {
+          if (this.files && this.files.length > 0) {
+            let rowBadge = row.querySelector(".tc-inline-file-badge");
+            if (!rowBadge) {
+              rowBadge = document.createElement("div");
+              rowBadge.className = "tc-inline-file-badge new";
+              this.parentElement.insertBefore(rowBadge, this);
+            } else {
+              rowBadge.className = "tc-inline-file-badge new";
+            }
+            rowBadge.innerHTML = `<span>🔵 New file selected:</span> <code style="font-size: 11px;">${escapeHtml(this.files[0].name)}</code>`;
+          }
+        });
+      }
+    });
+  }
+
+  enhanceGalleryInlineRows();
 
   // -------------------------------------------------------------
   // 5. GLOBAL COLOUR MASTER LIBRARY AUTO-FILL & SWATCH PREVIEW
