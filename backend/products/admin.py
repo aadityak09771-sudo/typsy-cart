@@ -663,8 +663,21 @@ class ProductSizeInline(admin.TabularInline):
     verbose_name_plural = "6. Product Sizes & Options (e.g. S, M, L, XL or 250 g, 500 g, 1 kg)"
 
 
+class ProductVariantInlineForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariant
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "price" in self.fields:
+            self.fields["price"].required = False
+            self.fields["price"].help_text = "Leave blank to inherit product price"
+
+
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
+    form = ProductVariantInlineForm
     extra = 0
     fields = (
         "colour",

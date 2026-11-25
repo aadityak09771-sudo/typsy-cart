@@ -1001,6 +1001,17 @@ class ProductVariant(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+        if self.price is None:
+            if hasattr(self, "product") and self.product and getattr(self.product, "price", None) is not None:
+                self.price = self.product.price
+            elif getattr(self, "product_id", None):
+                try:
+                    p = Product.objects.filter(pk=self.product_id).first()
+                    if p and p.price is not None:
+                        self.price = p.price
+                except Exception:
+                    pass
+
         if self.price is not None and self.price < 0:
             raise ValidationError({"price": "Variant price cannot be negative."})
         if self.original_price is not None and self.original_price < 0:
@@ -1014,6 +1025,20 @@ class ProductVariant(models.Model):
                 raise ValidationError({"discount_value": "Fixed discount cannot equal or exceed original price."})
 
     def save(self, *args, **kwargs):
+        # 0. Fallback for price from product if not provided
+        if self.price is None:
+            if hasattr(self, "product") and self.product and getattr(self.product, "price", None) is not None:
+                self.price = self.product.price
+            elif getattr(self, "product_id", None):
+                try:
+                    p = Product.objects.filter(pk=self.product_id).first()
+                    if p and p.price is not None:
+                        self.price = p.price
+                except Exception:
+                    pass
+            if self.price is None:
+                self.price = Decimal("0.00")
+
         # 1. Fallback for original_price
         if self.original_price is None or self.original_price <= 0:
             self.original_price = self.price
