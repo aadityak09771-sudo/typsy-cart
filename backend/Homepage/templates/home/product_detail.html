@@ -447,7 +447,7 @@
 }
 /* Similar Products Section */
 .tc-similar-section {
-    margin-top: 54px;
+    margin-top: 48px;
     padding-top: 24px;
     border-top: 1px solid #fce7f3;
 }
@@ -455,7 +455,8 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
+    gap: 12px;
 }
 .tc-similar-eyebrow {
     font-size: 11px;
@@ -475,24 +476,27 @@
     font-size: 13.5px;
     font-weight: 700;
     text-decoration: none;
+    white-space: nowrap;
 }
 .tc-similar-view-all:hover {
     text-decoration: underline;
 }
 .tc-similar-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
 }
 .tc-similar-card {
     background: #ffffff;
     border: 1px solid #f1e2e9;
     border-radius: 16px;
-    padding: 14px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-width: 0;
+    overflow: hidden;
 }
 .tc-similar-card:hover {
     transform: translateY(-3px);
@@ -500,20 +504,35 @@
     border-color: #fbcfe8;
 }
 .tc-similar-img-box {
-    height: 160px;
+    width: 100%;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fdf4f8;
     border-radius: 12px;
-    padding: 10px;
+    padding: 8px;
     margin-bottom: 10px;
     position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+.tc-similar-img-box a {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    overflow: hidden;
 }
 .tc-similar-img {
     max-height: 100%;
     max-width: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
+    display: block;
 }
 .tc-similar-badge {
     position: absolute;
@@ -525,6 +544,7 @@
     font-weight: 800;
     padding: 2px 6px;
     border-radius: 4px;
+    z-index: 2;
 }
 .tc-similar-brand {
     font-size: 11px;
@@ -594,6 +614,41 @@
 .tc-similar-btn-outline:hover {
     background: #a51655;
     color: #fff;
+}
+
+@media (max-width: 900px) {
+    .tc-similar-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 680px) {
+    .tc-similar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+    .tc-similar-card {
+        padding: 10px !important;
+        border-radius: 14px !important;
+    }
+    .tc-similar-img-box {
+        height: 130px !important;
+        padding: 6px !important;
+    }
+    .tc-similar-name {
+        font-size: 12.5px !important;
+    }
+    .tc-similar-price {
+        font-size: 14px !important;
+    }
+    .tc-similar-title {
+        font-size: 18px !important;
+    }
+    .tc-similar-btn {
+        padding: 7px 8px !important;
+        font-size: 11.5px !important;
+    }
 }
 </style>
 {% endblock %}
@@ -815,7 +870,7 @@
                     {% if sp.discount_percentage > 0 %}
                         <span class="tc-similar-badge">{{ sp.discount_percentage }}% OFF</span>
                     {% endif %}
-                    <a href="/product/{{ sp.id }}/">
+                    <a href="/product/{{ sp.id }}/" style="display:flex; width:100%; height:100%; align-items:center; justify-content:center;">
                         <img src="{{ sp.get_image_url }}" alt="{{ sp.name }}" class="tc-similar-img" loading="lazy">
                     </a>
                 </div>
@@ -1051,6 +1106,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             updateGalleryForColour(selectedColourId);
             updateSizeAvailability();
+
+            // Auto-select first available size for this colour if none active or current is disabled
+            const currentActiveSize = document.querySelector(".tc-size-btn.active");
+            if (!currentActiveSize || currentActiveSize.classList.contains("disabled")) {
+                const firstAvailSize = document.querySelector(".tc-size-btn:not(.disabled)");
+                if (firstAvailSize) {
+                    firstAvailSize.click();
+                    return;
+                }
+            }
             syncVariantState();
         });
     });
@@ -1075,21 +1140,38 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Auto-select first colour by default if available; otherwise auto-select first option
-    const firstColourBtn = document.querySelector(".tc-colour-btn");
-    if (firstColourBtn) {
-        firstColourBtn.click();
+    if (hasColours) {
+        const firstColourBtn = document.querySelector(".tc-colour-btn");
+        if (firstColourBtn) {
+            firstColourBtn.click();
+        }
     } else {
         updateSizeAvailability();
         const firstSizeBtn = document.querySelector(".tc-size-btn:not(.disabled)");
         if (firstSizeBtn) {
             firstSizeBtn.click();
+        } else if (variantsData.length > 0) {
+            currentMatchedVariant = variantsData[0];
+            syncVariantState();
+        } else {
+            // Fallback: variable product with no active variants
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.textContent = "🛒 Add to Cart";
+            }
+            if (stockIndicator) {
+                stockIndicator.className = "tc-stock-indicator in-stock";
+            }
+            if (stockText) {
+                stockText.textContent = "✓ In Stock";
+            }
         }
     }
 
     // Add to Cart Action
     if (addBtn) {
         addBtn.addEventListener("click", async () => {
-            if (!currentMatchedVariant) {
+            if (!currentMatchedVariant && variantsData.length > 0) {
                 if (noticeEl) {
                     noticeEl.style.display = "block";
                     noticeEl.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1098,15 +1180,15 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const productId = parseInt(addBtn.dataset.productId, 10);
-            const variantId = currentMatchedVariant.id;
+            const variantId = currentMatchedVariant ? currentMatchedVariant.id : null;
             const quantity = parseInt(qtyInput ? qtyInput.value : 1, 10) || 1;
             const productName = addBtn.dataset.name;
-            const variantTitle = currentMatchedVariant.title ||
+            const variantTitle = currentMatchedVariant ? (currentMatchedVariant.title ||
                 (currentMatchedVariant.colour_name && currentMatchedVariant.size_name ?
                     `${currentMatchedVariant.colour_name} / ${currentMatchedVariant.size_name}` :
-                    (currentMatchedVariant.size_name || currentMatchedVariant.colour_name || currentMatchedVariant.variant_name || "Standard"));
-            const price = currentMatchedVariant.price;
-            const image = currentMatchedVariant.image_url || mainImg.src;
+                    (currentMatchedVariant.size_name || currentMatchedVariant.colour_name || currentMatchedVariant.variant_name || "Standard"))) : "";
+            const price = currentMatchedVariant ? currentMatchedVariant.price : (priceDisplay ? priceDisplay.textContent.replace(/[^\d.]/g, '') : "0");
+            const image = (currentMatchedVariant && currentMatchedVariant.image_url) ? currentMatchedVariant.image_url : (mainImg ? mainImg.src : "");
 
             addBtn.disabled = true;
             addBtn.textContent = "Adding...";

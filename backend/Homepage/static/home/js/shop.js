@@ -706,9 +706,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join("")}
                         </div>
                     ` : ""}
-                    <div class="product-tag-row" style="position:absolute; bottom:6px; left:8px; z-index:4; pointer-events:none;">
-                        <span class="product-tag-cat">${escapeHTML(product.category || "Essentials")}</span>
-                    </div>
                 </div>
             `;
 
@@ -744,7 +741,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 >
                     ${sliderHtml}
 
-                    <h2 style="margin: 6px 0 2px;">
+                    <div class="product-tag-row" style="margin: 6px 0 3px;">
+                        <span class="product-tag-cat">${escapeHTML(product.category || "Essentials")}</span>
+                        ${product.subcategory ? `<span class="product-tag-subcat">${escapeHTML(product.subcategory)}</span>` : ""}
+                    </div>
+
+                    <h2 style="margin: 4px 0 2px;">
                         <a href="/product/${product.id}/" style="color:inherit; text-decoration:none;">
                             ${escapeHTML(product.name)}
                         </a>

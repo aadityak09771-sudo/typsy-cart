@@ -58,21 +58,8 @@ Explore TipsyCart categories: Daily Essentials, Groceries, Personal Care, Period
                         <h2 class="tc-cat-title">{{ cat.name }}</h2>
                         <p class="tc-cat-desc">{{ cat.description|default:"Thoughtfully selected essentials for your everyday needs." }}</p>
 
-                        <!-- Subcategory Quick Links (Admin Linked) -->
-                        {% with subcats=cat.subcategories.all %}
-                        {% if subcats %}
-                        <div class="tc-subcat-links-wrap" aria-label="{{ cat.name }} subcategories">
-                            {% for sub in subcats %}
-                            {% if sub.is_active %}
-                            <a href="/shop/?category={{ cat.slug }}&subcategory={{ sub.slug }}" class="tc-subcat-pill">{{ sub.name }}</a>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        {% endwith %}
-
                         <a href="/shop/?category={{ cat.slug }}" class="tc-cat-btn">
-                            <span>Shop All {{ cat.name }}</span>
+                            <span>Shop Now</span>
                             <span class="tc-cat-btn-arrow">→</span>
                         </a>
                     </div>
