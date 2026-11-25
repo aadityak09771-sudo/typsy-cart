@@ -750,7 +750,7 @@ class ProductColour(models.Model):
         unique_together = [["product", "name"]]
 
     def __str__(self):
-        return f"{self.product.name} - {self.name}"
+        return self.name
 
     def save(self, *args, **kwargs):
         if self.color_master:
@@ -868,7 +868,7 @@ class ProductSize(models.Model):
         unique_together = [["product", "name"]]
 
     def __str__(self):
-        return f"{self.product.name} - {self.name}"
+        return self.name
 
 
 class ProductVariant(models.Model):

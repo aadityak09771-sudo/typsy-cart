@@ -684,6 +684,24 @@ class ProductVariantInline(admin.TabularInline):
     verbose_name = "Independently Sold Variant"
     verbose_name_plural = "7. Product Variants (Independent Pricing, Discounts, SKU & Stock)"
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        object_id = None
+        if request and request.resolver_match and "object_id" in request.resolver_match.kwargs:
+            object_id = request.resolver_match.kwargs["object_id"]
+
+        if db_field.name == "size":
+            if object_id:
+                kwargs["queryset"] = ProductSize.objects.filter(product_id=object_id).order_by("display_order", "id")
+            else:
+                kwargs["queryset"] = ProductSize.objects.none()
+        elif db_field.name == "colour":
+            if object_id:
+                kwargs["queryset"] = ProductColour.objects.filter(product_id=object_id).order_by("display_order", "id")
+            else:
+                kwargs["queryset"] = ProductColour.objects.none()
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
@@ -691,6 +709,18 @@ class ProductVariantAdmin(admin.ModelAdmin):
     list_filter = ("product", "is_active", "colour", "size")
     search_fields = ("sku", "barcode", "product__name", "colour__name", "size__name")
     list_editable = ("price", "stock", "is_active")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name in ("size", "colour"):
+            variant_id = request.resolver_match.kwargs.get("object_id") if request.resolver_match else None
+            if variant_id:
+                variant = ProductVariant.objects.filter(pk=variant_id).first()
+                if variant:
+                    if db_field.name == "size":
+                        kwargs["queryset"] = ProductSize.objects.filter(product_id=variant.product_id).order_by("display_order", "id")
+                    elif db_field.name == "colour":
+                        kwargs["queryset"] = ProductColour.objects.filter(product_id=variant.product_id).order_by("display_order", "id")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 # ---------------------------------------------------------------------------
