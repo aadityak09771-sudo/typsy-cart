@@ -111,22 +111,184 @@
     gap: 16px;
 }
 .tc-product-img-box {
+    position: relative;
+    background: #fff0f6;
+    border-radius: 20px;
+    border: 1px solid #fbcfe8;
+    overflow: hidden;
+    padding: 0;
+    min-height: 380px;
+    height: 440px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff0f6;
-    border-radius: 20px;
-    padding: 24px;
-    border: 1px solid #fbcfe8;
-    min-height: 380px;
-    position: relative;
 }
-.tc-product-img {
+.tc-detail-slider-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tc-detail-slider-track::-webkit-scrollbar {
+    display: none;
+}
+.tc-detail-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    user-select: none;
+}
+.tc-slide-img {
     max-width: 100%;
-    max-height: 380px;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
     border-radius: 12px;
-    transition: opacity 0.2s ease-in-out;
+    cursor: zoom-in;
+    transition: transform 0.25s ease;
+}
+/* Left / Right Arrows for Desktop / Hover */
+.tc-detail-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    line-height: 1;
+    color: #a51655;
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.2s ease;
+    padding: 0;
+    user-select: none;
+}
+.tc-detail-arrow:hover {
+    background: #a51655;
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+}
+.tc-detail-prev {
+    left: 12px;
+}
+.tc-detail-next {
+    right: 12px;
+}
+/* Meesho-Style Swipe Dots Indicator (Image 3) */
+.tc-detail-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 5;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    border: 1px solid rgba(251, 207, 232, 0.6);
+}
+.tc-detail-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+.tc-detail-dot.active {
+    width: 20px;
+    border-radius: 4px;
+    background: #a51655;
+}
+/* Floating Image Expand / Fullscreen Button (Image 3 bottom right) */
+.tc-detail-expand-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.tc-detail-expand-btn:hover {
+    background: #ffffff;
+    color: #a51655;
+    transform: scale(1.06);
+}
+/* Fullscreen Lightbox Modal */
+.tc-image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    padding: 20px;
+    box-sizing: border-box;
+}
+.tc-modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tc-modal-content img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.tc-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-size: 28px;
+    color: #ffffff;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10000;
 }
 .tc-gallery-thumbnails {
     display: flex;
@@ -780,21 +942,57 @@
     <article class="tc-product-detail-card">
         <!-- LEFT: GALLERY -->
         <div class="tc-gallery-section">
-            <div class="tc-product-img-box">
-                <img
-                    id="tc-main-product-img"
-                    src="{{ product.get_image_url }}"
-                    alt="{{ product.name }}"
-                    class="tc-product-img"
-                    onerror="this.onerror=null;this.src='/static/home/images/tipsycart-logo.png';"
-                >
+            <div class="tc-product-img-box" id="tc-product-img-box">
+                <!-- Swipeable Image Carousel Track (Meesho style scrolling gallery) -->
+                <div class="tc-detail-slider-track" id="tc-detail-slider-track" tabindex="0" aria-label="Product image gallery">
+                    {% for gimg in gallery_images %}
+                    <div class="tc-detail-slide" data-index="{{ forloop.counter0 }}">
+                        <img
+                            src="{{ gimg.url }}"
+                            alt="{{ product.name }} - View {{ forloop.counter }}"
+                            loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                            class="tc-slide-img"
+                            onerror="this.onerror=null;this.src='/static/home/images/tipsycart-logo.png';"
+                        >
+                    </div>
+                    {% empty %}
+                    <div class="tc-detail-slide" data-index="0">
+                        <img
+                            src="{{ product.get_image_url }}"
+                            alt="{{ product.name }}"
+                            class="tc-slide-img"
+                            onerror="this.onerror=null;this.src='/static/home/images/tipsycart-logo.png';"
+                        >
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Previous / Next Navigation Arrows -->
+                <button type="button" class="tc-detail-arrow tc-detail-prev" id="tc-detail-prev" aria-label="Previous photo" {% if gallery_images|length <= 1 %}style="display:none;"{% endif %}>‹</button>
+                <button type="button" class="tc-detail-arrow tc-detail-next" id="tc-detail-next" aria-label="Next photo" {% if gallery_images|length <= 1 %}style="display:none;"{% endif %}>›</button>
+
+                <!-- Meesho-Style Swipe Dots Indicator (Image 3) -->
+                <div class="tc-detail-dots" id="tc-detail-dots" aria-hidden="true" {% if gallery_images|length <= 1 %}style="display:none;"{% endif %}>
+                    {% for gimg in gallery_images %}
+                    <span class="tc-detail-dot {% if forloop.first %}active{% endif %}" data-slide-index="{{ forloop.counter0 }}"></span>
+                    {% endfor %}
+                </div>
+
+                <!-- Fullscreen / Zoom Button (Image 3 bottom right) -->
+                <button type="button" class="tc-detail-expand-btn" id="tc-detail-expand-btn" title="View Fullscreen" aria-label="View Fullscreen">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                </button>
             </div>
-            {% if gallery_images|length > 1 or colours %}
-            <div id="tc-thumbnails-row" class="tc-gallery-thumbnails" role="tablist" aria-label="Product thumbnails">
+
+            <!-- Thumbnail Row Below Slider -->
+            <div id="tc-thumbnails-row" class="tc-gallery-thumbnails" role="tablist" aria-label="Product thumbnails" {% if gallery_images|length <= 1 and not colours %}style="display:none;"{% endif %}>
                 {% for gimg in gallery_images %}
                 <button
                     type="button"
                     class="tc-thumb-btn {% if forloop.first %}active{% endif %}"
+                    data-slide-index="{{ forloop.counter0 }}"
                     data-img-url="{{ gimg.url }}"
                     aria-label="View photo {{ forloop.counter }}"
                 >
@@ -802,7 +1000,6 @@
                 </button>
                 {% endfor %}
             </div>
-            {% endif %}
 
             <!-- MEESHO / AMAZON STYLE: SIMILAR PRODUCTS / DIFFERENT STYLES SELECTOR -->
             {% if style_options and style_options|length > 1 %}
@@ -1066,15 +1263,216 @@
     {% endif %}
 </div>
 
+<!-- Fullscreen Lightbox Modal (like Image 3 expand icon) -->
+<div id="tc-image-modal" class="tc-image-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="Full size product image">
+    <button type="button" class="tc-modal-close" id="tc-modal-close" aria-label="Close fullscreen view">✕</button>
+    <div class="tc-modal-content">
+        <img id="tc-modal-img" src="" alt="Full size view">
+    </div>
+</div>
+
+<script>
+// -------------------------------------------------------------------------
+// MEESHO-STYLE SWIPEABLE / SCROLLABLE PRODUCT GALLERY (IMAGE 3)
+// -------------------------------------------------------------------------
+function initGalleryCarousel() {
+    const sliderTrack = document.getElementById("tc-detail-slider-track");
+    const dotsWrap = document.getElementById("tc-detail-dots");
+    const thumbnailsRow = document.getElementById("tc-thumbnails-row");
+    const prevBtn = document.getElementById("tc-detail-prev");
+    const nextBtn = document.getElementById("tc-detail-next");
+    const expandBtn = document.getElementById("tc-detail-expand-btn");
+    const modal = document.getElementById("tc-image-modal");
+    const modalImg = document.getElementById("tc-modal-img");
+    const modalClose = document.getElementById("tc-modal-close");
+
+    if (!sliderTrack) return null;
+
+    let isScrollingTimeout = null;
+
+    function getSlideWidth() {
+        return sliderTrack.offsetWidth || sliderTrack.getBoundingClientRect().width || 1;
+    }
+
+    function updateActiveState(index) {
+        if (dotsWrap) {
+            const dots = dotsWrap.querySelectorAll(".tc-detail-dot");
+            dots.forEach((d, i) => d.classList.toggle("active", i === index));
+        }
+        if (thumbnailsRow) {
+            const thumbs = thumbnailsRow.querySelectorAll(".tc-thumb-btn");
+            thumbs.forEach((t, i) => {
+                const isActive = (i === index);
+                t.classList.toggle("active", isActive);
+                if (isActive) {
+                    t.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+                }
+            });
+        }
+    }
+
+    function scrollToIndex(index) {
+        const slideW = getSlideWidth();
+        sliderTrack.scrollTo({
+            left: index * slideW,
+            behavior: "smooth"
+        });
+        updateActiveState(index);
+    }
+
+    // Real-time scroll listener: updates pagination dots & active thumbnail as user swipes
+    sliderTrack.addEventListener("scroll", () => {
+        if (isScrollingTimeout) clearTimeout(isScrollingTimeout);
+        isScrollingTimeout = setTimeout(() => {
+            const slideW = getSlideWidth();
+            const index = Math.round(sliderTrack.scrollLeft / slideW);
+            updateActiveState(index);
+        }, 35);
+    }, { passive: true });
+
+    // Arrow navigation
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+            const slideW = getSlideWidth();
+            const curIdx = Math.round(sliderTrack.scrollLeft / slideW);
+            const targetIdx = Math.max(0, curIdx - 1);
+            scrollToIndex(targetIdx);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            const slideW = getSlideWidth();
+            const slidesCount = sliderTrack.querySelectorAll(".tc-detail-slide").length;
+            const curIdx = Math.round(sliderTrack.scrollLeft / slideW);
+            const targetIdx = Math.min(slidesCount - 1, curIdx + 1);
+            scrollToIndex(targetIdx);
+        });
+    }
+
+    // Dot click
+    if (dotsWrap) {
+        dotsWrap.addEventListener("click", (e) => {
+            const dot = e.target.closest(".tc-detail-dot");
+            if (!dot) return;
+            const idx = parseInt(dot.dataset.slideIndex, 10);
+            if (!isNaN(idx)) scrollToIndex(idx);
+        });
+    }
+
+    // Thumbnail click
+    if (thumbnailsRow) {
+        thumbnailsRow.addEventListener("click", (e) => {
+            const btn = e.target.closest(".tc-thumb-btn");
+            if (!btn) return;
+            const idx = parseInt(btn.dataset.slideIndex, 10);
+            if (!isNaN(idx)) scrollToIndex(idx);
+        });
+    }
+
+    // Fullscreen lightbox
+    function openLightbox(src) {
+        if (!modal || !modalImg) return;
+        modalImg.src = src;
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeLightbox() {
+        if (!modal) return;
+        modal.style.display = "none";
+        document.body.style.overflow = "";
+    }
+
+    if (expandBtn) {
+        expandBtn.addEventListener("click", () => {
+            const slideW = getSlideWidth();
+            const index = Math.round(sliderTrack.scrollLeft / slideW);
+            const slides = sliderTrack.querySelectorAll(".tc-detail-slide img");
+            const currentImg = slides[index] || sliderTrack.querySelector(".tc-detail-slide img");
+            if (currentImg && currentImg.src) {
+                openLightbox(currentImg.src);
+            }
+        });
+    }
+
+    sliderTrack.addEventListener("dblclick", (e) => {
+        const img = e.target.closest("img");
+        if (img && img.src) openLightbox(img.src);
+    });
+
+    if (modalClose) modalClose.addEventListener("click", closeLightbox);
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) closeLightbox();
+        });
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeLightbox();
+    });
+
+    return {
+        scrollToIndex: scrollToIndex,
+        updateActiveState: updateActiveState,
+        rebuildGallery: function(images) {
+            if (!Array.isArray(images) || images.length === 0) return;
+
+            // Rebuild track slides
+            sliderTrack.innerHTML = images.map((url, i) => `
+                <div class="tc-detail-slide" data-index="${i}">
+                    <img src="${url}" alt="Photo ${i + 1}" class="tc-slide-img" onerror="this.src='/static/home/images/tipsycart-logo.png';">
+                </div>
+            `).join("");
+
+            // Rebuild dots
+            if (dotsWrap) {
+                if (images.length > 1) {
+                    dotsWrap.style.display = "flex";
+                    dotsWrap.innerHTML = images.map((_, i) => `
+                        <span class="tc-detail-dot ${i === 0 ? 'active' : ''}" data-slide-index="${i}"></span>
+                    `).join("");
+                } else {
+                    dotsWrap.style.display = "none";
+                    dotsWrap.innerHTML = "";
+                }
+            }
+
+            // Show/hide navigation arrows
+            const showNav = images.length > 1;
+            if (prevBtn) prevBtn.style.display = showNav ? "flex" : "none";
+            if (nextBtn) nextBtn.style.display = showNav ? "flex" : "none";
+
+            // Rebuild thumbnails
+            if (thumbnailsRow) {
+                if (images.length > 1) {
+                    thumbnailsRow.style.display = "flex";
+                    thumbnailsRow.innerHTML = images.map((url, i) => `
+                        <button type="button" class="tc-thumb-btn ${i === 0 ? 'active' : ''}" data-slide-index="${i}" data-img-url="${url}">
+                            <img src="${url}" alt="Thumbnail ${i + 1}" onerror="this.src='/static/home/images/tipsycart-logo.png';">
+                        </button>
+                    `).join("");
+                } else {
+                    thumbnailsRow.style.display = "none";
+                    thumbnailsRow.innerHTML = "";
+                }
+            }
+
+            sliderTrack.scrollLeft = 0;
+            updateActiveState(0);
+        }
+    };
+}
+</script>
+
 {% if is_variable %}
 <script id="tc-variants-json" type="application/json">{{ variants_json|safe }}</script>
 <script id="tc-colours-json" type="application/json">{{ colours_json|safe }}</script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    const galleryCtrl = initGalleryCarousel();
     const variantsData = JSON.parse(document.getElementById("tc-variants-json").textContent || "[]");
     const coloursData = JSON.parse(document.getElementById("tc-colours-json").textContent || "[]");
 
-    const mainImg = document.getElementById("tc-main-product-img");
     const thumbnailsRow = document.getElementById("tc-thumbnails-row");
     const skuDisplay = document.getElementById("tc-product-sku-display");
     const priceDisplay = document.getElementById("tc-display-price");
@@ -1112,33 +1510,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Populate thumbnails for a given colour
+    // Populate thumbnails and swipe slides for a given colour
     function updateGalleryForColour(colourId) {
-        if (!thumbnailsRow) return;
         const colObj = coloursData.find(c => c.id === colourId);
         let images = [];
         if (colObj && colObj.images && colObj.images.length > 0) {
             images = colObj.images;
-        } else if (mainImg && mainImg.src) {
-            images = [mainImg.src];
+        } else {
+            const firstImg = document.querySelector(".tc-detail-slide img");
+            if (firstImg && firstImg.src) images = [firstImg.src];
         }
 
-        thumbnailsRow.innerHTML = "";
-        images.forEach((url, idx) => {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "tc-thumb-btn" + (idx === 0 ? " active" : "");
-            btn.innerHTML = `<img src="${url}" alt="Thumbnail ${idx + 1}" onerror="this.src='/static/home/images/tipsycart-logo.png';">`;
-            btn.addEventListener("click", () => {
-                thumbnailsRow.querySelectorAll(".tc-thumb-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                mainImg.src = url;
-            });
-            thumbnailsRow.appendChild(btn);
-        });
-
-        if (images.length > 0) {
-            mainImg.src = images[0];
+        if (galleryCtrl && typeof galleryCtrl.rebuildGallery === "function") {
+            galleryCtrl.rebuildGallery(images);
         }
     }
 
@@ -1233,18 +1617,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Direct click handlers for static thumbnail gallery
-    document.querySelectorAll(".tc-thumb-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".tc-thumb-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            const imgUrl = btn.dataset.imgUrl || btn.querySelector("img")?.src;
-            if (imgUrl && mainImg) {
-                mainImg.src = imgUrl;
-            }
-        });
-    });
-
     // Colour click handlers
     document.querySelectorAll(".tc-colour-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -1338,7 +1710,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     `${currentMatchedVariant.colour_name} / ${currentMatchedVariant.size_name}` :
                     (currentMatchedVariant.size_name || currentMatchedVariant.colour_name || currentMatchedVariant.variant_name || "Standard"))) : "";
             const price = currentMatchedVariant ? currentMatchedVariant.price : (priceDisplay ? priceDisplay.textContent.replace(/[^\d.]/g, '') : "0");
-            const image = (currentMatchedVariant && currentMatchedVariant.image_url) ? currentMatchedVariant.image_url : (mainImg ? mainImg.src : "");
+            const image = (currentMatchedVariant && currentMatchedVariant.image_url) ? currentMatchedVariant.image_url : (document.querySelector(".tc-detail-slide img") ? document.querySelector(".tc-detail-slide img").src : "");
 
             addBtn.disabled = true;
             addBtn.textContent = "Adding...";
@@ -1384,23 +1756,11 @@ document.addEventListener("DOMContentLoaded", function () {
 {% else %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    initGalleryCarousel();
     const simpleAddBtn = document.getElementById("tc-simple-add-btn");
     const qtyInput = document.getElementById("tc-qty-input");
     const qtyMinus = document.getElementById("tc-qty-minus");
     const qtyPlus = document.getElementById("tc-qty-plus");
-    const mainImg = document.getElementById("tc-main-product-img");
-
-    // Static thumbnails handler for simple products with multiple gallery images
-    document.querySelectorAll(".tc-thumb-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".tc-thumb-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            const imgUrl = btn.dataset.imgUrl || btn.querySelector("img")?.src;
-            if (imgUrl && mainImg) {
-                mainImg.src = imgUrl;
-            }
-        });
-    });
 
     if (qtyMinus && qtyPlus && qtyInput) {
         qtyMinus.addEventListener("click", () => {
