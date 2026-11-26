@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // -------------------------------------------------------------
-  // 3. LIVE PRICING & DISCOUNT PREVIEW (Product Form)
+  // 3. LIVE PRICING & TWO-WAY SMART DISCOUNT PREVIEW (Product Form)
   // -------------------------------------------------------------
   const origPriceInput = document.querySelector("#id_original_price");
   const discountEnabledCheck = document.querySelector("#id_discount_enabled");
@@ -248,55 +248,109 @@ document.addEventListener("DOMContentLoaded", function () {
   const discountValInput = document.querySelector("#id_discount_value");
   const sellingPriceInput = document.querySelector("#id_price");
 
-  function calculateLivePrice() {
-    if (!origPriceInput || !sellingPriceInput) return;
-    const orig = parseFloat(origPriceInput.value) || 0;
-    const isDiscount = discountEnabledCheck ? discountEnabledCheck.checked : false;
-    const dType = discountTypeSelect ? discountTypeSelect.value : "percentage";
-    const dVal = discountValInput ? parseFloat(discountValInput.value) || 0 : 0;
+  let isUpdatingPrice = false;
+
+  function updatePricingBadge(orig, finalPrice, savings, discountPct) {
     const badgeContainer = document.getElementById("tc-pricing-preview-badge");
+    if (!badgeContainer) return;
 
     if (orig <= 0) {
-      if (badgeContainer) badgeContainer.innerHTML = '<span style="color: #6b7280; font-size: 12px;">Enter Original MRP first.</span>';
-      updateCardPreview();
+      badgeContainer.innerHTML = '<span style="color: #6b7280; font-size: 12px;">Enter Original MRP first.</span>';
       return;
     }
 
-    if (!isDiscount || dVal <= 0) {
-      sellingPriceInput.value = orig.toFixed(2);
-      if (badgeContainer) {
-        badgeContainer.innerHTML = `<span style="color: #1e293b; background: #f3f4f6; padding: 4px 10px; border-radius: 6px;">Regular Price: ₹${orig.toFixed(2)} (No Discount)</span>`;
-      }
+    if (savings > 0 && discountPct > 0) {
+      badgeContainer.innerHTML = `
+        <span style="color: #15803d; background: #dcfce7; padding: 4px 10px; border-radius: 6px; font-weight: 700;">
+          ✨ Final Selling Price: ₹${finalPrice.toFixed(2)}
+        </span>
+        <del style="color: #94a3b8; margin-left: 6px;">₹${orig.toFixed(2)}</del>
+        <span style="color: #b91c1c; background: #fee2e2; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-size: 11px; font-weight: 800;">
+          ${discountPct}% OFF (Save ₹${savings.toFixed(2)})
+        </span>
+      `;
     } else {
-      let finalPrice = orig;
-      let savings = 0;
-      let discountPct = 0;
-
-      if (dType === "percentage") {
-        const pct = Math.min(99, Math.max(0, dVal));
-        savings = orig * (pct / 100);
-        finalPrice = Math.max(1, orig - savings);
-        discountPct = Math.round(pct);
-      } else {
-        savings = Math.min(orig - 1, Math.max(0, dVal));
-        finalPrice = Math.max(1, orig - savings);
-        discountPct = Math.round((savings / orig) * 100);
-      }
-
-      sellingPriceInput.value = finalPrice.toFixed(2);
-      if (badgeContainer) {
-        badgeContainer.innerHTML = `
-          <span style="color: #15803d; background: #dcfce7; padding: 4px 10px; border-radius: 6px;">
-            ✨ Final Price: ₹${finalPrice.toFixed(2)}
-          </span>
-          <del style="color: #94a3b8; margin-left: 6px;">₹${orig.toFixed(2)}</del>
-          <span style="color: #b91c1c; background: #fee2e2; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-size: 11px;">
-            ${discountPct}% OFF (Save ₹${savings.toFixed(2)})
-          </span>
-        `;
-      }
+      badgeContainer.innerHTML = `<span style="color: #1e293b; background: #f3f4f6; padding: 4px 10px; border-radius: 6px;">Regular Price: ₹${finalPrice.toFixed(2)} (No Discount)</span>`;
     }
-    updateCardPreview();
+  }
+
+  // Called when user edits Selling Price manually: auto-calculates Discount %
+  function onSellingPriceManualInput() {
+    if (isUpdatingPrice || !origPriceInput || !sellingPriceInput) return;
+    isUpdatingPrice = true;
+    try {
+      const orig = parseFloat(origPriceInput.value) || 0;
+      const sellPrice = parseFloat(sellingPriceInput.value) || 0;
+
+      if (orig > 0 && sellPrice > 0 && orig > sellPrice) {
+        const savings = orig - sellPrice;
+        const discountPct = Math.round((savings / orig) * 100);
+        if (discountEnabledCheck) discountEnabledCheck.checked = true;
+        if (discountTypeSelect) discountTypeSelect.value = "percentage";
+        if (discountValInput) discountValInput.value = discountPct;
+        updatePricingBadge(orig, sellPrice, savings, discountPct);
+      } else {
+        if (discountEnabledCheck) discountEnabledCheck.checked = false;
+        if (discountValInput) discountValInput.value = "0.00";
+        updatePricingBadge(orig, sellPrice || orig, 0, 0);
+      }
+    } finally {
+      isUpdatingPrice = false;
+      updateCardPreview();
+    }
+  }
+
+  // Called when user edits Discount % or MRP: auto-calculates Selling Price
+  function onDiscountOrMrpInput() {
+    if (isUpdatingPrice || !origPriceInput || !sellingPriceInput) return;
+    isUpdatingPrice = true;
+    try {
+      const orig = parseFloat(origPriceInput.value) || 0;
+      const isDiscount = discountEnabledCheck ? discountEnabledCheck.checked : false;
+      const dType = discountTypeSelect ? discountTypeSelect.value : "percentage";
+      const dVal = discountValInput ? parseFloat(discountValInput.value) || 0 : 0;
+
+      if (orig <= 0) {
+        updatePricingBadge(0, 0, 0, 0);
+        return;
+      }
+
+      if (!isDiscount || dVal <= 0) {
+        // If discount is not enabled, but sellingPrice is already set and lower than MRP, keep it!
+        const currentSell = parseFloat(sellingPriceInput.value) || 0;
+        if (currentSell > 0 && currentSell < orig) {
+          const savings = orig - currentSell;
+          const discountPct = Math.round((savings / orig) * 100);
+          if (discountEnabledCheck) discountEnabledCheck.checked = true;
+          if (discountValInput) discountValInput.value = discountPct;
+          updatePricingBadge(orig, currentSell, savings, discountPct);
+        } else {
+          sellingPriceInput.value = orig.toFixed(2);
+          updatePricingBadge(orig, orig, 0, 0);
+        }
+      } else {
+        let finalPrice = orig;
+        let savings = 0;
+        let discountPct = 0;
+
+        if (dType === "percentage") {
+          const pct = Math.min(99, Math.max(0, dVal));
+          savings = orig * (pct / 100);
+          finalPrice = Math.max(1, orig - savings);
+          discountPct = Math.round(pct);
+        } else {
+          savings = Math.min(orig - 1, Math.max(0, dVal));
+          finalPrice = Math.max(1, orig - savings);
+          discountPct = Math.round((savings / orig) * 100);
+        }
+
+        sellingPriceInput.value = finalPrice.toFixed(2);
+        updatePricingBadge(orig, finalPrice, savings, discountPct);
+      }
+    } finally {
+      isUpdatingPrice = false;
+      updateCardPreview();
+    }
   }
 
   if (origPriceInput && sellingPriceInput) {
@@ -308,15 +362,17 @@ document.addEventListener("DOMContentLoaded", function () {
       priceRow.appendChild(badgeContainer);
     }
 
+    sellingPriceInput.addEventListener("input", onSellingPriceManualInput);
+
     [origPriceInput, discountValInput].forEach(function (el) {
-      if (el) el.addEventListener("input", calculateLivePrice);
+      if (el) el.addEventListener("input", onDiscountOrMrpInput);
     });
 
     [discountEnabledCheck, discountTypeSelect].forEach(function (el) {
-      if (el) el.addEventListener("change", calculateLivePrice);
+      if (el) el.addEventListener("change", onDiscountOrMrpInput);
     });
 
-    calculateLivePrice();
+    onDiscountOrMrpInput();
   }
 
   // -------------------------------------------------------------

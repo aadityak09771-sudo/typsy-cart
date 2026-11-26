@@ -564,7 +564,12 @@ class ProductAdminForm(forms.ModelForm):
                 cleaned_data["original_price"] = price
                 orig_price = price
 
-        if discount_enabled and discount_val and discount_val > 0:
+        if orig_price and price and orig_price > price:
+            cleaned_data["discount_enabled"] = True
+            cleaned_data["discount_type"] = "percentage"
+            diff = orig_price - price
+            cleaned_data["discount_value"] = round((diff / orig_price) * Decimal("100.00"), 2)
+        elif discount_enabled and discount_val and discount_val > 0:
             if discount_type == "percentage" and discount_val > 99:
                 self.add_error("discount_value", "Percentage discount cannot exceed 99%.")
             elif discount_type == "fixed" and orig_price and discount_val >= orig_price:
@@ -810,7 +815,18 @@ class ProductVariantInlineForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get("discount_value") is None:
+        price = cleaned_data.get("price")
+        orig_price = cleaned_data.get("original_price")
+        if orig_price and price:
+            if orig_price > price:
+                cleaned_data["discount_enabled"] = True
+                cleaned_data["discount_type"] = "percentage"
+                diff = orig_price - price
+                cleaned_data["discount_value"] = round((diff / orig_price) * Decimal("100.00"), 2)
+            else:
+                cleaned_data["discount_enabled"] = False
+                cleaned_data["discount_value"] = Decimal("0.00")
+        elif cleaned_data.get("discount_value") is None:
             cleaned_data["discount_value"] = Decimal("0.00")
         return cleaned_data
 

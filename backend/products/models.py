@@ -422,17 +422,26 @@ class Product(models.Model):
         if self.original_price is None or self.original_price <= 0:
             self.original_price = self.price
 
-        # 4. Calculate selling price if discount is enabled
-        if self.discount_enabled and self.discount_value and self.discount_value > 0 and self.original_price:
-            if self.discount_type == "percentage":
-                pct = min(Decimal("99.00"), max(Decimal("0.00"), self.discount_value))
-                calc_price = self.original_price * (Decimal("100.00") - pct) / Decimal("100.00")
-                self.price = max(Decimal("1.00"), round(calc_price, 2))
+        # 4. Smart discount sync (Manual Selling Price is KING):
+        # If both original_price (MRP) and price (Selling Price) are provided:
+        if self.original_price and self.price is not None:
+            if self.original_price > self.price:
+                self.discount_enabled = True
+                self.discount_type = "percentage"
+                diff = self.original_price - self.price
+                self.discount_value = round((diff / self.original_price) * Decimal("100.00"), 2)
+            elif self.discount_enabled and self.discount_value and self.discount_value > 0:
+                # If price was not manually changed and discount is explicitly configured
+                if self.discount_type == "percentage":
+                    pct = min(Decimal("99.00"), max(Decimal("0.00"), self.discount_value))
+                    calc_price = self.original_price * (Decimal("100.00") - pct) / Decimal("100.00")
+                    self.price = max(Decimal("1.00"), round(calc_price, 2))
+                else:
+                    calc_price = self.original_price - self.discount_value
+                    self.price = max(Decimal("1.00"), round(calc_price, 2))
             else:
-                calc_price = self.original_price - self.discount_value
-                self.price = max(Decimal("1.00"), round(calc_price, 2))
-        elif self.original_price and self.price and self.original_price > self.price:
-            self.discount_enabled = True
+                self.discount_enabled = False
+                self.discount_value = Decimal("0.00")
 
         # 5. Availability sync with stock
         if self.stock == 0:
@@ -1127,17 +1136,18 @@ class ProductVariant(models.Model):
         if self.original_price is None or self.original_price <= 0:
             self.original_price = self.price
 
-        # 2. Discount calculation
-        if self.discount_enabled and self.discount_value and self.discount_value > 0 and self.original_price:
-            if self.discount_type == "percentage":
-                pct = min(Decimal("99.00"), max(Decimal("0.00"), self.discount_value))
-                calc_price = self.original_price * (Decimal("100.00") - pct) / Decimal("100.00")
-                self.price = max(Decimal("1.00"), round(calc_price, 2))
+        # 2. Smart discount sync (Manual Variant Selling Price is KING):
+        # When store admin sets MRP and Selling Price on a variant, NEVER overwrite their selling price.
+        # Auto-compute and sync the discount metadata directly from MRP and Selling Price.
+        if self.original_price and self.price is not None:
+            if self.original_price > self.price:
+                self.discount_enabled = True
+                self.discount_type = "percentage"
+                diff = self.original_price - self.price
+                self.discount_value = round((diff / self.original_price) * Decimal("100.00"), 2)
             else:
-                calc_price = self.original_price - self.discount_value
-                self.price = max(Decimal("1.00"), round(calc_price, 2))
-        elif self.original_price and self.price and self.original_price > self.price:
-            self.discount_enabled = True
+                self.discount_enabled = False
+                self.discount_value = Decimal("0.00")
 
         # 3. Auto-generate readable variant_name if empty
         if not self.variant_name:
