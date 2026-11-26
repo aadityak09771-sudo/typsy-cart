@@ -5,9 +5,11 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, F
+from django.core.cache import cache
 
 from products.models import Product, Category, Subcategory
 from Homepage.models import StoreSetting, HeroBanner, FAQItem
+from .signals import HOMEPAGE_CACHE_KEY, purge_homepage_cache
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +107,14 @@ def ensure_categories_exist():
 
 
 def home(request):
+    # Check in-memory cache first for ultra-fast instant page load (<20ms)
+    try:
+        cached_context = cache.get(HOMEPAGE_CACHE_KEY)
+        if cached_context and isinstance(cached_context, dict):
+            return render(request, "home/index.html", cached_context)
+    except Exception as ce:
+        logger.warning("Cache check error: %s", ce)
+
     try:
         ensure_categories_exist()
         if not Product.objects.exists():
@@ -291,7 +301,7 @@ def home(request):
         store_setting = None
         deals_end_iso = ""
 
-    return render(request, "home/index.html", {
+    context = {
         "featured_products": featured_products,
         "hero_banner": hero_banner,
         "hero_banners": hero_banners,
@@ -303,7 +313,14 @@ def home(request):
         "deals_title": getattr(store_setting, "deals_title", "Today's Deals") if store_setting else "Today's Deals",
         "top_categories_tabs": top_categories_tabs,
         "store_setting": store_setting,
-    })
+    }
+
+    try:
+        cache.set(HOMEPAGE_CACHE_KEY, context, timeout=3600)
+    except Exception as ce:
+        logger.warning("Could not cache homepage context: %s", ce)
+
+    return render(request, "home/index.html", context)
 
 
 def categories(request):

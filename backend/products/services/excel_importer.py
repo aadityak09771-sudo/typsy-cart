@@ -1,15 +1,31 @@
 import io
+import logging
 import re
 import uuid
+import os
+import mimetypes
+import base64
 from decimal import Decimal, InvalidOperation
+
+logger = logging.getLogger(__name__)
 from django.db import transaction
 from django.utils.text import slugify
 from django.utils import timezone
+from django.core.files.base import ContentFile
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from products.models import Product, Category, Subcategory
+from products.models import Product, Category, Subcategory, ProductSize, ProductVariant, ProductImage
+
+try:
+    from Homepage.signals import purge_homepage_cache
+except Exception:
+    def purge_homepage_cache():
+        pass
+
+
+SUPPORTED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 
 # Canonical header normalization mappings
@@ -68,20 +84,52 @@ HEADER_MAP = {
     "uom": "unit",
     "unitvalue": "unit_value",
     "weight": "unit_value",
-    "size": "unit_value",
+    "unittype": "unit_type",
 
     # Type & Status
     "type": "product_type",
     "producttype": "product_type",
     "status": "status",
+    "productstatus": "is_active",
     "isactive": "is_active",
     "active": "is_active",
+    "isfeatured": "is_featured",
+    "featured": "is_featured",
+    "displayorder": "display_order",
+    "order": "display_order",
 
-    # Description & Image
+    # Description & Images
     "description": "description",
     "shortdescription": "short_description",
+    "desc": "description",
     "image": "image_url",
     "imageurl": "image_url",
+    "mainimage": "image_url",
+    "photo": "image_url",
+    "galleryimages": "gallery_images",
+    "gallery": "gallery_images",
+    "additionalimages": "gallery_images",
+    "moreimages": "gallery_images",
+
+    # Variant Fields
+    "variantname": "variant_name",
+    "size": "variant_name",
+    "option": "variant_name",
+    "variant": "variant_name",
+    "weightoption": "variant_name",
+    "packsize": "variant_name",
+    "variantprice": "variant_price",
+    "variantsellingprice": "variant_price",
+    "optionsellingprice": "variant_price",
+    "variantmrp": "variant_mrp",
+    "variantoriginalprice": "variant_mrp",
+    "optionmrp": "variant_mrp",
+    "variantstock": "variant_stock",
+    "optionstock": "variant_stock",
+    "variantsku": "variant_sku",
+    "optionsku": "variant_sku",
+    "variantimage": "variant_image",
+    "optionimage": "variant_image",
 }
 
 
@@ -91,6 +139,20 @@ def _normalize_header(header_val):
     cleaned = re.sub(r"[^a-zA-Z0-9]", "", str(header_val)).lower()
     if cleaned in HEADER_MAP:
         return HEADER_MAP[cleaned]
+    if "gallery" in cleaned:
+        return "gallery_images"
+    if "variantprice" in cleaned:
+        return "variant_price"
+    if "variantmrp" in cleaned:
+        return "variant_mrp"
+    if "variantstock" in cleaned:
+        return "variant_stock"
+    if "variantsku" in cleaned:
+        return "variant_sku"
+    if "variantimage" in cleaned or "optionimage" in cleaned:
+        return "variant_image"
+    if "variant" in cleaned or "option" in cleaned or "packsize" in cleaned:
+        return "variant_name"
     if "sku" in cleaned or "itemcode" in cleaned or "productcode" in cleaned:
         return "sku"
     if "productname" in cleaned or "itemname" in cleaned:
@@ -107,25 +169,33 @@ def _normalize_header(header_val):
         return "category"
     if "brand" in cleaned:
         return "brand"
+    if "unittype" in cleaned:
+        return "unit_type"
     if "unitval" in cleaned or "weight" in cleaned:
         return "unit_value"
     if "unit" in cleaned or "uom" in cleaned:
         return "unit"
     if "status" in cleaned or "active" in cleaned:
         return "is_active"
+    if "feature" in cleaned:
+        return "is_featured"
     if "type" in cleaned:
         return "product_type"
     if "desc" in cleaned:
         return "description"
+    if "image" in cleaned or "photo" in cleaned or "picture" in cleaned:
+        return "image_url"
     return cleaned
 
 
-def parse_and_validate_excel(file_obj):
+def parse_and_validate_excel(file_obj, image_files_map=None):
     """
     Parses an uploaded Excel (.xlsx) file, maps headers intelligently,
-    validates data rules, detects existing vs new products, flags conflicts,
+    validates data rules, detects existing vs new products, groups variants,
+    verifies image files if image_files_map is provided (from ZIP),
     and returns a structured validation preview dictionary.
     """
+    image_files_map = image_files_map or {}
     try:
         wb = openpyxl.load_workbook(file_obj, data_only=True)
     except Exception as e:
@@ -167,11 +237,11 @@ def parse_and_validate_excel(file_obj):
             "error": "Could not identify table headers. Please include columns like 'Product Name', 'SKU', 'Price', 'Stock', 'Category'."
         }
 
-    # Pre-load existing categories and subcategories for fast in-memory validation
+    # Pre-load existing categories and subcategories
     existing_categories = {c.name.strip().lower(): c for c in Category.objects.all()}
     existing_subcategories = {s.name.strip().lower(): s for s in Subcategory.objects.select_related("category").all()}
 
-    # Pre-load existing products by SKU (product_number) and Name
+    # Pre-load existing products by SKU and Name
     existing_products_by_sku = {}
     for p in Product.objects.all():
         if p.product_number:
@@ -180,11 +250,14 @@ def parse_and_validate_excel(file_obj):
 
     valid_rows = []
     invalid_rows = []
-    seen_skus_in_file = set()
     missing_categories = set()
     missing_subcategories = set()
 
     data_rows = rows[header_row_idx + 1:]
+
+    # Group rows by product identifier (SKU or Name) to support multi-row variants
+    grouped_products = {}  # key -> product_dict
+    group_order = []
 
     for line_offset, row in enumerate(data_rows):
         excel_row_num = header_row_idx + 2 + line_offset
@@ -201,23 +274,27 @@ def parse_and_validate_excel(file_obj):
 
         errors = []
 
-        # Validate Product Name
         name = row_data.get("name", "").strip()
-        if not name:
-            errors.append("Product Name is required.")
-
-        # Validate SKU
         sku = row_data.get("sku", "").strip()
-        if sku:
-            sku_lower = sku.lower()
-            if sku_lower in seen_skus_in_file:
-                errors.append(f"Duplicate SKU '{sku}' found within this Excel file.")
-            else:
-                seen_skus_in_file.add(sku_lower)
-
-        # Validate Selling Price
+        variant_name = row_data.get("variant_name", "").strip()
         raw_price = row_data.get("price", "").strip()
-        clean_price = re.sub(r"[^\d.]", "", raw_price)
+        raw_vprice = row_data.get("variant_price", "").strip()
+
+        # Grouping key: either explicit SKU, or product name
+        group_key = (sku.lower() if sku else name.lower())
+        if not group_key:
+            errors.append("Product Name or SKU is required.")
+            invalid_rows.append({
+                "row_num": excel_row_num,
+                "name": name or "(Empty)",
+                "sku": sku,
+                "errors": errors,
+            })
+            continue
+
+        # Selling price validation
+        price_to_eval = raw_vprice if (variant_name and raw_vprice) else raw_price
+        clean_price = re.sub(r"[^\d.]", "", price_to_eval)
         price_val = None
         if not clean_price:
             errors.append("Selling Price is required.")
@@ -227,71 +304,85 @@ def parse_and_validate_excel(file_obj):
                 if price_val <= 0:
                     errors.append("Selling Price must be greater than 0.")
             except (InvalidOperation, ValueError):
-                errors.append(f"Invalid Selling Price format: '{raw_price}'.")
+                errors.append(f"Invalid Selling Price format: '{price_to_eval}'.")
 
-        # Validate MRP / Original Price
-        raw_mrp = row_data.get("mrp", "").strip()
+        # MRP validation
+        raw_mrp = row_data.get("variant_mrp", "").strip() or row_data.get("mrp", "").strip()
         clean_mrp = re.sub(r"[^\d.]", "", raw_mrp)
-        mrp_val = None
+        mrp_val = price_val
         if clean_mrp:
             try:
                 mrp_val = Decimal(clean_mrp)
                 if price_val and mrp_val < price_val:
-                    # MRP is lower than price; default MRP to price
                     mrp_val = price_val
             except (InvalidOperation, ValueError):
                 mrp_val = price_val
-        else:
-            mrp_val = price_val
 
-        # Validate Stock
-        raw_stock = row_data.get("stock", "").strip()
+        # Stock validation
+        raw_stock = row_data.get("variant_stock", "").strip() or row_data.get("stock", "").strip()
         clean_stock = re.sub(r"[^\d]", "", raw_stock)
         stock_val = 0
-        if raw_stock:
+        if clean_stock:
             try:
-                stock_val = int(clean_stock) if clean_stock else 0
-                if stock_val < 0:
-                    errors.append("Stock quantity cannot be negative.")
+                stock_val = int(clean_stock)
             except ValueError:
-                errors.append(f"Invalid Stock value: '{raw_stock}'.")
+                stock_val = 0
 
-        # Check Category
+        # Category check
         raw_cat = row_data.get("category", "").strip()
-        cat_match = None
-        if raw_cat:
-            cat_match = existing_categories.get(raw_cat.lower())
-            if not cat_match:
-                missing_categories.add(raw_cat)
+        if raw_cat and raw_cat.lower() not in existing_categories:
+            missing_categories.add(raw_cat)
 
-        # Check Subcategory
         raw_subcat = row_data.get("subcategory", "").strip()
-        subcat_match = None
-        if raw_subcat:
-            subcat_match = existing_subcategories.get(raw_subcat.lower())
-            if not subcat_match:
-                missing_subcategories.add(raw_subcat)
+        if raw_subcat and raw_subcat.lower() not in existing_subcategories:
+            missing_subcategories.add(raw_subcat)
 
-        # Check Unit Value
-        raw_unit_val = row_data.get("unit_value", "").strip()
-        clean_unit_val = re.sub(r"[^\d.]", "", raw_unit_val)
-        unit_value_num = None
-        if clean_unit_val:
-            try:
-                unit_value_num = Decimal(clean_unit_val)
-            except (InvalidOperation, ValueError):
-                unit_value_num = None
+        # Image validation / Thumbnail generation
+        img_raw = row_data.get("image_url", "").strip()
+        matched_image_filename = ""
+        thumbnail_b64 = None
 
-        # Check Active Status
-        status_val = row_data.get("is_active", "").strip().lower()
-        if status_val in ("active", "true", "1", "yes", "y", ""):
-            is_active_val = True
-        elif status_val in ("inactive", "false", "0", "no", "n"):
-            is_active_val = False
-        else:
-            is_active_val = True
+        if img_raw:
+            clean_base = os.path.basename(img_raw).strip().lower()
+            if clean_base in image_files_map:
+                matched_image_filename = clean_base
+                img_bytes = image_files_map[clean_base]
+                mime, _ = mimetypes.guess_type(clean_base)
+                mime = mime or "image/jpeg"
+                preview_bytes = img_bytes[:256 * 1024]
+                thumbnail_b64 = f"data:{mime};base64,{base64.b64encode(preview_bytes).decode('ascii')}"
+            elif img_raw.startswith("http://") or img_raw.startswith("https://"):
+                matched_image_filename = img_raw
+                thumbnail_b64 = img_raw
 
-        # Check whether this product exists in DB (Matching by SKU or Name)
+        # Variant Image check
+        v_img_raw = row_data.get("variant_image", "").strip()
+        v_matched_img = ""
+        if v_img_raw:
+            v_clean_base = os.path.basename(v_img_raw).strip().lower()
+            if v_clean_base in image_files_map:
+                v_matched_img = v_clean_base
+            elif v_img_raw.startswith("http://") or v_img_raw.startswith("https://"):
+                v_matched_img = v_img_raw
+
+        # Gallery images list
+        gallery_raw = row_data.get("gallery_images", "").strip()
+        gallery_list = [g.strip() for g in gallery_raw.split(",") if g.strip()] if gallery_raw else []
+
+        if errors:
+            invalid_rows.append({
+                "row_num": excel_row_num,
+                "name": name,
+                "sku": sku,
+                "category": raw_cat,
+                "subcategory": raw_subcat,
+                "price": str(price_val or raw_price),
+                "stock": stock_val,
+                "errors": errors,
+            })
+            continue
+
+        # Check existing product match in DB
         existing_obj = None
         action_type = "create"
         if sku and sku.lower() in existing_products_by_sku:
@@ -301,38 +392,81 @@ def parse_and_validate_excel(file_obj):
             existing_obj = existing_products_by_name[name.lower()]
             action_type = "update"
 
-        processed_row = {
-            "row_num": excel_row_num,
-            "name": name,
-            "sku": sku or (existing_obj.product_number if existing_obj else ""),
-            "brand": row_data.get("brand", "").strip() or "TipsyCart",
-            "category": raw_cat,
-            "category_id": cat_match.id if cat_match else None,
-            "category_exists": bool(cat_match),
-            "subcategory": raw_subcat,
-            "subcategory_id": subcat_match.id if subcat_match else None,
-            "subcategory_exists": bool(subcat_match),
-            "price": float(price_val) if price_val is not None else 0.0,
-            "mrp": float(mrp_val) if mrp_val is not None else 0.0,
-            "stock": stock_val,
-            "unit": row_data.get("unit", "").strip(),
-            "unit_value": float(unit_value_num) if unit_value_num is not None else None,
-            "is_active": is_active_val,
-            "action": action_type,
-            "existing_id": existing_obj.id if existing_obj else None,
-            "existing_name": existing_obj.name if existing_obj else "",
-            "image_url": row_data.get("image_url", "").strip(),
-            "description": row_data.get("description", "").strip(),
-            "errors": errors,
-        }
+        # Check Active Status
+        status_val = row_data.get("is_active", "").strip().lower()
+        is_active_val = status_val not in ("inactive", "false", "0", "no", "n")
 
-        if errors:
-            invalid_rows.append(processed_row)
+        # Check Featured
+        feat_val = row_data.get("is_featured", "").strip().lower()
+        is_featured_val = feat_val in ("yes", "true", "1", "y")
+
+        # Determine Product Type
+        raw_type = row_data.get("product_type", "").strip().lower()
+        is_var = bool(variant_name or raw_type == "variable")
+
+        # Build Variant Dict if variant info is present
+        variant_dict = None
+        if variant_name or is_var:
+            variant_dict = {
+                "name": variant_name or "Standard",
+                "price": float(price_val) if price_val else 0.0,
+                "mrp": float(mrp_val) if mrp_val else (float(price_val) if price_val else 0.0),
+                "stock": stock_val,
+                "sku": row_data.get("variant_sku", "").strip() or (f"{sku}-{variant_name[:4].upper()}" if sku and variant_name else ""),
+                "image": v_matched_img or v_img_raw,
+            }
+
+        if group_key not in grouped_products:
+            grouped_products[group_key] = {
+                "row_num": excel_row_num,
+                "name": name,
+                "sku": sku,
+                "brand": row_data.get("brand", "").strip() or "TipsyCart",
+                "category": raw_cat,
+                "subcategory": raw_subcat,
+                "product_type": "variable" if is_var else "simple",
+                "unit_type": row_data.get("unit_type", "").strip().lower() or ("weight" if any(u in (row_data.get("unit", "")).lower() for u in ["kg", "g", "gm"]) else "count"),
+                "unit": row_data.get("unit", "").strip() or "Piece",
+                "unit_value": row_data.get("unit_value", "").strip() or None,
+                "price": float(price_val) if price_val else 0.0,
+                "mrp": float(mrp_val) if mrp_val else 0.0,
+                "stock": stock_val,
+                "is_active": is_active_val,
+                "is_featured": is_featured_val,
+                "description": row_data.get("description", "").strip(),
+                "image_url": matched_image_filename or img_raw,
+                "gallery_images": gallery_list,
+                "thumbnail_b64": thumbnail_b64,
+                "variants": [variant_dict] if variant_dict else [],
+                "action": action_type,
+                "existing_id": existing_obj.id if existing_obj else None,
+                "existing_name": existing_obj.name if existing_obj else "",
+            }
+            group_order.append(group_key)
         else:
-            valid_rows.append(processed_row)
+            # Append additional variant to existing parent product group
+            parent = grouped_products[group_key]
+            parent["product_type"] = "variable"
+            if variant_dict:
+                parent["variants"].append(variant_dict)
+                # Recalculate parent stock as sum of variants
+                parent["stock"] += stock_val
+                # Base price is minimum variant price
+                if price_val and float(price_val) < parent["price"]:
+                    parent["price"] = float(price_val)
+
+    # Compile valid rows
+    for key in group_order:
+        item = grouped_products[key]
+        # Clean up unit value decimal if possible
+        if item.get("unit_value"):
+            try:
+                item["unit_value"] = float(re.sub(r"[^\d.]", "", str(item["unit_value"])))
+            except Exception:
+                item["unit_value"] = None
+        valid_rows.append(item)
 
     token = str(uuid.uuid4())
-
     create_count = sum(1 for r in valid_rows if r["action"] == "create")
     update_count = sum(1 for r in valid_rows if r["action"] == "update")
 
@@ -348,24 +482,27 @@ def parse_and_validate_excel(file_obj):
         "missing_subcategories": sorted(list(missing_subcategories)),
         "valid_rows": valid_rows,
         "invalid_rows": invalid_rows,
-        # Preview rows: top 30 valid rows + top 20 invalid rows
-        "preview_valid": valid_rows[:30],
-        "preview_invalid": invalid_rows[:30],
+        "preview_valid": valid_rows[:35],
+        "preview_invalid": invalid_rows[:35],
     }
 
 
-def commit_excel_import(valid_rows, auto_create_missing_categories=True):
+def commit_excel_import(valid_rows, auto_create_missing_categories=True, image_files_map=None):
     """
     Executes the validated rows into the database atomically.
-    Safety guarantees:
-    - Never deletes any product.
-    - Never modifies orders, order items, carts, or payments.
-    - Preserves existing images unless new non-empty image_url is provided.
-    - Wrapped in an atomic transaction; rolls back on unhandled error.
+    Supports:
+    - Main image upload to Cloudinary (from in-memory image_files_map or URL)
+    - Multiple gallery images creation (ProductImage)
+    - Variable products with automatic ProductSize and ProductVariant rows
+    - Independent pricing, MRP, stock, and variant images
+    - Auto-purges homepage cache after import so changes reflect immediately!
     """
+    image_files_map = image_files_map or {}
     stats = {
         "created": 0,
         "updated": 0,
+        "variants_created": 0,
+        "gallery_images_added": 0,
         "skipped": 0,
         "errors": [],
     }
@@ -373,9 +510,10 @@ def commit_excel_import(valid_rows, auto_create_missing_categories=True):
     category_cache = {c.name.strip().lower(): c for c in Category.objects.all()}
     subcategory_cache = {s.name.strip().lower(): s for s in Subcategory.objects.all()}
 
-    with transaction.atomic():
-        for item in valid_rows:
-            try:
+    for item in valid_rows:
+        try:
+            with transaction.atomic():
+                # 1. Resolve Category
                 cat_obj = None
                 raw_cat = item.get("category", "").strip()
                 if raw_cat:
@@ -383,8 +521,7 @@ def commit_excel_import(valid_rows, auto_create_missing_categories=True):
                     if cat_lower in category_cache:
                         cat_obj = category_cache[cat_lower]
                     elif auto_create_missing_categories:
-                        cat_slug = slugify(raw_cat)
-                        # Ensure unique slug
+                        cat_slug = slugify(raw_cat) or "category"
                         base_slug = cat_slug
                         cnt = 1
                         while Category.objects.filter(slug=cat_slug).exists():
@@ -393,6 +530,7 @@ def commit_excel_import(valid_rows, auto_create_missing_categories=True):
                         cat_obj = Category.objects.create(name=raw_cat, slug=cat_slug, is_active=True)
                         category_cache[cat_lower] = cat_obj
 
+                # 2. Resolve Subcategory
                 subcat_obj = None
                 raw_subcat = item.get("subcategory", "").strip()
                 if raw_subcat:
@@ -400,7 +538,7 @@ def commit_excel_import(valid_rows, auto_create_missing_categories=True):
                     if subcat_lower in subcategory_cache:
                         subcat_obj = subcategory_cache[subcat_lower]
                     elif auto_create_missing_categories and cat_obj:
-                        subcat_slug = slugify(raw_subcat)
+                        subcat_slug = slugify(raw_subcat) or "subcategory"
                         base_slug = subcat_slug
                         cnt = 1
                         while Subcategory.objects.filter(slug=subcat_slug).exists():
@@ -414,71 +552,145 @@ def commit_excel_import(valid_rows, auto_create_missing_categories=True):
                         )
                         subcategory_cache[subcat_lower] = subcat_obj
 
-                # Find product to update or create
+                # 3. Find or Initialize Product
                 existing_id = item.get("existing_id")
                 prod = None
                 if existing_id:
-                    try:
-                        prod = Product.objects.get(id=existing_id)
-                    except Product.DoesNotExist:
-                        prod = None
-
+                    prod = Product.objects.filter(id=existing_id).first()
                 if not prod and item.get("sku"):
                     prod = Product.objects.filter(product_number__iexact=item["sku"]).first()
+                if not prod and item.get("name"):
+                    prod = Product.objects.filter(name__iexact=item["name"]).first()
 
-                if prod:
-                    # UPDATE EXISTING PRODUCT
-                    # Safe update: never delete, preserve image if none provided
-                    prod.name = item["name"]
-                    prod.price = Decimal(str(item["price"]))
-                    if item.get("mrp"):
-                        prod.original_price = Decimal(str(item["mrp"]))
-                    prod.stock = item["stock"]
-                    if item.get("brand"):
-                        prod.brand = item["brand"]
-                    if item.get("unit"):
-                        prod.unit = item["unit"]
-                    if item.get("unit_value"):
-                        prod.unit_value = Decimal(str(item["unit_value"]))
-                    prod.is_active = item["is_active"]
-                    if cat_obj:
-                        prod.category_ref = cat_obj
-                        prod.category = cat_obj.name
-                    if subcat_obj:
-                        prod.subcategory_ref = subcat_obj
-                        prod.subcategory = subcat_obj.name
-                    if item.get("description"):
-                        prod.description = item["description"]
-                    
-                    prod.save()
-                    stats["updated"] += 1
-
-                else:
-                    # CREATE NEW PRODUCT
+                is_new = prod is None
+                if is_new:
                     sku_val = item.get("sku", "").strip()
                     if not sku_val:
                         sku_val = f"TC-PRD-{int(timezone.now().timestamp() * 1000) % 1000000}"
+                    prod = Product(product_number=sku_val)
 
-                    prod = Product.objects.create(
-                        name=item["name"],
-                        product_number=sku_val,
-                        brand=item.get("brand") or "TipsyCart",
-                        category_ref=cat_obj,
-                        category=cat_obj.name if cat_obj else "",
-                        subcategory_ref=subcat_obj,
-                        subcategory=subcat_obj.name if subcat_obj else "",
-                        price=Decimal(str(item["price"])),
-                        original_price=Decimal(str(item.get("mrp") or item["price"])),
-                        stock=item["stock"],
-                        unit=item.get("unit") or "Piece",
-                        unit_value=Decimal(str(item["unit_value"])) if item.get("unit_value") else None,
-                        is_active=item["is_active"],
-                        description=item.get("description") or "",
-                    )
+                # Set product attributes
+                prod.name = item["name"]
+                prod.brand = item.get("brand") or "TipsyCart"
+                prod.product_type = item.get("product_type") or "simple"
+                prod.unit_type = item.get("unit_type") or "weight"
+                prod.unit = item.get("unit") or "Piece"
+                if item.get("unit_value") is not None:
+                    prod.unit_value = Decimal(str(item["unit_value"]))
+                prod.price = Decimal(str(item["price"]))
+                prod.original_price = Decimal(str(item.get("mrp") or item["price"]))
+                prod.stock = int(item["stock"])
+                prod.is_active = bool(item.get("is_active", True))
+                if item.get("is_featured") is not None:
+                    prod.is_featured = bool(item.get("is_featured"))
+                if item.get("description"):
+                    prod.description = item["description"]
+
+                if cat_obj:
+                    prod.category_ref = cat_obj
+                    prod.category = cat_obj.name
+                if subcat_obj:
+                    prod.subcategory_ref = subcat_obj
+                    prod.subcategory = subcat_obj.name
+
+                # 4. Attach Main Image if provided
+                img_ref = item.get("image_url", "").strip()
+                if img_ref:
+                    clean_img_base = os.path.basename(img_ref).strip().lower()
+                    if clean_img_base in image_files_map:
+                        try:
+                            img_bytes = image_files_map[clean_img_base]
+                            prod.image.save(clean_img_base, ContentFile(img_bytes), save=False)
+                        except Exception as img_err:
+                            logger.warning(f"Could not upload main image {clean_img_base} to Cloudinary: {img_err}")
+                    elif img_ref.startswith("http://") or img_ref.startswith("https://"):
+                        prod.image_url = img_ref
+
+                prod.save()
+
+                if is_new:
                     stats["created"] += 1
+                else:
+                    stats["updated"] += 1
 
-            except Exception as e:
-                stats["errors"].append(f"Row {item.get('row_num', '?')}: {str(e)}")
+                # 5. Attach Gallery Images
+                gallery_refs = item.get("gallery_images", [])
+                for g_ref in gallery_refs:
+                    g_clean = os.path.basename(g_ref).strip().lower()
+                    if g_clean in image_files_map:
+                        try:
+                            g_bytes = image_files_map[g_clean]
+                            ProductImage.objects.create(
+                                product=prod,
+                                image=ContentFile(g_bytes, name=g_clean)
+                            )
+                            stats["gallery_images_added"] += 1
+                        except Exception as g_err:
+                            logger.warning(f"Could not upload gallery image {g_clean} to Cloudinary: {g_err}")
+                    elif g_ref.startswith("http://") or g_ref.startswith("https://"):
+                        ProductImage.objects.create(
+                            product=prod,
+                            image_url=g_ref
+                        )
+                        stats["gallery_images_added"] += 1
+
+                # 6. Create / Update Variants if Variable Product
+                variants = item.get("variants", [])
+                if variants and prod.product_type == "variable":
+                    for idx, v_data in enumerate(variants, start=1):
+                        v_name = v_data.get("name", "").strip() or f"Option {idx}"
+                        v_price = Decimal(str(v_data.get("price") or prod.price))
+                        v_mrp = Decimal(str(v_data.get("mrp") or prod.original_price or v_price))
+                        v_stock = int(v_data.get("stock") or 0)
+                        v_sku = v_data.get("sku", "").strip() or f"{prod.product_number}-{slugify(v_name)[:5].upper() or idx}"
+
+                        # Create or get Size Option
+                        size_obj, _ = ProductSize.objects.get_or_create(
+                            product=prod,
+                            name=v_name,
+                            defaults={"display_order": idx, "is_active": True}
+                        )
+
+                        # Create or update Variant
+                        variant_obj, _ = ProductVariant.objects.get_or_create(
+                            product=prod,
+                            size=size_obj,
+                            defaults={
+                                "variant_name": v_name,
+                                "price": v_price,
+                                "original_price": v_mrp,
+                                "stock": v_stock,
+                                "sku": v_sku,
+                                "is_active": True,
+                            }
+                        )
+                        variant_obj.price = v_price
+                        variant_obj.original_price = v_mrp
+                        variant_obj.stock = v_stock
+                        variant_obj.sku = v_sku
+                        variant_obj.is_active = True
+
+                        # Variant custom image
+                        v_img_ref = v_data.get("image", "").strip()
+                        if v_img_ref:
+                            v_clean = os.path.basename(v_img_ref).strip().lower()
+                            if v_clean in image_files_map:
+                                try:
+                                    v_bytes = image_files_map[v_clean]
+                                    variant_obj.image.save(v_clean, ContentFile(v_bytes), save=False)
+                                except Exception as v_img_err:
+                                    logger.warning(f"Could not upload variant image {v_clean} to Cloudinary: {v_img_err}")
+                            elif v_img_ref.startswith("http://") or v_img_ref.startswith("https://"):
+                                variant_obj.image_url = v_img_ref
+
+                        variant_obj.save()
+                        stats["variants_created"] += 1
+
+        except Exception as e:
+            stats["errors"].append(f"Row {item.get('row_num', '?')} ({item.get('name', 'Product')}): {str(e)}")
+
+    # Auto-purge homepage cache so imported products appear immediately
+    purge_homepage_cache()
 
     return stats
 
@@ -494,7 +706,7 @@ def generate_import_error_excel(invalid_rows):
     ws.views.sheetView[0].showGridLines = True
 
     header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="991B1B", end_color="991B1B", fill_type="solid")  # Crimson Red
+    header_fill = PatternFill(start_color="991B1B", end_color="991B1B", fill_type="solid")
     border = Border(
         left=Side(style="thin", color="E2E8F0"),
         right=Side(style="thin", color="E2E8F0"),
@@ -566,18 +778,24 @@ def generate_import_error_excel(invalid_rows):
 
 def generate_sample_excel_template():
     """
-    Generates a professionally styled sample .xlsx template that the admin
-    can download and fill out to import products.
+    Generates a comprehensive 2-sheet sample .xlsx template:
+    - Sheet 1: 'Products & Variants' with realistic Simple and Variable product examples.
+    - Sheet 2: 'Instructions & Guide' with clear step-by-step Hindi & English rules for the team.
     """
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "TipsyCart Import Template"
-    ws.views.sheetView[0].showGridLines = True
 
-    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    # ----------------------------------------------------
+    # SHEET 1: PRODUCTS & VARIANTS
+    # ----------------------------------------------------
+    ws1 = wb.active
+    ws1.title = "Products & Variants"
+    ws1.views.sheetView[0].showGridLines = True
+
+    header_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="A51655", end_color="A51655", fill_type="solid")
-    example_fill = PatternFill(start_color="FDF2F8", end_color="FDF2F8", fill_type="solid")
-    data_font = Font(name="Calibri", size=10)
+    simple_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    variable_fill = PatternFill(start_color="FDF2F8", end_color="FDF2F8", fill_type="solid")
+    data_font = Font(name="Calibri", size=9)
     border = Border(
         left=Side(style="thin", color="E2E8F0"),
         right=Side(style="thin", color="E2E8F0"),
@@ -587,54 +805,179 @@ def generate_sample_excel_template():
 
     headers = [
         "Product Name *",
-        "SKU / Product Code",
+        "SKU / Code *",
         "Brand",
         "Category *",
         "Subcategory",
+        "Product Type (simple/variable)",
+        "Unit Type (weight/volume/count/size)",
+        "Unit (e.g. Kg, g, ml, L, Piece)",
+        "Unit Value (e.g. 1, 250, 500)",
         "Selling Price (₹) *",
         "MRP (₹)",
         "Stock Quantity *",
-        "Unit (e.g. Kg, Piece, Gram)",
-        "Unit Value (e.g. 1, 500)",
         "Product Status (Active/Inactive)",
+        "Is Featured (Yes/No)",
         "Description",
+        "Main Image (File Name or URL)",
+        "Gallery Images (Comma-separated)",
+        "Variant Name / Size (for Variable Products)",
+        "Variant Selling Price (₹)",
+        "Variant MRP (₹)",
+        "Variant Stock",
+        "Variant SKU",
+        "Variant Image (File Name or URL)",
     ]
 
     for col_idx, h in enumerate(headers, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell = ws1.cell(row=1, column=col_idx, value=h)
         cell.font = header_font
         cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = border
-    ws.row_dimensions[1].height = 26
+    ws1.row_dimensions[1].height = 32
 
+    # Realistic sample rows
     sample_rows = [
-        ["Fresh Apples (Kinnaur)", "TC-APL-01", "Tipsy Fresh Cuts", "Groceries", "Fruits", 149.00, 175.00, 50, "Kg", 1, "Active", "Crisp juicy fresh Kinnaur apples."],
-        ["Aashirvaad Shudh Chakki Atta", "TC-ATA-05", "Aashirvaad", "Daily Essentials", "Atta & Flours", 265.00, 295.00, 35, "Kg", 5, "Active", "100% whole wheat chakki atta."],
-        ["Vim Dishwash Liquid Gel", "TC-VIM-500", "Vim", "Personal Care", "Cleaning", 115.00, 145.00, 40, "ml", 500, "Active", "Power of 100 lemons for grease cleaning."],
-        ["Bhatinda Chikki Crunchy Peanut", "TC-CHK-450", "TipsyCart", "Gajak & Chikki", "Chikki", 210.00, 220.00, 25, "Gram", 450, "Active", "Traditional peanut jaggery brittle."],
-        ["Bluetooth Wireless Earbuds", "TC-AUD-99", "Boat", "Mobile Accessories", "Headphones", 899.00, 1499.00, 15, "Piece", 1, "Active", "High bass fast charging earbuds."],
+        # 1. Simple Product - Groceries
+        [
+            "Fresh Apples (Kinnaur Crisp)", "TC-APL-01", "Tipsy Fresh Cuts", "Groceries", "Fresh Fruits",
+            "simple", "weight", "Kg", 1, 149.00, 175.00, 50, "Active", "Yes",
+            "Fresh sweet and juicy crisp Kinnaur apples delivered doorstep.", "apples_main.jpg", "apples_cut.jpg, apples_box.jpg",
+            "", "", "", "", "", ""
+        ],
+        # 2. Simple Product - Daily Essentials
+        [
+            "Vim Dishwash Liquid Gel", "TC-VIM-500", "Vim", "Daily Essentials", "Cleaning Essentials",
+            "simple", "volume", "ml", 500, 115.00, 145.00, 40, "Active", "No",
+            "Power of 100 lemons for instant grease removal.", "vim_500ml.jpg", "",
+            "", "", "", "", "", ""
+        ],
+        # 3. Variable Product - Fish / Non-Veg (Row 1: 250g)
+        [
+            "Fresh River Basa Fish Fillets", "TC-BASA-01", "Tipsy Fresh Cuts", "Tipsy Fresh Cuts", "Fish",
+            "variable", "weight", "Kg", 1, 120.00, 150.00, 115, "Active", "Yes",
+            "Fresh boneless river Basa fish fillets, cleaned and hygienically packed.", "basa_cover.jpg", "basa_dish.jpg",
+            "250g", 120.00, 150.00, 50, "TC-BASA-250G", "basa_250g.jpg"
+        ],
+        # 4. Variable Product - Fish (Row 2: 500g)
+        [
+            "Fresh River Basa Fish Fillets", "TC-BASA-01", "Tipsy Fresh Cuts", "Tipsy Fresh Cuts", "Fish",
+            "variable", "weight", "Kg", 1, 120.00, 150.00, 115, "Active", "Yes",
+            "Fresh boneless river Basa fish fillets, cleaned and hygienically packed.", "basa_cover.jpg", "basa_dish.jpg",
+            "500g", 220.00, 280.00, 40, "TC-BASA-500G", "basa_500g.jpg"
+        ],
+        # 5. Variable Product - Fish (Row 3: 1 kg)
+        [
+            "Fresh River Basa Fish Fillets", "TC-BASA-01", "Tipsy Fresh Cuts", "Tipsy Fresh Cuts", "Fish",
+            "variable", "weight", "Kg", 1, 120.00, 150.00, 115, "Active", "Yes",
+            "Fresh boneless river Basa fish fillets, cleaned and hygienically packed.", "basa_cover.jpg", "basa_dish.jpg",
+            "1 kg", 400.00, 500.00, 25, "TC-BASA-1KG", "basa_1kg.jpg"
+        ],
+        # 6. Variable Product - Fashion / Jewellery (Row 1: Pink)
+        [
+            "Dainty Butterfly Pendant Necklace", "TC-JWL-09", "TipsyCart", "Fashion & Jewellery", "Necklace",
+            "variable", "count", "Piece", 1, 145.00, 155.00, 18, "Active", "Yes",
+            "Elegant silver link chain with lustrous pearls and crystal butterfly pendant.", "necklace_main.jpg", "necklace_box.jpg",
+            "Pink Butterfly", 145.00, 155.00, 10, "TC-JWL-PNK", "necklace_pink.jpg"
+        ],
+        # 7. Variable Product - Fashion / Jewellery (Row 2: Silver)
+        [
+            "Dainty Butterfly Pendant Necklace", "TC-JWL-09", "TipsyCart", "Fashion & Jewellery", "Necklace",
+            "variable", "count", "Piece", 1, 145.00, 155.00, 18, "Active", "Yes",
+            "Elegant silver link chain with lustrous pearls and crystal butterfly pendant.", "necklace_main.jpg", "necklace_box.jpg",
+            "Silver Butterfly", 145.00, 155.00, 8, "TC-JWL-SLV", "necklace_silver.jpg"
+        ],
     ]
 
     for row_idx, r_data in enumerate(sample_rows, start=2):
+        is_var_row = bool(r_data[17])  # has variant
+        fill_to_use = variable_fill if is_var_row else simple_fill
         for col_idx, val in enumerate(r_data, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell = ws1.cell(row=row_idx, column=col_idx, value=val)
             cell.font = data_font
-            cell.fill = example_fill
+            cell.fill = fill_to_use
             cell.border = border
-            if col_idx in [6, 7]:
+            if col_idx in [10, 11, 19, 20] and val != "":
                 cell.number_format = "₹#,##0.00"
                 cell.alignment = Alignment(horizontal="right", vertical="center")
-            elif col_idx in [8, 10]:
+            elif col_idx in [9, 12, 21] and val != "":
                 cell.alignment = Alignment(horizontal="right", vertical="center")
             else:
                 cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    for col in ws.columns:
+    for col in ws1.columns:
         col_letter = get_column_letter(col[0].column)
-        ws.column_dimensions[col_letter].width = 22
-    ws.column_dimensions["A"].width = 32
-    ws.column_dimensions["L"].width = 36
+        ws1.column_dimensions[col_letter].width = 22
+    ws1.column_dimensions["A"].width = 30
+    ws1.column_dimensions["O"].width = 34
+    ws1.column_dimensions["P"].width = 24
+    ws1.column_dimensions["Q"].width = 28
+    ws1.column_dimensions["W"].width = 24
+
+    # ----------------------------------------------------
+    # SHEET 2: INSTRUCTIONS & GUIDE (टीम के लिए गाइड)
+    # ----------------------------------------------------
+    ws2 = wb.create_sheet(title="Guide & Instructions (गाइड)")
+    ws2.views.sheetView[0].showGridLines = True
+
+    guide_title_font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+    guide_header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    section_font = Font(name="Calibri", size=11, bold=True, color="1E3A8A")
+    body_font = Font(name="Calibri", size=10)
+    bold_body = Font(name="Calibri", size=10, bold=True)
+
+    ws2.merge_cells("A1:D1")
+    title_cell = ws2.cell(row=1, column=1, value="TipsyCart Bulk Product Upload Guide for Store Team (एक्सेल अपलोड गाइड)")
+    title_cell.font = guide_title_font
+    title_cell.fill = guide_header_fill
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws2.row_dimensions[1].height = 36
+
+    instructions = [
+        ("1. SIMPLE PRODUCT कैसे भरें?", "अगर किसी प्रोडक्ट का सिर्फ 1 ही साइज़, 1 ही प्राइस है (जैसे Maggi 70g, Dettol साबुन):", [
+            ("Row Count:", "सिर्फ 1 रो भरें।"),
+            ("Product Type:", "simple लिखें।"),
+            ("Columns 1 to 17:", "नाम, SKU, केटेगरी, सब-केटेगरी, सेलिंग प्राइस, MRP, स्टॉक और मेन इमेज भरें।"),
+            ("Columns 18 to 23:", "वेरियंट के कॉलम्स को खाली (Blank) छोड़ दें।"),
+        ]),
+        ("2. VARIABLE PRODUCT (मल्टीपल वजन/साइज़) कैसे भरें?", "अगर प्रोडक्ट में 250g, 500g, 1 kg जैसे अलग-अलग वजन हैं (जैसे Fish, Atta):", [
+            ("Row Count:", "जितने वजन/ऑप्शन्स हैं, उतनी रो भरें (जैसे 250g के लिए 1 रो, 500g के लिए 2nd रो, 1 kg के लिए 3rd रो)।"),
+            ("Same SKU / Name:", "तीनों रो में Product Name और SKU / Code बिल्कुल सेम रखें ताकि सिस्टम समझ सके कि ये एक ही प्रोडक्ट के वजन हैं।"),
+            ("Product Type:", "variable लिखें।"),
+            ("Variant Columns (18 to 23):", "हर रो में Variant Name (जैसे 250g), Variant Selling Price, Variant MRP, Variant Stock और Variant Image भरें।"),
+            ("Different Prices & Images:", "250g का प्राइस 120 और फोटो basa_250g.jpg, 500g का प्राइस 220 और फोटो basa_500g.jpg डाल सकते हैं।"),
+        ]),
+        ("3. IMAGES (फोटो) और ZIP फ़ोल्डर कैसे बनाएं?", "अगर आपके पास सभी प्रोडक्ट्स और वेरियंट्स की फ़ोटो हैं:", [
+            ("Step 1:", "अपने कंप्यूटर में एक नया फ़ोल्डर बनाएं।"),
+            ("Step 2:", "इस एक्सेल फ़ाइल (.xlsx) को उस फ़ोल्डर में रखें।"),
+            ("Step 3:", "एक्सेल में जिन-जिन फोटो का नाम लिखा है (जैसे basa_cover.jpg, vim_500ml.jpg), उन सभी फ़ोटो को उसी फ़ोल्डर में डाल दें।"),
+            ("Step 4:", "उस फ़ोल्डर पर राइट क्लिक करके 'Compress to ZIP' (या Send to -> Compressed folder) बनाएं।"),
+            ("Step 5:", "एडमिन पैनल में 'Import from Excel (.xlsx)' या 'Import Products (ZIP + Images)' में जाकर यह ZIP अपलोड कर दें!"),
+            ("Cloudinary Auto-Upload:", "सिस्टम सभी फ़ोटो को अपने आप Cloudinary पर सुरक्षित अपलोड कर देगा और डेटाबेस से लिंक कर देगा।"),
+        ]),
+        ("4. केटेगरी और सब-केटेगरी ऑटो-लिंक", "अगर आपकी एक्सेल शीट में लिखी केटेगरी डेटाबेस में मौजूद नहीं है:", [
+            ("Auto-Creation:", "सिस्टम अपने आप नई केटेगरी और सब-केटेगरी बना देगा और प्रोडक्ट को उसमें शिफ्ट कर देगा।"),
+            ("Exact Match:", "अगर केटेगरी पहले से मौजूद है (जैसे Groceries, Tipsy Fresh Cuts), तो प्रोडक्ट उसी में चला जाएगा।"),
+        ]),
+    ]
+
+    curr_row = 3
+    for sec_title, sec_desc, rules in instructions:
+        ws2.cell(row=curr_row, column=1, value=sec_title).font = section_font
+        curr_row += 1
+        ws2.cell(row=curr_row, column=1, value=sec_desc).font = body_font
+        curr_row += 1
+        for rule_name, rule_val in rules:
+            c1 = ws2.cell(row=curr_row, column=1, value=f"• {rule_name}")
+            c1.font = bold_body
+            c2 = ws2.cell(row=curr_row, column=2, value=rule_val)
+            c2.font = body_font
+            curr_row += 1
+        curr_row += 1
+
+    ws2.column_dimensions["A"].width = 30
+    ws2.column_dimensions["B"].width = 85
 
     buffer = io.BytesIO()
     wb.save(buffer)

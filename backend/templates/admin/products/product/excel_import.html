@@ -10,7 +10,7 @@
     --tc-primary-light: #fdf2f8;
   }
   .tc-import-box {
-    max-width: 900px;
+    max-width: 960px;
     margin: 20px auto;
     background: #ffffff;
     border: 1px solid #e5e7eb;
@@ -22,6 +22,11 @@
     border-bottom: 1px solid #f3f4f6;
     padding-bottom: 18px;
     margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
   }
   .tc-import-header h1 {
     font-size: 22px;
@@ -34,16 +39,53 @@
     color: #6b7280;
     font-size: 14px;
   }
-  .tc-guidelines-box {
+  .tc-methods-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 768px) {
+    .tc-methods-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .tc-method-card {
     background: #fdf2f8;
     border: 1px solid #fbcfe8;
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .tc-method-card.zip {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  .tc-method-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #831843;
+  }
+  .tc-method-card.zip h3 {
+    color: #166534;
+  }
+  .tc-method-card p, .tc-method-card ul {
+    margin: 0;
+    color: #4b5563;
+    font-size: 12.5px;
+    line-height: 1.5;
+    padding-left: 18px;
+  }
+  .tc-guidelines-box {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 16px 20px;
     margin-bottom: 24px;
   }
   .tc-guidelines-box h4 {
     margin: 0 0 10px 0;
-    color: #831843;
+    color: #1f2937;
     font-size: 14px;
     font-weight: 700;
   }
@@ -97,6 +139,15 @@
   .tc-btn-secondary:hover {
     background: #f9fafb;
   }
+  .tc-btn-sample {
+    background: #10b981;
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+  }
+  .tc-btn-sample:hover {
+    background: #059669;
+  }
   .tc-alert-error {
     background: #fee2e2;
     border: 1px solid #fca5a5;
@@ -114,8 +165,15 @@
 <div class="tc-import-box">
 
   <div class="tc-import-header">
-    <h1>📥 Import Products from Excel (.xlsx)</h1>
-    <p>Upload a spreadsheet to batch create new products or safely update existing product pricing and stock.</p>
+    <div>
+      <h1>📥 Bulk Product Import &amp; Category Placement</h1>
+      <p>Upload a spreadsheet (.xlsx) or a ZIP archive containing the spreadsheet and product image files.</p>
+    </div>
+    <div>
+      <a href="{% url 'admin:products_product_sample_excel' %}" class="tc-btn tc-btn-sample">
+        📄 Download Sample Excel Template (.xlsx)
+      </a>
+    </div>
   </div>
 
   {% if error_message %}
@@ -124,41 +182,56 @@
     </div>
   {% endif %}
 
+  <!-- DUAL METHOD EXPLANATION -->
+  <div class="tc-methods-grid">
+    <div class="tc-method-card">
+      <h3>📊 Method 1: Excel Spreadsheet (.xlsx)</h3>
+      <ul>
+        <li>Ideal when images are hosted online via URLs (HTTP/HTTPS) or products don't have new local image files.</li>
+        <li>Put direct image URLs in the <strong>Main Image</strong> and <strong>Gallery Images</strong> columns.</li>
+        <li>Fastest way to update prices, stock, MRP, and descriptions in bulk.</li>
+      </ul>
+    </div>
+
+    <div class="tc-method-card zip">
+      <h3>📦 Method 2: ZIP Package (.zip + Images)</h3>
+      <ul>
+        <li>Put your Excel file and product image files (e.g. <code>fish_rohu.jpg</code>, <code>atta.png</code>) into a folder.</li>
+        <li>Compress the folder into a <strong>.zip</strong> archive and upload it below.</li>
+        <li>Images matching the filenames will automatically upload to <strong>Cloudinary</strong> and attach to products and variants!</li>
+      </ul>
+    </div>
+  </div>
+
   <!-- GUIDELINES & SAFETY RULES -->
   <div class="tc-guidelines-box">
-    <h4>📋 Import Guidelines &amp; Data Safety Rules</h4>
+    <h4>📋 Smart Features &amp; Format Specifications</h4>
     <ul>
-      <li><strong>Supported Formats:</strong> Microsoft Excel (.xlsx).</li>
-      <li><strong>Column Headers:</strong> Product Name *, SKU / Product Code, Brand, Category *, Subcategory, Selling Price (₹) *, MRP (₹), Stock Quantity *, Unit, Unit Value, Status, Description.</li>
-      <li><strong>Automatic Detection:</strong> If a row's SKU or Product Name matches an existing store product, it will be marked for <strong>Safe Update</strong> (updating stock, price, etc.). Otherwise, it will be created as a <strong>New Product</strong>.</li>
-      <li><strong>Safety Guarantee:</strong> Existing products and past sales/orders are <strong>never deleted or modified</strong>. Cloudinary product images remain intact.</li>
-      <li><strong>Two-Step Verification:</strong> Uploading presents a complete validation preview first. Nothing is committed to the database until you click "Confirm Import".</li>
+      <li><strong>Automatic Category Creation:</strong> Products are automatically placed into the specified <strong>Category</strong> and <strong>Subcategory</strong>. If they don't exist yet, TipsyCart creates them automatically with clean SEO slugs.</li>
+      <li><strong>Variable Products (Weights &amp; Sizes):</strong> For products like Fish or Staples with multiple weights (e.g. 250g, 500g, 1 kg), create consecutive rows with the same <strong>Product Name</strong> and different <strong>Variant Name (Size / Weight)</strong>, <strong>Variant Price</strong>, and <strong>Variant Stock</strong>.</li>
+      <li><strong>Safe Update vs. Create:</strong> If a row's SKU or Product Name matches an existing product, it safely updates its pricing, stock, and info without breaking order history. If it is new, it creates a fresh product.</li>
+      <li><strong>Homepage Speed:</strong> The homepage cache is automatically purged upon import completion so new items appear immediately for shoppers.</li>
     </ul>
-    <div style="margin-top: 14px;">
-      <a href="{% url 'admin:products_product_sample_excel' %}" class="tc-btn tc-btn-secondary" style="font-size: 12px; padding: 6px 14px;">
-        📄 Download Sample Excel Template (.xlsx)
-      </a>
-    </div>
   </div>
 
   <!-- UPLOAD FORM -->
   <form method="POST" enctype="multipart/form-data" action="{% url 'admin:products_product_import_excel' %}">
     {% csrf_token %}
     <div class="tc-upload-area">
-      <div style="font-size: 40px; margin-bottom: 12px;">📊</div>
-      <label for="excel_file_input" style="display: block; font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 8px; cursor: pointer;">
-        Choose an Excel file or click to browse
+      <div style="font-size: 42px; margin-bottom: 12px;">📊 📦</div>
+      <label for="excel_file_input" style="display: block; font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 8px; cursor: pointer;">
+        Choose an Excel (.xlsx) or ZIP package (.zip)
       </label>
-      <input type="file" id="excel_file_input" name="excel_file" accept=".xlsx" required style="margin: 10px auto; display: block; font-size: 13px;">
-      <p style="margin: 8px 0 0; color: #9ca3af; font-size: 12px;">Supported extension: .xlsx (Max size: 10 MB)</p>
+      <input type="file" id="excel_file_input" name="excel_file" accept=".xlsx, .zip" required style="margin: 12px auto; display: block; font-size: 13px;">
+      <p style="margin: 8px 0 0; color: #9ca3af; font-size: 12px;">Supported extensions: <strong>.xlsx</strong> or <strong>.zip</strong> (Maximum size: 50 MB)</p>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <a href="{% url 'admin:products_product_changelist' %}" class="tc-btn tc-btn-secondary">
         &larr; Back to Products
       </a>
       <button type="submit" class="tc-btn tc-btn-primary">
-        🔍 Upload &amp; Validate Preview &rarr;
+        🔍 Upload &amp; Preview Verification &rarr;
       </button>
     </div>
   </form>

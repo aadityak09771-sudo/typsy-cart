@@ -2,8 +2,10 @@ import csv
 import io
 import json
 import os
+import shutil
 import tempfile
 import uuid
+import zipfile
 from decimal import Decimal, InvalidOperation
 
 from django import forms
@@ -32,7 +34,7 @@ from .models import (
     ProductSize,
     ProductVariant,
 )
-from .services.zip_importer import ZipProductImporter
+from .services.zip_importer import ZipProductImporter, sanitize_zip_path
 from .services.excel_exporter import generate_products_excel, VALID_ORDER_STATUSES
 from .services.excel_importer import (
     parse_and_validate_excel,
@@ -1540,29 +1542,109 @@ class ProductAdmin(admin.ModelAdmin):
         return response
 
     def import_excel_view(self, request):
-        """Handles upload and validation preview of product Excel files."""
+        """
+        Handles upload and validation preview of product spreadsheets.
+        Supports both:
+        1. Standalone Excel files (.xlsx)
+        2. ZIP packages (.zip) containing an Excel file (.xlsx) + folder of product images.
+           Images are staged in a secure temp folder and automatically mapped by filename.
+        """
         if request.method == "POST":
-            uploaded_file = request.FILES.get("excel_file")
+            uploaded_file = request.FILES.get("excel_file") or request.FILES.get("zip_file")
             if not uploaded_file:
                 return render(
                     request,
                     "admin/products/product/excel_import.html",
                     {
                         **self.admin_site.each_context(request),
-                        "title": "Import Products from Excel",
+                        "title": "Import Products from Excel (.xlsx or .zip)",
                         "opts": self.model._meta,
-                        "error_message": "Please select a valid .xlsx file to upload.",
+                        "error_message": "Please select a valid .xlsx or .zip file to upload.",
                     }
                 )
 
-            preview_res = parse_and_validate_excel(uploaded_file)
-            if not preview_res.get("success"):
+            fname = uploaded_file.name.lower()
+            token = f"tc_imp_{uuid.uuid4().hex[:12]}"
+            image_files_map = {}
+            excel_bytes = None
+            temp_img_dir = None
+
+            if fname.endswith(".zip"):
+                try:
+                    zf = zipfile.ZipFile(uploaded_file)
+                    spreadsheet_name = None
+                    temp_img_dir = os.path.join(tempfile.gettempdir(), f"tc_import_imgs_{token}")
+                    os.makedirs(temp_img_dir, exist_ok=True)
+
+                    for info in zf.infolist():
+                        if info.is_dir() or "__macosx" in info.filename.lower() or info.filename.startswith("."):
+                            continue
+                        clean_path = sanitize_zip_path(info.filename)
+                        base_name = os.path.basename(clean_path).strip()
+                        _, ext = os.path.splitext(base_name.lower())
+
+                        if ext in (".xlsx", ".csv"):
+                            if not spreadsheet_name or "product" in base_name.lower():
+                                spreadsheet_name = info.filename
+                        elif ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"):
+                            img_data = zf.read(info.filename)
+                            save_path = os.path.join(temp_img_dir, base_name.lower())
+                            with open(save_path, "wb") as f_img:
+                                f_img.write(img_data)
+                            image_files_map[base_name.lower()] = img_data
+
+                    if not spreadsheet_name:
+                        if os.path.exists(temp_img_dir):
+                            shutil.rmtree(temp_img_dir, ignore_errors=True)
+                        return render(
+                            request,
+                            "admin/products/product/excel_import.html",
+                            {
+                                **self.admin_site.each_context(request),
+                                "title": "Import Products from Excel (.xlsx or .zip)",
+                                "opts": self.model._meta,
+                                "error_message": "No .xlsx or .csv spreadsheet found inside the ZIP archive. Please ensure your spreadsheet is included in the ZIP file.",
+                            }
+                        )
+
+                    excel_bytes = io.BytesIO(zf.read(spreadsheet_name))
+                except Exception as e:
+                    if temp_img_dir and os.path.exists(temp_img_dir):
+                        shutil.rmtree(temp_img_dir, ignore_errors=True)
+                    return render(
+                        request,
+                        "admin/products/product/excel_import.html",
+                        {
+                            **self.admin_site.each_context(request),
+                            "title": "Import Products from Excel (.xlsx or .zip)",
+                            "opts": self.model._meta,
+                            "error_message": f"Failed to extract ZIP archive: {str(e)}",
+                        }
+                    )
+            elif fname.endswith(".xlsx") or fname.endswith(".xls"):
+                excel_bytes = uploaded_file
+            else:
                 return render(
                     request,
                     "admin/products/product/excel_import.html",
                     {
                         **self.admin_site.each_context(request),
-                        "title": "Import Products from Excel",
+                        "title": "Import Products from Excel (.xlsx or .zip)",
+                        "opts": self.model._meta,
+                        "error_message": "Unsupported file format. Please upload a .xlsx Excel file or a .zip archive containing an Excel file + images.",
+                    }
+                )
+
+            preview_res = parse_and_validate_excel(excel_bytes, image_files_map=image_files_map)
+            if not preview_res.get("success"):
+                if temp_img_dir and os.path.exists(temp_img_dir):
+                    shutil.rmtree(temp_img_dir, ignore_errors=True)
+                return render(
+                    request,
+                    "admin/products/product/excel_import.html",
+                    {
+                        **self.admin_site.each_context(request),
+                        "title": "Import Products from Excel (.xlsx or .zip)",
                         "opts": self.model._meta,
                         "error_message": preview_res.get("error"),
                     }
@@ -1570,6 +1652,9 @@ class ProductAdmin(admin.ModelAdmin):
 
             token = preview_res["token"]
             request.session[f"excel_import_{token}"] = preview_res
+            if temp_img_dir:
+                request.session[f"excel_import_imgdir_{token}"] = temp_img_dir
+                preview_res["images_attached_count"] = len(image_files_map)
             request.session.modified = True
 
             context = {
@@ -1577,12 +1662,14 @@ class ProductAdmin(admin.ModelAdmin):
                 "title": "Excel Import Preview & Verification",
                 "opts": self.model._meta,
                 "preview": preview_res,
+                "is_zip": bool(temp_img_dir),
+                "images_count": len(image_files_map),
             }
             return render(request, "admin/products/product/excel_import_preview.html", context)
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Import Products from Excel (.xlsx)",
+            "title": "Import Products from Excel (.xlsx or .zip)",
             "opts": self.model._meta,
         }
         return render(request, "admin/products/product/excel_import.html", context)
@@ -1600,28 +1687,55 @@ class ProductAdmin(admin.ModelAdmin):
             self.message_user(request, "Import session expired. Please re-upload your Excel file.", level=messages.ERROR)
             return redirect("admin:products_product_import_excel")
 
+        temp_img_dir = request.session.get(f"excel_import_imgdir_{token}")
+        image_files_map = {}
+        if temp_img_dir and os.path.exists(temp_img_dir):
+            try:
+                for fname in os.listdir(temp_img_dir):
+                    fpath = os.path.join(temp_img_dir, fname)
+                    if os.path.isfile(fpath):
+                        with open(fpath, "rb") as f_img:
+                            image_files_map[fname.lower()] = f_img.read()
+            except Exception as e:
+                pass
+
         valid_rows = import_data["valid_rows"]
-        stats = commit_excel_import(valid_rows, auto_create_missing_categories=auto_cats)
+        stats = commit_excel_import(
+            valid_rows,
+            auto_create_missing_categories=auto_cats,
+            image_files_map=image_files_map,
+        )
+
+        if temp_img_dir and os.path.exists(temp_img_dir):
+            shutil.rmtree(temp_img_dir, ignore_errors=True)
 
         if f"excel_import_{token}" in request.session:
             del request.session[f"excel_import_{token}"]
+        if f"excel_import_imgdir_{token}" in request.session:
+            del request.session[f"excel_import_imgdir_{token}"]
 
         created = stats.get("created", 0)
         updated = stats.get("updated", 0)
+        variants = stats.get("variants_created", 0)
+        gallery = stats.get("gallery_images_added", 0)
         errors = stats.get("errors", [])
+
+        summary_msg = f"🎉 Bulk import complete! {created} new products created, {updated} updated."
+        if variants > 0:
+            summary_msg += f" {variants} variants/weights created."
+        if gallery > 0:
+            summary_msg += f" {gallery} gallery images attached."
+        if image_files_map:
+            summary_msg += f" Cloudinary images uploaded successfully."
 
         if errors:
             self.message_user(
                 request,
-                f"Import completed with warnings: {created} products created, {updated} updated. {len(errors)} items failed.",
+                f"{summary_msg} (Warnings: {len(errors)} items had minor issues).",
                 level=messages.WARNING
             )
         else:
-            self.message_user(
-                request,
-                f"🎉 Successfully imported! {created} new products created, {updated} existing products safely updated.",
-                level=messages.SUCCESS
-            )
+            self.message_user(request, summary_msg, level=messages.SUCCESS)
         return redirect("admin:products_product_changelist")
 
     def subcategories_api(self, request):
