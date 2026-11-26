@@ -288,10 +288,12 @@
                     <a href="/product/{{ p.id }}/" class="tc-card-name">{{ p.name }}</a>
                 </h3>
 
-                {% if p.unit_value and p.unit %}
-                    <div class="tc-card-unit-badge">
-                        {{ p.unit_value|floatformat }} {{ p.unit }}
-                    </div>
+                {% if not p.is_variable or not p.has_variants %}
+                    {% if p.unit_value and p.unit %}
+                        <div class="tc-card-unit-badge">
+                            {{ p.unit_value|floatformat }} {{ p.unit }}
+                        </div>
+                    {% endif %}
                 {% endif %}
 
                 {% if p.is_variable and p.has_variants %}

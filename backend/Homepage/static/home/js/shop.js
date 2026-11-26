@@ -638,10 +638,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const discountPct = firstAvailableVariant ? (firstAvailableVariant.discount_percentage || 0) : product.discount_percentage;
             const inStock = firstAvailableVariant ? (firstAvailableVariant.is_available && firstAvailableVariant.stock > 0) : (product.stock > 0);
 
-            // Unit badge
+            // Unit badge - only show for simple products or variable products without active variant chips
             let unitBadgeHtml = "";
             const unitText = formatUnit(product.unit_value, product.unit);
-            if (unitText) {
+            if (unitText && !(isVariable && hasVariants)) {
                 unitBadgeHtml = `<div class="tc-card-unit-badge">${escapeHTML(unitText)}</div>`;
             }
 
