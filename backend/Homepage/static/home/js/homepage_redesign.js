@@ -163,4 +163,23 @@ document.addEventListener("DOMContentLoaded", () => {
             startAutoPlay();
         }
     }
+
+    // 5. MOBILE CATEGORY "VIEW ALL / SHOW LESS" TOGGLE
+    const catToggleBtn = document.getElementById("tc-cat-toggle-more");
+    const catRail = document.getElementById("tc-category-rail");
+    if (catToggleBtn && catRail) {
+        catToggleBtn.addEventListener("click", () => {
+            const isExpanded = catRail.classList.toggle("tc-show-all-mobile");
+            const textSpan = catToggleBtn.querySelector(".tc-cat-more-text");
+            const arrowSpan = catToggleBtn.querySelector(".tc-cat-more-arrow");
+            if (isExpanded) {
+                if (textSpan) textSpan.textContent = "Show Less Categories";
+                if (arrowSpan) arrowSpan.textContent = "↑";
+            } else {
+                const total = catRail.querySelectorAll(".tc-cat-card-item").length;
+                if (textSpan) textSpan.textContent = `View All Categories (${total})`;
+                if (arrowSpan) arrowSpan.textContent = "↓";
+            }
+        });
+    }
 });

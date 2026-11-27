@@ -8,7 +8,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.2">
 {% endblock %}
 
 {% block announcement_bar %}
@@ -29,104 +29,68 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% block content %}
 <div class="tc-home-redesign">
 
-    <!-- 2. MAIN HERO BANNER SECTION -->
+    <!-- 2. MAIN HERO BANNER SECTION (EXACT REFERENCE DESIGN) -->
     <section class="tc-hero-section">
         <div class="tc-home-container">
             <div class="tc-hero-slider">
-                {% if hero_banners %}
-                    {% for banner in hero_banners %}
-                    <div class="tc-hero-card tc-hero-slide" style="{% if not forloop.first %}display:none;{% endif %}">
-                        <div class="tc-hero-left">
-                            <span class="tc-hero-tag-pill">{{ banner.badge_text|default:"Your Everyday Shopping Partner" }}</span>
-                            <h1 class="tc-hero-title">{{ banner.title|linebreaksbr|default:"Daily Essentials<br>Delivered to Your<br>Doorstep" }}</h1>
-                            <p class="tc-hero-desc">{{ banner.subtitle|default:"Groceries, Personal Care, Home Needs, Accessories & Much More" }}</p>
-                            <a href="{{ banner.button_link|default:'/shop/' }}" class="tc-hero-btn">
-                                <span>{{ banner.button_text|default:"Shop Now" }}</span>
-                                <span class="tc-arrow">→</span>
-                            </a>
-                        </div>
-                        <div class="tc-hero-right">
-                            <div class="tc-hero-img-wrap">
-                                <img src="{{ banner.get_image_url }}" alt="TipsyCart Essentials" class="tc-hero-img" loading="eager" onerror="this.onerror=null;this.src='{% static 'home/images/hero-banner.png' %}';">
-                                <div class="tc-hero-badge-float">
-                                    <span>⚡</span> Fast Delivery in Kanpur
+                <div class="tc-hero-card tc-hero-slide">
+                    <!-- Desktop Background Artwork (1024x512 with groceries on right & soft pink gradient on left) -->
+                    <div class="tc-hero-desktop-bg" aria-hidden="true">
+                        <img src="{% static 'home/images/hero-banner-new.jpg' %}" alt="TipsyCart Groceries & Daily Essentials" class="tc-hero-bg-art" loading="eager">
+                    </div>
+
+                    <!-- Left Text Content -->
+                    <div class="tc-hero-left">
+                        <span class="tc-hero-tag-pill">KANPUR'S HYPERLOCAL LIFESTYLE STORE</span>
+                        <h1 class="tc-hero-title">
+                            Everything you need,<br>
+                            <span class="tc-hero-highlight">all in one cart.</span>
+                        </h1>
+                        <p class="tc-hero-desc">
+                            Fresh Groceries • Daily Essentials • Personal Care and More, Now at Your Doorstep in Kanpur.
+                        </p>
+                        <a href="/shop/" class="tc-hero-btn">
+                            <span>Explore Products</span>
+                            <span class="tc-arrow">→</span>
+                        </a>
+                    </div>
+
+                    <!-- Right Visual Area (Desktop pointer badge) -->
+                    <div class="tc-hero-right">
+                        <div class="tc-hero-img-wrap">
+                            <div class="tc-hero-pointer-badge">
+                                <div class="tc-pointer-pill">
+                                    <span class="tc-pointer-icon">📍</span> Fresh from Farm to Your Home
                                 </div>
+                                <svg class="tc-pointer-arrow" width="46" height="38" viewBox="0 0 46 38" fill="none" aria-hidden="true">
+                                    <path d="M38 4 C32 20, 16 26, 6 32" stroke="#be185d" stroke-width="1.8" stroke-dasharray="3 3" fill="none"/>
+                                    <path d="M6 32 L12 26 M6 32 L10 36" stroke="#be185d" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="tc-hero-card tc-hero-slide">
-                        <div class="tc-hero-left">
-                            <span class="tc-hero-tag-pill">Your Everyday Shopping Partner</span>
-                            <h1 class="tc-hero-title">Daily Essentials<br>Delivered to Your<br>Doorstep</h1>
-                            <p class="tc-hero-desc">Groceries, Personal Care, Home Needs, Accessories & Much More</p>
-                            <a href="/shop/" class="tc-hero-btn">
-                                <span>Shop Now</span>
-                                <span class="tc-arrow">→</span>
-                            </a>
-                        </div>
-                        <div class="tc-hero-right">
-                            <div class="tc-hero-img-wrap">
-                                <img src="{% static 'home/images/hero-banner.png' %}" alt="TipsyCart Essentials" class="tc-hero-img" loading="eager" onerror="this.onerror=null;this.src='{% static 'home/images/shop-banner-desktop.png' %}';">
-                                <div class="tc-hero-badge-float">
-                                    <span>⚡</span> Fast Delivery in Kanpur
+
+                    <!-- Mobile Dedicated Visual (Appears cleanly below the text) -->
+                    <div class="tc-hero-mobile-visual">
+                        <div class="tc-hero-mobile-img-wrap">
+                            <img src="{% static 'home/images/hero-banner-new.jpg' %}" alt="TipsyCart Fresh Essentials" class="tc-hero-mobile-img" loading="eager">
+                            <div class="tc-hero-pointer-badge tc-mobile-pointer">
+                                <div class="tc-pointer-pill">
+                                    <span class="tc-pointer-icon">📍</span> Fresh from Farm to Your Home
                                 </div>
+                                <svg class="tc-pointer-arrow" width="38" height="32" viewBox="0 0 46 38" fill="none" aria-hidden="true">
+                                    <path d="M38 4 C32 20, 16 26, 6 32" stroke="#be185d" stroke-width="1.8" stroke-dasharray="3 3" fill="none"/>
+                                    <path d="M6 32 L12 26 M6 32 L10 36" stroke="#be185d" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
                             </div>
                         </div>
-                    </div>
-                {% endif %}
-
-                {% if hero_banners|length > 1 %}
-                <button type="button" class="tc-hero-nav-arrow tc-hero-prev" aria-label="Previous Banner">‹</button>
-                <button type="button" class="tc-hero-nav-arrow tc-hero-next" aria-label="Next Banner">›</button>
-                <div class="tc-hero-dots">
-                    {% for banner in hero_banners %}
-                    <span class="tc-hero-dot{% if forloop.first %} active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-
-    <!-- 3. SHOPPING BENEFITS SECTION (4 CARDS) -->
-    <section class="tc-benefits-strip">
-        <div class="tc-home-container">
-            <div class="tc-benefits-grid">
-                <div class="tc-benefit-card">
-                    <div class="tc-benefit-icon-box">🚚</div>
-                    <div class="tc-benefit-info">
-                        <h4>Fast Delivery</h4>
-                        <p>In Kanpur</p>
-                    </div>
-                </div>
-                <div class="tc-benefit-card">
-                    <div class="tc-benefit-icon-box">🛡️</div>
-                    <div class="tc-benefit-info">
-                        <h4>Quality Products</h4>
-                        <p>Always</p>
-                    </div>
-                </div>
-                <div class="tc-benefit-card">
-                    <div class="tc-benefit-icon-box">💳</div>
-                    <div class="tc-benefit-info">
-                        <h4>Secure Payments</h4>
-                        <p>100% Safe</p>
-                    </div>
-                </div>
-                <div class="tc-benefit-card">
-                    <div class="tc-benefit-icon-box">🔄</div>
-                    <div class="tc-benefit-info">
-                        <h4>Easy Returns</h4>
-                        <p>Hassle Free</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 4. SHOP BY CATEGORY SECTION (ADMIN CONTROLLED & MOST IMPORTANT) -->
+    <!-- 3. SHOP BY CATEGORY SECTION (IMMEDIATELY BELOW HERO BANNER) -->
     <section class="tc-section-category" id="shop-by-category">
         <div class="tc-home-container">
             <div class="tc-section-header">
@@ -134,7 +98,10 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                     <h2 class="tc-section-title">Shop by Category</h2>
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
-                    <a href="/categories/" class="tc-view-all-link">View All Categories <span>→</span></a>
+                    <a href="/categories/" class="tc-view-all-link">
+                        <span class="tc-view-all-desktop">View All Categories <span>→</span></span>
+                        <span class="tc-view-all-mobile">View All <span>→</span></span>
+                    </a>
                     <div class="tc-rail-controls">
                         <button type="button" class="tc-rail-btn" id="tc-cat-prev" aria-label="Scroll Categories Left">‹</button>
                         <button type="button" class="tc-rail-btn" id="tc-cat-next" aria-label="Scroll Categories Right">›</button>
@@ -145,7 +112,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
             <div class="tc-category-rail-wrap">
                 <div class="tc-category-rail" id="tc-category-rail">
                     {% for cat in homepage_categories %}
-                    <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item tc-cat-size-{{ cat.card_size|default:'medium' }} tc-cat-style-{{ cat.display_style|default:'compact' }}{% if cat.is_featured %} tc-cat-featured{% endif %}" title="{{ cat.name }}">
+                    <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item tc-cat-size-{{ cat.card_size|default:'medium' }} tc-cat-style-{{ cat.display_style|default:'compact' }}{% if cat.is_featured %} tc-cat-featured{% endif %}{% if forloop.counter > 8 %} tc-cat-extra-mobile{% endif %}" title="{{ cat.name }}">
                         <div class="tc-cat-icon-container">
                             <img src="{{ cat.image_url }}" alt="{{ cat.name }}" class="tc-cat-icon-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/tipsycart-logo.png' %}';">
                         </div>
@@ -153,7 +120,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                     </a>
                     {% empty %}
                         {% for cat in categories_list %}
-                        <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item" title="{{ cat.name }}">
+                        <a href="/shop/?category={{ cat.slug }}" class="tc-cat-card-item{% if forloop.counter > 8 %} tc-cat-extra-mobile{% endif %}" title="{{ cat.name }}">
                             <div class="tc-cat-icon-container">
                                 <img src="{{ cat.get_image_url }}" alt="{{ cat.name }}" class="tc-cat-icon-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/tipsycart-logo.png' %}';">
                             </div>
@@ -162,6 +129,15 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                         {% endfor %}
                     {% endfor %}
                 </div>
+
+                {% if homepage_categories|length > 8 or categories_list|length > 8 %}
+                <div class="tc-cat-mobile-more-wrap">
+                    <button type="button" class="tc-cat-mobile-more-btn" id="tc-cat-toggle-more">
+                        <span class="tc-cat-more-text">View All Categories ({{ homepage_categories|length|default:categories_list|length }})</span>
+                        <span class="tc-cat-more-arrow">↓</span>
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -382,5 +358,5 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% block extra_js %}
 {{ featured_products|json_script:"homepage-products-data" }}
 {{ categories_data|json_script:"homepage-categories-data" }}
-<script src="{% static 'home/js/homepage_redesign.js' %}?v=1.1"></script>
+<script src="{% static 'home/js/homepage_redesign.js' %}?v=1.2"></script>
 {% endblock %}
