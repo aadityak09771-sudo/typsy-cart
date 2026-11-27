@@ -5,6 +5,18 @@ from django.db import models
 from django.utils.text import slugify
 
 
+def optimize_image_url(url):
+    """
+    Applies automatic format (WebP/AVIF) and automatic quality compression
+    to Cloudinary URLs. Leaves non-Cloudinary and already-transformed URLs untouched.
+    """
+    if not url or not isinstance(url, str):
+        return url
+    if "res.cloudinary.com" in url and "/upload/" in url and "f_auto" not in url:
+        return url.replace("/upload/", "/upload/f_auto,q_auto/")
+    return url
+
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
@@ -118,28 +130,28 @@ class Category(models.Model):
             try:
                 url = self.image.url
                 if url and (url.startswith("http://") or url.startswith("https://")):
-                    return url
+                    return optimize_image_url(url)
                 if hasattr(self.image, "path"):
                     try:
                         if os.path.exists(self.image.path):
-                            return url
+                            return optimize_image_url(url)
                     except (NotImplementedError, Exception):
-                        return url
+                        return optimize_image_url(url)
                 elif not hasattr(self.image, "path"):
-                    return url
+                    return optimize_image_url(url)
             except Exception:
                 pass
         if self.image_url and self.image_url.strip():
             url = self.image_url.strip()
             if url.startswith("http://") or url.startswith("https://"):
-                return url
+                return optimize_image_url(url)
             if url.startswith("/media/"):
                 rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                 if os.path.exists(full_path):
                     return url
             else:
-                return url
+                return optimize_image_url(url)
         return fallback
 
 
@@ -190,28 +202,28 @@ class Subcategory(models.Model):
             try:
                 url = self.image.url
                 if url and (url.startswith("http://") or url.startswith("https://")):
-                    return url
+                    return optimize_image_url(url)
                 if hasattr(self.image, "path"):
                     try:
                         if os.path.exists(self.image.path):
-                            return url
+                            return optimize_image_url(url)
                     except (NotImplementedError, Exception):
-                        return url
+                        return optimize_image_url(url)
                 elif not hasattr(self.image, "path"):
-                    return url
+                    return optimize_image_url(url)
             except Exception:
                 pass
         if self.image_url and self.image_url.strip():
             url = self.image_url.strip()
             if url.startswith("http://") or url.startswith("https://"):
-                return url
+                return optimize_image_url(url)
             if url.startswith("/media/"):
                 rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                 if os.path.exists(full_path):
                     return url
             else:
-                return url
+                return optimize_image_url(url)
         if self.category:
             return self.category.get_image_url()
         return "/static/home/images/tipsycart-logo.png"
@@ -454,15 +466,15 @@ class Product(models.Model):
             try:
                 url = self.image.url
                 if url and (url.startswith("http://") or url.startswith("https://")):
-                    return url
+                    return optimize_image_url(url)
                 if hasattr(self.image, "path"):
                     try:
                         if os.path.exists(self.image.path):
-                            return url
+                            return optimize_image_url(url)
                     except (NotImplementedError, Exception):
-                        return url
+                        return optimize_image_url(url)
                 elif not hasattr(self.image, "path"):
-                    return url
+                    return optimize_image_url(url)
             except Exception:
                 pass
             fname = os.path.basename(self.image.name or "")
@@ -472,7 +484,7 @@ class Product(models.Model):
         if self.image_url and self.image_url.strip():
             url = self.image_url.strip()
             if url.startswith("http://") or url.startswith("https://"):
-                return url
+                return optimize_image_url(url)
             if url.startswith("/media/"):
                 rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
@@ -482,7 +494,7 @@ class Product(models.Model):
                 if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
                     return f"/static/home/images/products/{fname}"
             else:
-                return url
+                return optimize_image_url(url)
 
         if self.category_ref:
             return self.category_ref.get_image_url()
@@ -566,13 +578,15 @@ class Product(models.Model):
         Returns list of image dicts:
         [{'url': ..., 'is_primary': bool, 'id': int, 'alt': str, 'source': str}]
         Prioritizes selected colour images, followed by product gallery images, and main cover.
+        Guarantees that the primary image is first.
         """
         images = []
         seen = set()
 
         if colour:
             for cimg in colour.images.all().order_by("display_order", "id"):
-                url = cimg.get_image_url()
+                raw_url = cimg.get_image_url()
+                url = optimize_image_url(raw_url) if raw_url else ""
                 if url and url not in seen:
                     images.append({
                         "url": url,
@@ -584,7 +598,8 @@ class Product(models.Model):
                     seen.add(url)
 
         for gimg in self.gallery_images.all().order_by("display_order", "id"):
-            url = gimg.get_image_url()
+            raw_url = gimg.get_image_url()
+            url = optimize_image_url(raw_url) if raw_url else ""
             if url and url not in seen:
                 images.append({
                     "url": url,
@@ -595,7 +610,8 @@ class Product(models.Model):
                 })
                 seen.add(url)
 
-        cover_url = self.get_image_url()
+        raw_cover = self.get_image_url()
+        cover_url = optimize_image_url(raw_cover) if raw_cover else ""
         if cover_url and cover_url not in seen:
             if not any(img["is_primary"] for img in images):
                 images.insert(0, {
@@ -623,6 +639,13 @@ class Product(models.Model):
                 "id": 0,
                 "source": "default",
             })
+
+        # Ensure the primary image is always at index 0
+        primary_idx = next((i for i, img in enumerate(images) if img.get("is_primary")), 0)
+        if primary_idx > 0:
+            primary_item = images.pop(primary_idx)
+            images.insert(0, primary_item)
+
         return images
 
     def get_similar_styles(self, limit=12):
@@ -716,15 +739,15 @@ class ProductImage(models.Model):
             try:
                 url = self.image.url
                 if url and (url.startswith("http://") or url.startswith("https://")):
-                    return url
+                    return optimize_image_url(url)
                 if hasattr(self.image, "path"):
                     try:
                         if os.path.exists(self.image.path):
-                            return url
+                            return optimize_image_url(url)
                     except (NotImplementedError, Exception):
-                        return url
+                        return optimize_image_url(url)
                 elif not hasattr(self.image, "path"):
-                    return url
+                    return optimize_image_url(url)
             except Exception:
                 pass
             fname = os.path.basename(self.image.name or "")
@@ -734,7 +757,7 @@ class ProductImage(models.Model):
         if self.image_url and self.image_url.strip():
             url = self.image_url.strip()
             if url.startswith("http://") or url.startswith("https://"):
-                return url
+                return optimize_image_url(url)
             if url.startswith("/media/"):
                 rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
@@ -744,7 +767,7 @@ class ProductImage(models.Model):
                 if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
                     return f"/static/home/images/products/{fname}"
             else:
-                return url
+                return optimize_image_url(url)
 
         if self.product:
             return self.product.get_image_url()
@@ -886,15 +909,15 @@ class ProductColourImage(models.Model):
             try:
                 url = self.image.url
                 if url and (url.startswith("http://") or url.startswith("https://")):
-                    return url
+                    return optimize_image_url(url)
                 if hasattr(self.image, "path"):
                     try:
                         if os.path.exists(self.image.path):
-                            return url
+                            return optimize_image_url(url)
                     except (NotImplementedError, Exception):
-                        return url
+                        return optimize_image_url(url)
                 elif not hasattr(self.image, "path"):
-                    return url
+                    return optimize_image_url(url)
             except Exception:
                 pass
             fname = os.path.basename(self.image.name or "")
@@ -904,7 +927,7 @@ class ProductColourImage(models.Model):
         if self.image_url and self.image_url.strip():
             url = self.image_url.strip()
             if url.startswith("http://") or url.startswith("https://"):
-                return url
+                return optimize_image_url(url)
             if url.startswith("/media/"):
                 rel_path = url.replace("/media/", "").lstrip("/")
                 full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
@@ -914,7 +937,7 @@ class ProductColourImage(models.Model):
                 if fname and os.path.exists(os.path.join(settings.BASE_DIR, "Homepage/static/home/images/products", fname)):
                     return f"/static/home/images/products/{fname}"
             else:
-                return url
+                return optimize_image_url(url)
 
         if self.colour and self.colour.product:
             return self.colour.product.get_image_url()
@@ -1081,15 +1104,17 @@ class ProductVariant(models.Model):
     def get_image_url(self):
         if self.image:
             try:
-                return self.image.url
+                url = self.image.url
+                if url:
+                    return optimize_image_url(url)
             except Exception:
                 pass
         if self.image_url:
-            return self.image_url
+            return optimize_image_url(self.image_url)
         if self.colour:
             c_url = self.colour.get_primary_image_url()
             if c_url:
-                return c_url
+                return optimize_image_url(c_url)
         return self.product.get_image_url()
 
     def clean(self):

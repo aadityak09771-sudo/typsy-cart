@@ -258,20 +258,19 @@
                 class="tc-card-slider"
                 data-images='[{% for img in p.get_all_images %}"{{ img.url|escapejs }}"{% if not forloop.last %},{% endif %}{% empty %}"{{ p.get_image_url|escapejs }}"{% endfor %}]'
                 data-current-index="0"
-                onclick="window.location.href='/product/{{ p.id }}/'"
             >
                 {% if p.discount_percentage > 0 %}
                     <span class="tc-card-discount-badge tc-discount-badge">{{ p.discount_percentage }}% OFF</span>
                 {% endif %}
-                <div class="tc-slider-track">
+                <div class="tc-slider-track" onclick="window.location.href='/product/{{ p.id }}/';" style="cursor:pointer;" title="View {{ p.name }}">
                     <img src="{{ p.get_image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy">
                 </div>
                 {% if p.get_all_images|length > 1 %}
-                    <button type="button" class="tc-slider-arrow tc-slider-prev" aria-label="Previous image">‹</button>
-                    <button type="button" class="tc-slider-arrow tc-slider-next" aria-label="Next image">›</button>
+                    <button type="button" class="tc-slider-arrow tc-slider-prev" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Previous image">‹</button>
+                    <button type="button" class="tc-slider-arrow tc-slider-next" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Next image">›</button>
                     <div class="tc-slider-dots">
                         {% for img in p.get_all_images %}
-                            <span class="tc-slider-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+                            <span class="tc-slider-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="event.preventDefault(); event.stopPropagation();"></span>
                         {% endfor %}
                     </div>
                 {% endif %}

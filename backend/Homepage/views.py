@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, F
 from django.core.cache import cache
+from django.utils.text import slugify
 
 from products.models import Product, Category, Subcategory
 from Homepage.models import StoreSetting, HeroBanner, FAQItem
@@ -586,6 +587,18 @@ def product_detail(request, pk):
     # -------------------------------------------------------------------------
     style_options = product.get_all_style_options(limit=10)
 
+    category_slug = ""
+    if product.category_ref and product.category_ref.slug:
+        category_slug = product.category_ref.slug
+    elif product.category:
+        category_slug = slugify(product.category)
+
+    subcategory_slug = ""
+    if product.subcategory_ref and product.subcategory_ref.slug:
+        subcategory_slug = product.subcategory_ref.slug
+    elif product.subcategory:
+        subcategory_slug = slugify(product.subcategory)
+
     context = {
         "product": product,
         "is_variable": is_variable,
@@ -594,6 +607,8 @@ def product_detail(request, pk):
         "style_options": style_options,
         "similar_products": similar_products,
         "unit_selector_label": product.unit_selector_label,
+        "category_slug": category_slug,
+        "subcategory_slug": subcategory_slug,
     }
 
     if is_variable:
@@ -620,7 +635,7 @@ def product_detail(request, pk):
                 "color_code": c.color_code,
                 "images": [
                     img.get_image_url() for img in c.images.all()
-                ] or [c.get_primary_image_url()],
+                ] if c.images.exists() else [],
             }
             for c in colours
         ]
@@ -644,6 +659,7 @@ def product_detail(request, pk):
                 "stock": v.stock,
                 "is_in_stock": v.is_in_stock,
                 "image_url": v.get_image_url(),
+                "has_custom_image": bool(v.image or v.image_url),
             }
             for v in variants
         ]

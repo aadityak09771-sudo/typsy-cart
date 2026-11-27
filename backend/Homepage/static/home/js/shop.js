@@ -48,6 +48,24 @@ document.addEventListener("DOMContentLoaded", () => {
     let cart = loadSavedCart();
     let busy = false;
     let currentSubcategory = "all";
+    let pendingRestoreScrollY = null;
+
+    const SHOP_STATE_KEY = "tipsy_shop_state_v1";
+
+    function saveShopState() {
+        try {
+            const state = {
+                category: categoryFilter ? categoryFilter.value : "all",
+                subcategory: currentSubcategory || "all",
+                search: searchInput ? searchInput.value : "",
+                sort: sortFilter ? sortFilter.value : "default",
+                scrollY: window.scrollY || document.documentElement.scrollTop || 0,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(SHOP_STATE_KEY, JSON.stringify(state));
+        } catch (e) {}
+    }
+    window.saveShopNavState = saveShopState;
 
     // --------------------------------
     // Safe helpers
@@ -454,6 +472,14 @@ document.addEventListener("DOMContentLoaded", () => {
             renderProducts();
             renderCart();
 
+            if (pendingRestoreScrollY && pendingRestoreScrollY > 0) {
+                const scrollPos = pendingRestoreScrollY;
+                pendingRestoreScrollY = null;
+                setTimeout(() => {
+                    window.scrollTo({ top: scrollPos, behavior: "instant" });
+                }, 100);
+            }
+
             return true;
 
         } catch (error) {
@@ -571,6 +597,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 window.history.replaceState({}, "", url.toString());
 
+                saveShopState();
                 renderSubcategories();
                 renderProducts();
             });
@@ -686,11 +713,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            // Slider markup
+            // Slider markup - click on track navigates to product details, while arrows & dots only navigate photos
             const sliderHtml = `
-                <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0" onclick="window.location.href='/product/${product.id}/'">
+                <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0">
                     ${discountPct > 0 ? `<span class="tc-card-discount-badge tc-discount-badge">${discountPct}% OFF</span>` : ""}
-                    <div class="tc-slider-track">
+                    <div class="tc-slider-track" onclick="if(window.saveShopNavState)window.saveShopNavState(); window.location.href='/product/${product.id}/';" style="cursor:pointer;" title="View ${escapeHTML(product.name)}">
                         <img
                             class="product-image tc-slider-img"
                             src="${escapeHTML(images[0])}"
@@ -700,10 +727,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         >
                     </div>
                     ${images.length > 1 ? `
-                        <button type="button" class="tc-slider-arrow tc-slider-prev" aria-label="Previous image">‹</button>
-                        <button type="button" class="tc-slider-arrow tc-slider-next" aria-label="Next image">›</button>
+                        <button type="button" class="tc-slider-arrow tc-slider-prev" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Previous image">‹</button>
+                        <button type="button" class="tc-slider-arrow tc-slider-next" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Next image">›</button>
                         <div class="tc-slider-dots">
-                            ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join("")}
+                            ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="event.preventDefault(); event.stopPropagation();"></span>`).join("")}
                         </div>
                     ` : ""}
                 </div>
@@ -1201,7 +1228,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    searchInput.addEventListener("input", renderProducts);
+    searchInput.addEventListener("input", () => {
+        saveShopState();
+        renderProducts();
+    });
 
     categoryFilter.addEventListener("change", () => {
         currentSubcategory = "all";
@@ -1214,11 +1244,23 @@ document.addEventListener("DOMContentLoaded", () => {
         url.searchParams.delete("subcategory");
         window.history.replaceState({}, "", url.toString());
 
+        saveShopState();
         renderSubcategories();
         renderProducts();
     });
 
-    sortFilter.addEventListener("change", renderProducts);
+    sortFilter.addEventListener("change", () => {
+        saveShopState();
+        renderProducts();
+    });
+
+    // Save shop navigation state whenever user clicks to view product details
+    productGrid.addEventListener("click", event => {
+        const productLink = event.target.closest("a, .tc-slider-track, h2, h3");
+        if (productLink && !event.target.closest(".tc-slider-arrow, .tc-slider-dot, .tc-variant-chip, .tc-card-add-btn, .tc-stepper-btn")) {
+            saveShopState();
+        }
+    });
 
     document.addEventListener("click", event => {
         if (event.target.closest("#cart-toggle")) {
@@ -1243,13 +1285,31 @@ document.addEventListener("DOMContentLoaded", () => {
     continueShoppingButton?.addEventListener("click", continueShopping);
 
     // --------------------------------
-    // Category & Subcategory links from URL
+    // Category & Subcategory links from URL or SessionStorage
     // --------------------------------
 
     const params = new URLSearchParams(window.location.search);
-    const requestedCategory = params.get("category");
-    const requestedSubcategory = params.get("subcategory");
-    const requestedSearch = params.get("search") || params.get("q");
+    let requestedCategory = params.get("category");
+    let requestedSubcategory = params.get("subcategory");
+    let requestedSearch = params.get("search") || params.get("q");
+    let requestedSort = params.get("sort");
+
+    // If URL has no category or subcategory, restore from sessionStorage
+    if (!requestedCategory && !requestedSubcategory && !requestedSearch) {
+        try {
+            const raw = sessionStorage.getItem(SHOP_STATE_KEY);
+            if (raw) {
+                const saved = JSON.parse(raw);
+                if (saved && (Date.now() - (saved.timestamp || 0) < 2 * 60 * 60 * 1000)) {
+                    if (saved.category && saved.category !== "all") requestedCategory = saved.category;
+                    if (saved.subcategory && saved.subcategory !== "all") requestedSubcategory = saved.subcategory;
+                    if (saved.search) requestedSearch = saved.search;
+                    if (saved.sort && saved.sort !== "default") requestedSort = saved.sort;
+                    if (saved.scrollY && saved.scrollY > 0) pendingRestoreScrollY = saved.scrollY;
+                }
+            }
+        } catch (e) {}
+    }
 
     if (requestedSearch && searchInput) {
         searchInput.value = requestedSearch;
@@ -1266,6 +1326,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (requestedSubcategory) {
         currentSubcategory = subcategorySlug(requestedSubcategory);
+    }
+
+    if (requestedSort && sortFilter) {
+        sortFilter.value = requestedSort;
     }
 
     // Listen to unified cart updates

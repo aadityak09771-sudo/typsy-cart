@@ -570,11 +570,11 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
 
-        // Slider markup
+        // Slider markup - click on track navigates to product details, while arrows & dots only navigate photos
         const sliderHtml = `
-            <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0" onclick="window.location.href='/product/${product.id}/'">
+            <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0">
                 ${discountPct > 0 ? `<span class="tc-card-discount-badge tc-discount-badge">${discountPct}% OFF</span>` : ""}
-                <div class="tc-slider-track">
+                <div class="tc-slider-track" onclick="if(window.saveShopNavState)window.saveShopNavState(); window.location.href='/product/${product.id}/';" style="cursor:pointer;" title="View ${escapeHTML(product.name)}">
                     <img
                         class="product-image tc-slider-img"
                         src="${escapeHTML(images[0])}"
@@ -584,10 +584,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     >
                 </div>
                 ${images.length > 1 ? `
-                    <button type="button" class="tc-slider-arrow tc-slider-prev" aria-label="Previous image">‹</button>
-                    <button type="button" class="tc-slider-arrow tc-slider-next" aria-label="Next image">›</button>
+                    <button type="button" class="tc-slider-arrow tc-slider-prev" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Previous image">‹</button>
+                    <button type="button" class="tc-slider-arrow tc-slider-next" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Next image">›</button>
                     <div class="tc-slider-dots">
-                        ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join("")}
+                        ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="event.preventDefault(); event.stopPropagation();"></span>`).join("")}
                     </div>
                 ` : ""}
             </div>

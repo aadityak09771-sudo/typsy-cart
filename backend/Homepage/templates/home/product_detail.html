@@ -1070,8 +1070,26 @@
 
 {% block content %}
 <div class="tc-product-detail-container">
-    <div style="margin-bottom: 18px;">
-        <a href="/shop/" class="tc-back-link">← Back to Shop</a>
+    <!-- Breadcrumbs & Back to Shop Navigation -->
+    <div class="tc-detail-nav-bar" style="margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <nav class="tc-breadcrumb-nav" aria-label="Breadcrumb" style="font-size: 13.5px; color: #64748b; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <a href="/" style="color: #64748b; text-decoration: none; font-weight: 600;">Home</a>
+            <span style="color: #cbd5e1;">/</span>
+            <a href="/shop/" style="color: #64748b; text-decoration: none; font-weight: 600;">Shop</a>
+            {% if product.category_ref or product.category %}
+            <span style="color: #cbd5e1;">/</span>
+            <a href="/shop/?category={{ category_slug|default:product.category|slugify }}" style="color: #64748b; text-decoration: none; font-weight: 600;">{{ product.category }}</a>
+            {% endif %}
+            {% if product.subcategory_ref or product.subcategory %}
+            <span style="color: #cbd5e1;">/</span>
+            <a href="/shop/?category={{ category_slug|default:product.category|slugify }}&subcategory={{ subcategory_slug|default:product.subcategory|slugify }}" style="color: #64748b; text-decoration: none; font-weight: 600;">{{ product.subcategory }}</a>
+            {% endif %}
+            <span style="color: #cbd5e1;">/</span>
+            <span style="color: #0f172a; font-weight: 700;">{{ product.name|truncatechars:28 }}</span>
+        </nav>
+        <a href="/shop/{% if category_slug %}?category={{ category_slug }}{% if subcategory_slug %}&subcategory={{ subcategory_slug }}{% endif %}{% endif %}" class="tc-back-link" id="tc-back-to-shop-btn" style="font-weight: 700; color: #a51655; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            ← Back to Shop
+        </a>
     </div>
 
     <article class="tc-product-detail-card">
@@ -1485,7 +1503,8 @@ function initGalleryCarousel() {
 
     // Arrow navigation
     if (prevBtn) {
-        prevBtn.addEventListener("click", () => {
+        prevBtn.addEventListener("click", (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
             const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
             const currentScroll = sliderTrack.scrollLeft;
             let curIdx = 0;
@@ -1503,7 +1522,8 @@ function initGalleryCarousel() {
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener("click", () => {
+        nextBtn.addEventListener("click", (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
             const slides = sliderTrack.querySelectorAll(".tc-detail-slide");
             const currentScroll = sliderTrack.scrollLeft;
             let curIdx = 0;
@@ -1525,6 +1545,8 @@ function initGalleryCarousel() {
         dotsWrap.addEventListener("click", (e) => {
             const dot = e.target.closest(".tc-detail-dot");
             if (!dot) return;
+            e.preventDefault();
+            e.stopPropagation();
             const idx = parseInt(dot.dataset.slideIndex, 10);
             if (!isNaN(idx)) scrollToIndex(idx);
         });
@@ -1535,6 +1557,8 @@ function initGalleryCarousel() {
         thumbnailsRow.addEventListener("click", (e) => {
             const btn = e.target.closest(".tc-thumb-btn");
             if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
             const idx = parseInt(btn.dataset.slideIndex, 10);
             if (!isNaN(idx)) scrollToIndex(idx);
         });
@@ -1649,14 +1673,31 @@ function initGalleryCarousel() {
 }
 </script>
 
+<script id="tc-gallery-images-json" type="application/json">{{ gallery_images_json|safe }}</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const backBtn = document.getElementById("tc-back-to-shop-btn");
+    if (backBtn) {
+        backBtn.addEventListener("click", function (e) {
+            if (document.referrer && document.referrer.includes("/shop")) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    }
+});
+</script>
+
 {% if is_variable %}
 <script id="tc-variants-json" type="application/json">{{ variants_json|safe }}</script>
 <script id="tc-colours-json" type="application/json">{{ colours_json|safe }}</script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const galleryCtrl = initGalleryCarousel();
-    const variantsData = JSON.parse(document.getElementById("tc-variants-json").textContent || "[]");
-    const coloursData = JSON.parse(document.getElementById("tc-colours-json").textContent || "[]");
+    const baseGalleryData = JSON.parse(document.getElementById("tc-gallery-images-json")?.textContent || "[]");
+    const baseGalleryUrls = baseGalleryData.map(img => img.url).filter(Boolean);
+    const variantsData = JSON.parse(document.getElementById("tc-variants-json")?.textContent || "[]");
+    const coloursData = JSON.parse(document.getElementById("tc-colours-json")?.textContent || "[]");
 
     const thumbnailsRow = document.getElementById("tc-thumbnails-row");
     const skuDisplay = document.getElementById("tc-product-sku-display");
@@ -1699,14 +1740,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateGalleryForColour(colourId) {
         const colObj = coloursData.find(c => c.id === colourId);
         let images = [];
-        if (colObj && colObj.images && colObj.images.length > 0) {
+        if (colObj && Array.isArray(colObj.images) && colObj.images.length > 0) {
             images = colObj.images;
         } else {
-            const firstImg = document.querySelector(".tc-detail-slide img");
-            if (firstImg && firstImg.src) images = [firstImg.src];
+            images = baseGalleryUrls;
         }
 
-        if (galleryCtrl && typeof galleryCtrl.rebuildGallery === "function") {
+        if (galleryCtrl && typeof galleryCtrl.rebuildGallery === "function" && images.length > 0) {
             galleryCtrl.rebuildGallery(images);
         }
     }
@@ -1788,10 +1828,21 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Update gallery photo if this specific weight/variant has a custom image
-        if (match.image_url && galleryCtrl && typeof galleryCtrl.rebuildGallery === "function") {
-            const currentImg = document.querySelector(".tc-detail-slide img");
-            if (currentImg && currentImg.src !== match.image_url) {
-                galleryCtrl.rebuildGallery([match.image_url]);
+        if (match.has_custom_image && match.image_url && galleryCtrl) {
+            const track = document.getElementById("tc-detail-slider-track");
+            const slides = track ? track.querySelectorAll(".tc-detail-slide img") : [];
+            let existingIdx = -1;
+            slides.forEach((img, idx) => {
+                if (img.src === match.image_url || img.getAttribute("src") === match.image_url) {
+                    existingIdx = idx;
+                }
+            });
+
+            if (existingIdx >= 0) {
+                galleryCtrl.scrollToIndex(existingIdx);
+            } else if (typeof galleryCtrl.rebuildGallery === "function") {
+                const combined = [match.image_url, ...baseGalleryUrls.filter(u => u !== match.image_url)];
+                galleryCtrl.rebuildGallery(combined);
             }
         }
 

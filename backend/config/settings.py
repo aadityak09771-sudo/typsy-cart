@@ -242,6 +242,8 @@ STORAGES = {
     },
 }
 
+WHITENOISE_MAX_AGE = 31536000  # 1 year caching headers for immutable static files
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
