@@ -89,13 +89,13 @@
     background: linear-gradient(135deg, #fbe8f2 0%, #fcecf5 45%, #fbdfe9 100%);
     border-radius: 28px;
     overflow: hidden;
-    padding: 48px 56px;
+    padding: 44px 48px;
     box-shadow: 0 10px 30px rgba(190, 24, 93, 0.08);
     border: 1px solid rgba(244, 114, 182, 0.28);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 410px;
+    min-height: 400px;
     box-sizing: border-box;
 }
 
@@ -113,7 +113,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: right center;
+    object-position: right bottom;
     display: block;
 }
 
@@ -201,8 +201,8 @@
 /* Farm pointer badge */
 .tc-hero-pointer-badge {
     position: absolute;
-    top: -24px;
-    right: 80px;
+    top: 28px;
+    right: 22%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -270,11 +270,13 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 22px 16px 14px;
-        border-radius: 22px;
+        padding: 24px 16px 0;
+        border-radius: 24px;
         min-height: auto;
-        background: linear-gradient(180deg, #fcebf4 0%, #fdf2f8 50%, #fae8ff 100%);
+        background: linear-gradient(180deg, #fcebf4 0%, #fdf2f8 45%, #fae8ff 100%);
         border: 1px solid rgba(244, 114, 182, 0.3);
+        box-shadow: 0 8px 24px rgba(190, 24, 93, 0.08);
+        overflow: hidden;
     }
     .tc-hero-left {
         max-width: 100%;
@@ -283,62 +285,76 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        z-index: 3;
     }
     .tc-hero-tag-pill {
-        font-size: 10px;
+        font-size: 10.5px;
         letter-spacing: 0.6px;
-        padding: 5px 14px;
+        padding: 5px 16px;
         margin-bottom: 12px;
     }
     .tc-hero-title {
-        font-size: 24px;
+        font-size: 26px;
         line-height: 1.2;
         margin-bottom: 10px;
-        letter-spacing: -0.4px;
+        letter-spacing: -0.5px;
     }
     .tc-hero-desc {
-        font-size: 12px;
+        font-size: 12.5px;
         line-height: 1.45;
         margin-bottom: 16px;
-        max-width: 310px;
+        max-width: 320px;
     }
     .tc-hero-btn {
-        font-size: 13.5px;
-        padding: 10px 24px;
-        margin: 0 auto;
+        font-size: 14px;
+        padding: 11px 26px;
+        margin: 0 auto 6px;
     }
     .tc-hero-mobile-visual {
         display: block;
         width: 100%;
-        margin-top: 14px;
+        margin-top: 10px;
         position: relative;
+        line-height: 0;
     }
     .tc-hero-mobile-img-wrap {
         position: relative;
         width: 100%;
-        border-radius: 16px;
-        overflow: hidden;
+        border-radius: 0;
+        overflow: visible;
+        background: transparent;
     }
     .tc-hero-mobile-img {
         width: 100%;
-        height: 195px;
-        object-fit: cover;
-        object-position: 85% center;
+        height: auto;
+        max-height: 240px;
+        object-fit: contain;
+        object-position: center bottom;
         display: block;
+        margin: 0 auto;
     }
     .tc-mobile-pointer {
         position: absolute;
-        top: 10px;
-        right: 8px;
-        z-index: 3;
+        top: 8px;
+        right: 12px;
+        z-index: 4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     .tc-mobile-pointer .tc-pointer-pill {
-        font-size: 10px;
+        font-size: 9.5px;
         padding: 4px 10px;
+        background: #ffffff;
+        color: #be185d;
+        border: 1px solid #fbcfe8;
+        box-shadow: 0 2px 8px rgba(190, 24, 93, 0.12);
+        white-space: nowrap;
     }
     .tc-mobile-pointer .tc-pointer-arrow {
-        transform: scale(0.8);
-        transform-origin: top right;
+        width: 34px;
+        height: 26px;
+        margin-top: 2px;
     }
 }
 
@@ -850,26 +866,45 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 14px;
+    padding: 10px;
     box-sizing: border-box;
+    overflow: hidden !important;
+}
+
+.tc-card-img-box a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    text-decoration: none;
+    overflow: hidden !important;
 }
 
 .tc-card-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
     transition: transform 0.25s ease;
+    display: block !important;
+    margin: auto;
 }
 
 .tc-product-card:hover .tc-card-img {
-    transform: scale(1.06);
+    transform: scale(1.05);
 }
 
 .tc-card-content {
-    padding: 14px 16px 16px;
+    padding: 12px 14px 14px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    position: relative;
+    z-index: 2;
+    background: #ffffff;
 }
 
 .tc-card-title {

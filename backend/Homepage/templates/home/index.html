@@ -15,7 +15,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 <!-- 1. TOP ANNOUNCEMENT BAR (PINK GRADIENT) -->
 <div class="tc-top-announcement">
     <div class="tc-top-announcement-inner">
-        <span class="tc-announce-item"><span class="tc-announce-icon">🚚</span> Free Delivery on Orders Above ₹{{ store_setting.free_delivery_threshold|default:"499"|floatformat:0 }}</span>
+        <span class="tc-announce-item"><span class="tc-announce-icon">🚚</span> Free Delivery on Orders Above ₹{{ store_setting.free_delivery_threshold|default:"89"|floatformat:0 }}</span>
         <span class="tc-announce-divider">|</span>
         <span class="tc-announce-item"><span class="tc-announce-icon">🌿</span> Fresh Products</span>
         <span class="tc-announce-divider">|</span>
@@ -177,7 +177,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                         {% endif %}
                         <div class="tc-card-img-box">
                             <a href="{{ p.detail_url }}">
-                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
                             </a>
                         </div>
                         <div class="tc-card-content">
@@ -304,7 +304,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                             {% endif %}
                             <div class="tc-card-img-box">
                                 <a href="{{ p.detail_url }}">
-                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
                                 </a>
                             </div>
                             <div class="tc-card-content">

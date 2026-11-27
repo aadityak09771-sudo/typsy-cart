@@ -11,7 +11,7 @@ class StoreSetting(models.Model):
     instagram_url = models.URLField(blank=True, default="https://www.instagram.com/tipsycart7/")
     facebook_url = models.URLField(blank=True, default="")
     delivery_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0.00"), help_text="Flat delivery fee in INR")
-    free_delivery_threshold = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("299.00"), help_text="Cart total above which delivery is free")
+    free_delivery_threshold = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("89.00"), help_text="Cart total above which delivery is free")
     is_store_open = models.BooleanField(default=True, help_text="Toggle store accepting orders")
     operating_hours = models.CharField(max_length=100, default="7:00 AM - 11:00 PM")
     announcement_text = models.CharField(max_length=255, blank=True, default="⚡ Fast 30-45 min delivery in Kanpur • Order your everyday essentials now!")
