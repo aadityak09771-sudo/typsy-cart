@@ -90,6 +90,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (item) {
                 item.quantity = Math.min(100, (Number(item.quantity) || 0) + delta);
                 newQty = item.quantity;
+                if ((!item.price || Number(item.price) === 0) && itemData && itemData.price && Number(itemData.price) > 0) {
+                    item.price = Number(itemData.price);
+                }
+                if ((!item.image_url || item.image_url === "") && itemData && itemData.image_url) {
+                    item.image_url = itemData.image_url;
+                }
+                if ((!item.variant_title || item.variant_title === "") && itemData && itemData.variant_title) {
+                    item.variant_title = itemData.variant_title;
+                }
             } else {
                 newQty = Math.min(100, delta);
                 item = {
@@ -714,8 +723,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const variantId = card.dataset.selectedVariantId ? parseInt(card.dataset.selectedVariantId, 10) : null;
         const qty = getCartItemQty(productId, variantId);
-        const actionWrap = card.querySelector(".tc-card-action-wrap");
-        if (!actionWrap) return;
+        let actionWrap = card.querySelector(".tc-card-action-wrap");
+        if (!actionWrap) {
+            const addBtn = card.querySelector(".tc-card-add-btn, .tc-card-stepper");
+            if (addBtn && addBtn.parentNode) {
+                actionWrap = document.createElement("div");
+                actionWrap.className = "tc-card-action-wrap";
+                addBtn.parentNode.insertBefore(actionWrap, addBtn);
+                actionWrap.appendChild(addBtn);
+            } else {
+                return;
+            }
+        }
 
         const isOutOfStock = card.dataset.isOutOfStock === "true";
 
@@ -832,6 +851,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const variantId = chip.dataset.variantId || "";
             card.dataset.selectedVariantId = variantId;
 
+            if (chip.dataset.price) {
+                card.dataset.selectedPrice = chip.dataset.price;
+            }
+            if (chip.dataset.origPrice) {
+                card.dataset.selectedOrigPrice = chip.dataset.origPrice;
+            }
+            if (chip.dataset.title) {
+                card.dataset.selectedVariantTitle = chip.dataset.title;
+            }
+            if (chip.dataset.image) {
+                card.dataset.selectedImage = chip.dataset.image;
+            }
+
             const priceEl = card.querySelector(".tc-current-price, .tc-price-current, .tc-card-curr-price");
             if (priceEl && chip.dataset.price) {
                 priceEl.textContent = `₹${chip.dataset.price}`;
@@ -883,6 +915,51 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // Helper to extract complete product card data safely
+        function extractCardProductData(card) {
+            const pId = card.dataset.cardProductId || card.dataset.id;
+            const vId = card.dataset.selectedVariantId || null;
+            const name = card.dataset.productName || card.querySelector(".tc-card-title, .product-title, h3")?.textContent.trim() || "Product";
+
+            // 1. Check card dataset first
+            let price = card.dataset.selectedPrice;
+
+            // 2. If not found or zero, check active variant chip
+            if (!price || Number(price) <= 0) {
+                const activeChip = card.querySelector(".tc-variant-chip.active");
+                if (activeChip && activeChip.dataset.price) {
+                    price = activeChip.dataset.price;
+                }
+            }
+
+            // 3. Fallback to visible price element text
+            if (!price || Number(price) <= 0) {
+                const priceEl = card.querySelector(".tc-card-curr-price, .tc-current-price, .tc-price-current, .price, .tc-card-price-row span:first-child");
+                if (priceEl && priceEl.textContent) {
+                    const clean = priceEl.textContent.replace(/[^0-9.]/g, "").trim();
+                    if (clean && Number(clean) > 0) {
+                        price = clean;
+                    }
+                }
+            }
+            if (!price || isNaN(Number(price))) {
+                price = "0";
+            }
+
+            // Image extraction
+            let img = card.dataset.selectedImage || "";
+            if (!img) {
+                const imgEl = card.querySelector(".tc-card-img, .tc-slider-img, .product-image, img");
+                if (imgEl && imgEl.src) img = imgEl.src;
+            }
+
+            // Variant title extraction
+            const activeChip = card.querySelector(".tc-variant-chip.active");
+            const vTitle = activeChip ? activeChip.textContent.trim() : (card.dataset.selectedVariantTitle || "");
+
+            return { pId, vId, name, price, img, vTitle };
+        }
+
         // 5. Add to Cart button on card
         const addBtn = e.target.closest(".tc-card-add-btn");
         if (addBtn && !addBtn.disabled && !addBtn.classList.contains("disabled")) {
@@ -891,13 +968,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = addBtn.closest("[data-card-product-id]");
             if (!card) return;
 
-            const pId = card.dataset.cardProductId;
-            const vId = card.dataset.selectedVariantId || null;
-            const name = card.dataset.productName || "Product";
-            const price = card.dataset.selectedPrice || (card.querySelector(".tc-current-price, .tc-price-current")?.textContent.replace(/[^0-9.]/g, "") || "0");
-            const img = card.querySelector(".tc-slider-img")?.src || "";
-            const activeChip = card.querySelector(".tc-variant-chip.active");
-            const vTitle = activeChip ? activeChip.textContent.trim() : (card.dataset.selectedVariantTitle || "");
+            const { pId, vId, name, price, img, vTitle } = extractCardProductData(card);
 
             changeCartQtyGlobal(pId, 1, vId, {
                 name: name,
@@ -917,13 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = incBtn.closest("[data-card-product-id]");
             if (!card) return;
 
-            const pId = card.dataset.cardProductId;
-            const vId = card.dataset.selectedVariantId || null;
-            const name = card.dataset.productName || "Product";
-            const price = card.dataset.selectedPrice || (card.querySelector(".tc-current-price, .tc-price-current")?.textContent.replace(/[^0-9.]/g, "") || "0");
-            const img = card.querySelector(".tc-slider-img")?.src || "";
-            const activeChip = card.querySelector(".tc-variant-chip.active");
-            const vTitle = activeChip ? activeChip.textContent.trim() : (card.dataset.selectedVariantTitle || "");
+            const { pId, vId, name, price, img, vTitle } = extractCardProductData(card);
 
             changeCartQtyGlobal(pId, 1, vId, {
                 name: name,

@@ -163,13 +163,21 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
             <div class="tc-deals-rail" id="tc-deals-rail">
                 {% for p in todays_deals %}
                 <div class="tc-product-card-wrap">
-                    <article class="tc-product-card" data-card-product-id="{{ p.id }}" data-product-name="{{ p.name }}" data-selected-variant-id="{{ p.selected_variant_id }}" data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
+                    <article class="tc-product-card"
+                        data-card-product-id="{{ p.id }}"
+                        data-product-name="{{ p.name }}"
+                        data-selected-variant-id="{{ p.selected_variant_id }}"
+                        data-selected-price="{{ p.price_raw|default:p.price }}"
+                        data-selected-orig-price="{{ p.original_price_raw|default:p.original_price }}"
+                        data-selected-image="{{ p.image_url }}"
+                        data-selected-variant-title="{% if p.variants %}{{ p.variants.0.title }}{% endif %}"
+                        data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
                         {% if p.has_discount and p.discount_percentage > 0 %}
                             <span class="tc-card-discount-badge">{{ p.discount_percentage }}% OFF</span>
                         {% endif %}
                         <div class="tc-card-img-box">
                             <a href="{{ p.detail_url }}">
-                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
                             </a>
                         </div>
                         <div class="tc-card-content">
@@ -177,18 +185,38 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                             {% if not p.is_variable or not p.variants %}
                                 {% if p.unit %}<div class="tc-card-unit">{{ p.unit }}</div>{% endif %}
                             {% endif %}
+                            {% if p.is_variable and p.variants %}
+                                <div class="tc-card-variants">
+                                    {% for v in p.variants %}
+                                        <span
+                                            class="tc-variant-chip {% if forloop.first %}active{% endif %}"
+                                            data-variant-id="{{ v.id }}"
+                                            data-price="{{ v.price }}"
+                                            data-orig-price="{{ v.original_price }}"
+                                            data-discount="{{ v.discount }}"
+                                            data-stock="{{ v.stock }}"
+                                            data-image="{{ v.image|default:'' }}"
+                                            data-title="{{ v.title }}"
+                                        >
+                                            {{ v.title }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                             <div class="tc-card-bottom">
                                 <div class="tc-card-price-row">
-                                    <span class="tc-card-curr-price">₹{{ p.price }}</span>
+                                    <span class="tc-card-curr-price tc-current-price tc-price-current">₹{{ p.price }}</span>
                                     {% if p.has_discount %}
-                                        <span class="tc-card-orig-price">₹{{ p.original_price }}</span>
+                                        <span class="tc-card-orig-price tc-original-price tc-price-original">₹{{ p.original_price }}</span>
                                     {% endif %}
                                 </div>
-                                {% if p.in_stock %}
-                                    <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
-                                {% else %}
-                                    <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
-                                {% endif %}
+                                <div class="tc-card-action-wrap">
+                                    {% if p.in_stock %}
+                                        <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
+                                    {% else %}
+                                        <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -262,13 +290,21 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                 <div class="tc-explore-rail" id="tc-explore-rail">
                     {% for p in tab.products %}
                     <div class="tc-product-card-wrap">
-                        <article class="tc-product-card" data-card-product-id="{{ p.id }}" data-product-name="{{ p.name }}" data-selected-variant-id="{{ p.selected_variant_id }}" data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
+                        <article class="tc-product-card"
+                            data-card-product-id="{{ p.id }}"
+                            data-product-name="{{ p.name }}"
+                            data-selected-variant-id="{{ p.selected_variant_id }}"
+                            data-selected-price="{{ p.price_raw|default:p.price }}"
+                            data-selected-orig-price="{{ p.original_price_raw|default:p.original_price }}"
+                            data-selected-image="{{ p.image_url }}"
+                            data-selected-variant-title="{% if p.variants %}{{ p.variants.0.title }}{% endif %}"
+                            data-is-out-of-stock="{% if not p.in_stock %}true{% else %}false{% endif %}">
                             {% if p.has_discount and p.discount_percentage > 0 %}
                                 <span class="tc-card-discount-badge">{{ p.discount_percentage }}% OFF</span>
                             {% endif %}
                             <div class="tc-card-img-box">
                                 <a href="{{ p.detail_url }}">
-                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
+                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="tc-card-img tc-slider-img" loading="lazy" onerror="this.onerror=null;this.src='{% static 'home/images/cat-daily-essentials.jpg' %}';">
                                 </a>
                             </div>
                             <div class="tc-card-content">
@@ -296,16 +332,18 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                                 {% endif %}
                                 <div class="tc-card-bottom">
                                     <div class="tc-card-price-row">
-                                        <span class="tc-card-curr-price">₹{{ p.price }}</span>
+                                        <span class="tc-card-curr-price tc-current-price tc-price-current">₹{{ p.price }}</span>
                                         {% if p.has_discount %}
-                                            <span class="tc-card-orig-price">₹{{ p.original_price }}</span>
+                                            <span class="tc-card-orig-price tc-original-price tc-price-original">₹{{ p.original_price }}</span>
                                         {% endif %}
                                     </div>
-                                    {% if p.in_stock %}
-                                        <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
-                                    {% else %}
-                                        <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
-                                    {% endif %}
+                                    <div class="tc-card-action-wrap">
+                                        {% if p.in_stock %}
+                                            <button type="button" class="tc-card-add-btn">Add to Cart 🛒</button>
+                                        {% else %}
+                                            <button type="button" class="tc-card-add-btn disabled" disabled>Out of Stock</button>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </article>
