@@ -725,10 +725,11 @@
     display: flex;
     gap: 18px;
     overflow-x: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: auto !important;
     -webkit-overflow-scrolling: touch;
     padding: 8px 4px 18px;
     scrollbar-width: none;
+    will-change: scroll-position;
 }
 
 .tc-deals-rail::-webkit-scrollbar {

@@ -28,8 +28,126 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Connect rails
     setupRailControls("#tc-category-rail", "#tc-cat-prev", "#tc-cat-next", 280);
-    setupRailControls("#tc-deals-rail", "#tc-deals-prev", "#tc-deals-next", 340);
     setupRailControls("#tc-explore-rail", "#tc-explore-prev", "#tc-explore-next", 340);
+
+    // 1B. SEAMLESS INFINITE CONTINUOUS AUTO-SCROLLER FOR TODAY'S DEALS
+    function setupInfiniteDealsScroller() {
+        const rail = document.querySelector("#tc-deals-rail");
+        const prevBtn = document.querySelector("#tc-deals-prev");
+        const nextBtn = document.querySelector("#tc-deals-next");
+        if (!rail) return;
+
+        const originalCards = Array.from(rail.querySelectorAll(".tc-product-card-wrap:not([data-clone='true'])"));
+        if (originalCards.length < 2) return;
+
+        // Clone cards to create an unbroken seamless infinite loop (2 cloned sets = 3 sets total)
+        for (let s = 0; s < 2; s++) {
+            originalCards.forEach((card) => {
+                const clone = card.cloneNode(true);
+                clone.setAttribute("data-clone", "true");
+                clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+                rail.appendChild(clone);
+            });
+        }
+
+        // Sync stepper states on all cards (including the newly added clones)
+        if (window.syncAllCardSteppers) {
+            window.syncAllCardSteppers();
+        }
+
+        // Measure single set width (sum of outer widths of original cards + gaps)
+        let singleSetWidth = 0;
+        function calculateSingleSetWidth() {
+            let total = 0;
+            const gap = parseFloat(window.getComputedStyle(rail).gap) || 18;
+            originalCards.forEach((card) => {
+                total += card.getBoundingClientRect().width + gap;
+            });
+            if (total > 0) singleSetWidth = total;
+        }
+
+        calculateSingleSetWidth();
+        window.addEventListener("resize", calculateSingleSetWidth);
+        window.addEventListener("load", calculateSingleSetWidth);
+
+        // Continuous scrolling state
+        let isPaused = false;
+        let resumeTimer = null;
+        const scrollSpeed = 0.85; // Pixels per frame (~50px/sec: silky-smooth, readable pace)
+
+        function pauseTemporarily(durationMs = 2500) {
+            isPaused = true;
+            if (resumeTimer) clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => {
+                isPaused = false;
+            }, durationMs);
+        }
+
+        function tick() {
+            if (!isPaused) {
+                rail.scrollLeft += scrollSpeed;
+
+                // When scrolled past the first full set, seamlessly wrap back to 0
+                // Because the cloned set is identical down to the exact pixel, ZERO jump occurs!
+                if (singleSetWidth > 0 && rail.scrollLeft >= singleSetWidth) {
+                    rail.scrollLeft -= singleSetWidth;
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+
+        // Pause on mouse hover (so customer can browse or add to cart without moving target)
+        rail.addEventListener("mouseenter", () => {
+            isPaused = true;
+            if (resumeTimer) clearTimeout(resumeTimer);
+        });
+
+        rail.addEventListener("mouseleave", () => {
+            if (resumeTimer) clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => {
+                isPaused = false;
+            }, 400);
+        });
+
+        // Touch & pointer interactions (mobile drag / swipe)
+        rail.addEventListener("touchstart", () => {
+            isPaused = true;
+            if (resumeTimer) clearTimeout(resumeTimer);
+        }, { passive: true });
+
+        rail.addEventListener("touchend", () => {
+            pauseTemporarily(2000);
+        }, { passive: true });
+
+        // Prev & Next navigation buttons
+        if (prevBtn) {
+            prevBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                pauseTemporarily(2500);
+                const step = 260;
+                if (singleSetWidth > 0 && rail.scrollLeft - step <= 0) {
+                    rail.scrollLeft += singleSetWidth;
+                }
+                rail.scrollBy({ left: -step, behavior: "smooth" });
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                pauseTemporarily(2500);
+                const step = 260;
+                if (singleSetWidth > 0 && rail.scrollLeft + step >= singleSetWidth * 2) {
+                    rail.scrollLeft -= singleSetWidth;
+                }
+                rail.scrollBy({ left: step, behavior: "smooth" });
+            });
+        }
+    }
+
+    setupInfiniteDealsScroller();
 
     // 2. TODAY'S DEALS COUNTDOWN TIMER (ADMIN-CONTROLLED & DYNAMIC)
     const countdownEl = document.getElementById("tc-deals-countdown");
