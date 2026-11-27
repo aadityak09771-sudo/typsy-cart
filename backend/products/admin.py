@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import os
+import re
 import shutil
 import tempfile
 import uuid
@@ -35,7 +36,11 @@ from .models import (
     ProductVariant,
 )
 from .services.zip_importer import ZipProductImporter, sanitize_zip_path
-from .services.excel_exporter import generate_products_excel, VALID_ORDER_STATUSES
+from .services.excel_exporter import (
+    generate_products_excel,
+    generate_category_subcategory_excel,
+    VALID_ORDER_STATUSES,
+)
 from .services.excel_importer import (
     parse_and_validate_excel,
     commit_excel_import,
@@ -729,20 +734,131 @@ class ProductImageAdmin(admin.ModelAdmin):
         return "—"
 
 
-class ProductColourInline(admin.TabularInline):
+class ColourImagesWidget(forms.Widget):
+    """
+    Custom rich widget for managing multiple images per Product Colour:
+    - Lists existing saved photos with thumbnails, primary (★) radio selector, order input, and remove checkbox.
+    - Multiple file upload button (supports selecting multiple photos at once).
+    - Client-side instant live previews container via FileReader before save.
+    """
+    def __init__(self, instance=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance = instance
+
+    def render(self, name, value, attrs=None, renderer=None):
+        prefix = name.replace("-colour_images_manager", "")
+        colour = self.instance
+
+        html = []
+        html.append(f'<div class="tc-colour-images-manager-wrap" data-prefix="{prefix}">')
+
+        # 1. Header / Action bar
+        html.append('  <div class="tc-cim-bar">')
+        html.append('    <span class="tc-cim-icon">📸</span>')
+        html.append('    <span class="tc-cim-title">Colour Photo Gallery (Multiple Photos for This Colour)</span>')
+        html.append('    <span class="tc-cim-badge">Upload front, side, close-up &amp; packaging photos</span>')
+        html.append('  </div>')
+
+        # 2. Existing Saved Images Grid
+        if colour and colour.pk:
+            images = list(colour.images.all().order_by("-is_primary", "display_order", "id"))
+            if images:
+                html.append('  <div class="tc-cim-existing-grid">')
+                for img in images:
+                    img_url = img.get_image_url()
+                    is_prim = img.is_primary
+                    checked_attr = "checked" if is_prim else ""
+                    primary_class = "is-primary" if is_prim else ""
+                    primary_badge = "<span class='tc-cim-primary-tag'>★ PRIMARY</span>" if is_prim else ""
+                    html.append(f'''
+                    <div class="tc-cim-card {primary_class}" id="tc-cim-card-{img.id}">
+                      <div class="tc-cim-card-img-wrap">
+                        <img src="{img_url}" alt="Colour photo" onerror="this.src=\'/static/home/images/tipsycart-logo.png\';" />
+                        {primary_badge}
+                      </div>
+                      <div class="tc-cim-card-controls">
+                        <label class="tc-cim-primary-lbl" title="Set this photo as the main default view for this colour">
+                          <input type="radio" name="colour_primary_{prefix}" value="{img.id}" {checked_attr} onchange="window.tcHandleColourPrimaryChange(this, \'{prefix}\')" />
+                          <strong>Primary (★)</strong>
+                        </label>
+                        <div class="tc-cim-order-row">
+                          <span class="tc-cim-lbl">Order:</span>
+                          <input type="number" name="colour_img_order_{img.id}" value="{img.display_order}" min="0" class="tc-cim-order-input" title="Display sequence order" />
+                        </div>
+                        <label class="tc-cim-delete-lbl" title="Check to delete this photo upon saving">
+                          <input type="checkbox" name="colour_delete_img_{img.id}" value="1" onchange="window.tcHandleColourDeleteToggle(this, {img.id})" />
+                          <span>🗑 Remove</span>
+                        </label>
+                      </div>
+                    </div>
+                    ''')
+                html.append('  </div>')
+            else:
+                html.append('  <div class="tc-cim-empty-notice">ℹ️ No photos uploaded for this colour yet. Choose multiple files below to attach photos.</div>')
+        else:
+            html.append('  <div class="tc-cim-empty-notice">✨ New Colour: Select multiple images below to upload together when saving this product.</div>')
+
+        # 3. Multiple File Upload Input
+        file_input_id = f"id_colour_bulk_files_{prefix}"
+        html.append('  <div class="tc-cim-upload-box">')
+        html.append(f'    <label for="{file_input_id}" class="tc-cim-upload-btn">')
+        html.append('      <span>📸 Choose Multiple Photos for this Colour</span>')
+        html.append('    </label>')
+        html.append(f'    <input type="file" name="colour_bulk_files_{prefix}" id="{file_input_id}" multiple accept="image/*" class="tc-cim-file-input" onchange="window.tcHandleColourFilesPicked(this, \'{prefix}\')" />')
+        html.append('    <span class="tc-cim-hint">Select multiple image files at once (JPG, PNG, WEBP). They will be automatically saved to this colour.</span>')
+        html.append('  </div>')
+
+        # 4. Instant Live Preview container for pending files
+        html.append(f'  <div id="tc-colour-pending-previews-{prefix}" class="tc-colour-pending-previews"></div>')
+
+        html.append('</div>')
+        return mark_safe("".join(html))
+
+
+class ProductColourInlineForm(forms.ModelForm):
+    colour_images_manager = forms.CharField(
+        required=False,
+        label="Colour Photos & Multi-Image Gallery",
+        help_text="Upload multiple photos for this specific colour (front, side, close-up, packaging). Select primary photo and adjust display sequence.",
+    )
+
+    class Meta:
+        model = ProductColour
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["colour_images_manager"].widget = ColourImagesWidget(instance=self.instance)
+        if "name" in self.fields:
+            self.fields["name"].widget.attrs.update({
+                "placeholder": "e.g. Red, Pink, Nude, Sky Blue",
+                "style": "font-weight: 700; min-width: 160px;",
+            })
+        if "color_code" in self.fields:
+            self.fields["color_code"].widget.attrs.update({
+                "placeholder": "#FF0000",
+                "style": "min-width: 90px; text-transform: uppercase;",
+            })
+
+
+class ProductColourInline(admin.StackedInline):
     model = ProductColour
+    form = ProductColourInlineForm
     extra = 1
-    fields = ("color_master", "name", "color_code", "swatch_preview", "display_order", "is_active")
+    fields = (
+        ("color_master", "name", "color_code", "swatch_preview", "display_order", "is_active"),
+        "colour_images_manager",
+    )
     readonly_fields = ("swatch_preview",)
     show_change_link = True
     verbose_name = "Product Colour"
-    verbose_name_plural = "6. Product Colours (Select from Global Colour Library or Type Custom)"
+    verbose_name_plural = "6. Product Colours (Multiple Images per Colour, Swatches & Display Settings)"
 
     @admin.display(description="Swatch")
     def swatch_preview(self, obj):
         code = (obj.color_code if obj else None) or (obj.color_master.hex_code if obj and obj.color_master else "#000000")
         return format_html(
-            '<span class="tc-colour-swatch-circle" style="display:inline-block; width:20px; height:20px; border-radius:50%; background-color:{}; border:1px solid #94a3b8; vertical-align:middle;"></span>',
+            '<span class="tc-colour-swatch-circle" style="display:inline-block; width:22px; height:22px; border-radius:50%; background-color:{}; border:2px solid #94a3b8; vertical-align:middle; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></span>',
             code
         )
 
@@ -836,6 +952,7 @@ class ProductVariantInline(admin.TabularInline):
     form = ProductVariantInlineForm
     extra = 0
     fields = (
+        "image_preview_small",
         "colour",
         "size",
         "variant_name",
@@ -846,9 +963,20 @@ class ProductVariantInline(admin.TabularInline):
         "sku",
         "is_active",
     )
+    readonly_fields = ("image_preview_small",)
     show_change_link = True
     verbose_name = "Independently Sold Variant"
     verbose_name_plural = "7. Product Variants (Independent Pricing, Discounts, SKU & Stock)"
+
+    @admin.display(description="Preview")
+    def image_preview_small(self, obj):
+        url = obj.get_image_url() if obj else ""
+        if url:
+            return format_html(
+                '<img src="{}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; padding: 2px;" onerror="this.onerror=null;this.src=\'/static/home/images/tipsycart-logo.png\';" />',
+                url
+            )
+        return "—"
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         object_id = None
@@ -992,6 +1120,7 @@ class ProductAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "product_type",
+                    "variant_display_style",
                     ("unit_type", "unit", "unit_value"),
                     "variant_generator_link",
                 ),
@@ -1255,8 +1384,12 @@ class ProductAdmin(admin.ModelAdmin):
 
     @admin.action(description="📥 Export selected products to Excel (.xlsx)")
     def export_selected_to_excel(self, request, queryset):
-        buffer = generate_products_excel(queryset, filter_description=f"Admin Selected ({queryset.count()} Products)")
-        filename = f"tipsycart_selected_products_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        date_str = timezone.now().strftime("%Y%m%d")
+        filename = f"TipsyCart_Selected_Products_{date_str}.xlsx"
+        buffer = generate_category_subcategory_excel(
+            queryset,
+            filter_description=f"Admin Selected ({queryset.count()} Products)",
+        )
         response = HttpResponse(
             buffer.getvalue(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1369,6 +1502,16 @@ class ProductAdmin(admin.ModelAdmin):
 
         for c in c_list:
             for s in s_list:
+                v_name = ""
+                if c and s:
+                    v_name = f"{c.name} / {s.name}"
+                elif s:
+                    v_name = s.name
+                elif c:
+                    v_name = c.name
+                else:
+                    v_name = "Standard"
+
                 var, created = ProductVariant.objects.get_or_create(
                     product=product,
                     colour=c,
@@ -1382,7 +1525,7 @@ class ProductAdmin(admin.ModelAdmin):
                         "stock": product.stock,
                         "is_active": True,
                         "unit": product.unit or "",
-                        "variant_name": s.name if s else (c.name if c else "Standard"),
+                        "variant_name": v_name,
                     }
                 )
                 if created:
@@ -1393,6 +1536,8 @@ class ProductAdmin(admin.ModelAdmin):
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
+
+        # 1. Main Product Bulk Gallery Images
         bulk_files = request.FILES.getlist("bulk_gallery_images")
         if bulk_files and form.instance and form.instance.pk:
             current_max_order = form.instance.gallery_images.count()
@@ -1408,6 +1553,70 @@ class ProductAdmin(admin.ModelAdmin):
                 f"📸 Successfully uploaded {len(bulk_files)} gallery image(s) for {form.instance.name}.",
                 level=messages.SUCCESS
             )
+
+        # 2. Multi-Image Management for Product Colours (Per-Colour Multi-Uploads, Primary & Deletions)
+        if form.instance and form.instance.pk:
+            product = form.instance
+            for formset in formsets:
+                if getattr(formset, "model", None) == ProductColour:
+                    for colour_form in formset.forms:
+                        if not colour_form.cleaned_data or colour_form.cleaned_data.get("DELETE"):
+                            continue
+                        colour = colour_form.instance
+                        if not colour or not colour.pk:
+                            continue
+                        prefix = colour_form.prefix
+
+                        # A. Update Primary Photo Selection
+                        primary_img_id = request.POST.get(f"colour_primary_{prefix}")
+                        if primary_img_id:
+                            try:
+                                p_id = int(primary_img_id)
+                                colour.images.filter(is_primary=True).exclude(id=p_id).update(is_primary=False)
+                                colour.images.filter(id=p_id).update(is_primary=True)
+                            except (ValueError, TypeError):
+                                pass
+
+                        # B. Deletions and Reordering for existing photos
+                        for img in list(colour.images.all()):
+                            if request.POST.get(f"colour_delete_img_{img.id}") == "1":
+                                img.delete()
+                            else:
+                                order_val = request.POST.get(f"colour_img_order_{img.id}")
+                                if order_val is not None and str(order_val).strip() != "":
+                                    try:
+                                        new_order = int(order_val)
+                                        if img.display_order != new_order:
+                                            img.display_order = new_order
+                                            img.save(update_fields=["display_order"])
+                                    except (ValueError, TypeError):
+                                        pass
+
+                        # C. Bulk Multiple Files Uploaded for this Colour
+                        new_files = request.FILES.getlist(f"colour_bulk_files_{prefix}")
+                        if new_files:
+                            has_primary = colour.images.filter(is_primary=True).exists()
+                            current_max = colour.images.count()
+                            for idx, f in enumerate(new_files):
+                                is_prim = (not has_primary and idx == 0)
+                                ProductColourImage.objects.create(
+                                    colour=colour,
+                                    image=f,
+                                    display_order=current_max + idx + 1,
+                                    is_primary=is_prim,
+                                )
+                            self.message_user(
+                                request,
+                                f"🎨 Uploaded {len(new_files)} photo(s) for colour '{colour.name}'.",
+                                level=messages.SUCCESS
+                            )
+
+                        # D. Ensure at least one image is primary if images exist
+                        if colour.images.exists() and not colour.images.filter(is_primary=True).exists():
+                            first_img = colour.images.order_by("display_order", "id").first()
+                            if first_img:
+                                first_img.is_primary = True
+                                first_img.save(update_fields=["is_primary"])
 
     def generate_variants_view(self, request, product_id):
         product = self.get_object(request, product_id)
@@ -1492,36 +1701,169 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return custom_urls + urls
 
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        # Preload active categories and their subcategories for the dynamic Excel export modal
+        categories_data = []
+        for cat in Category.objects.filter(is_active=True).prefetch_related("subcategories").order_by("display_order", "name"):
+            subcats = [
+                {"id": sub.id, "name": sub.name}
+                for sub in cat.subcategories.filter(is_active=True).order_by("display_order", "name")
+            ]
+            categories_data.append({
+                "id": cat.id,
+                "name": cat.name,
+                "subcategories": subcats,
+            })
+        extra_context["export_categories_json"] = json.dumps(categories_data)
+        extra_context["export_categories"] = categories_data
+        return super().changelist_view(request, extra_context=extra_context)
+
     def export_excel_view(self, request):
         """
-        Dynamically exports current filtered products to a styled Excel (.xlsx) file.
-        Respects any active category, subcategory, search, or status filter.
+        Dynamically exports products to a professional 3-worksheet Excel (.xlsx) file.
+        Supports:
+        - All Products
+        - Category-wise export (includes all subcategories)
+        - Subcategory-wise export
+        - Simple products only (all / within category / within subcategory)
+        - Variable products only (all / within category / within subcategory)
+        - Respects active changelist filters, searches, and stock statuses.
+        - Generates clean, dynamic filenames based on exported data.
         """
-        cl = self.get_changelist_instance(request)
-        queryset = cl.get_queryset(request)
+        queryset = self.get_queryset(request)
 
-        filter_parts = []
-        q_filter = request.GET.get("quick_filter")
-        if q_filter:
-            filter_parts.append(f"Filter: {q_filter.replace('_', ' ').title()}")
-        cat_id = request.GET.get("category_ref__id__exact")
+        # 1. Resolve Category and Subcategory
+        cat_id = request.GET.get("category_id") or request.GET.get("category_ref__id__exact")
+        subcat_id = request.GET.get("subcategory_id") or request.GET.get("subcategory_ref__id__exact")
+
+        category_obj = None
+        subcategory_obj = None
+
         if cat_id:
-            c = Category.objects.filter(id=cat_id).first()
-            if c:
-                filter_parts.append(f"Category: {c.name}")
-        subcat_id = request.GET.get("subcategory_ref__id__exact")
+            try:
+                category_obj = Category.objects.filter(id=int(cat_id)).first()
+            except (ValueError, TypeError):
+                category_obj = None
+
         if subcat_id:
-            s = Subcategory.objects.filter(id=subcat_id).first()
-            if s:
-                filter_parts.append(f"Subcategory: {s.name}")
+            try:
+                subcategory_obj = Subcategory.objects.filter(id=int(subcat_id)).first()
+                if subcategory_obj and not category_obj:
+                    category_obj = subcategory_obj.category
+            except (ValueError, TypeError):
+                subcategory_obj = None
+
+        # Filter by Category / Subcategory
+        if subcategory_obj:
+            queryset = queryset.filter(
+                Q(subcategory_ref=subcategory_obj) | Q(subcategory__iexact=subcategory_obj.name)
+            )
+        elif category_obj:
+            queryset = queryset.filter(
+                Q(category_ref=category_obj) | Q(category__iexact=category_obj.name)
+            )
+
+        # 2. Resolve Product Type (Simple / Variable / All)
+        product_type = request.GET.get("product_type")
+        if not product_type:
+            q_filter = request.GET.get("quick_filter")
+            if q_filter in ("simple", "variable"):
+                product_type = q_filter
+
+        if product_type in ("simple", "variable"):
+            queryset = queryset.filter(product_type=product_type)
+
+        # 3. Quick Filter (if not already handled by product_type)
+        quick_filter = request.GET.get("quick_filter")
+        if quick_filter:
+            if quick_filter == "in_stock":
+                queryset = queryset.filter(stock__gt=10)
+            elif quick_filter == "low_stock":
+                queryset = queryset.filter(stock__gt=0, stock__lte=10)
+            elif quick_filter == "out_of_stock":
+                queryset = queryset.filter(stock=0)
+            elif quick_filter == "active":
+                queryset = queryset.filter(is_active=True)
+            elif quick_filter == "inactive":
+                queryset = queryset.filter(is_active=False)
+
+        # 4. Stock status filter
+        stock_status = request.GET.get("stock_status")
+        if stock_status == "out_of_stock":
+            queryset = queryset.filter(stock=0)
+        elif stock_status == "low_stock":
+            queryset = queryset.filter(stock__gt=0, stock__lte=10)
+        elif stock_status == "in_stock":
+            queryset = queryset.filter(stock__gt=10)
+
+        # 5. Search query
         search_query = request.GET.get("q")
+        if search_query:
+            search_query = search_query.strip()
+            queryset = queryset.filter(
+                Q(name__icontains=search_query)
+                | Q(product_number__icontains=search_query)
+                | Q(brand__icontains=search_query)
+                | Q(description__icontains=search_query)
+            )
+
+        # 6. Active status filter
+        is_active_param = request.GET.get("is_active__exact")
+        if is_active_param in ("1", "true", "True"):
+            queryset = queryset.filter(is_active=True)
+        elif is_active_param in ("0", "false", "False"):
+            queryset = queryset.filter(is_active=False)
+
+        # 7. Construct dynamic description for report banner
+        filter_parts = []
+        if category_obj:
+            filter_parts.append(f"Category: {category_obj.name}")
+        if subcategory_obj:
+            filter_parts.append(f"Subcategory: {subcategory_obj.name}")
+        if product_type in ("simple", "variable"):
+            filter_parts.append(f"Product Type: {product_type.title()} Products Only")
+        if quick_filter and quick_filter not in ("simple", "variable"):
+            filter_parts.append(f"Filter: {quick_filter.replace('_', ' ').title()}")
         if search_query:
             filter_parts.append(f"Search: '{search_query}'")
 
-        filter_desc = " | ".join(filter_parts) if filter_parts else "All Filtered Products"
+        filter_desc = " | ".join(filter_parts) if filter_parts else "All Products (Full Catalog)"
 
-        buffer = generate_products_excel(queryset, filter_description=filter_desc)
-        filename = f"tipsycart_products_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # 8. Construct dynamic filename (Requirement 8)
+        date_str = timezone.now().strftime("%Y%m%d")
+        filename_parts = ["TipsyCart"]
+
+        def _clean_for_filename(name_str):
+            cleaned = re.sub(r"[^a-zA-Z0-9]+", "_", str(name_str).strip())
+            return cleaned.strip("_")
+
+        if category_obj:
+            filename_parts.append(_clean_for_filename(category_obj.name))
+            if subcategory_obj:
+                filename_parts.append(_clean_for_filename(subcategory_obj.name))
+        else:
+            filename_parts.append("All_Products")
+
+        if product_type == "simple":
+            filename_parts.append("Simple_Products")
+        elif product_type == "variable":
+            filename_parts.append("Variable_Products")
+
+        filename_parts.append(date_str)
+        filename = "_".join(filename_parts) + ".xlsx"
+
+        # 9. Generate 3-worksheet workbook
+        cat_name_str = category_obj.name if category_obj else None
+        subcat_name_str = subcategory_obj.name if subcategory_obj else None
+        buffer = generate_category_subcategory_excel(
+            queryset,
+            filter_description=filter_desc,
+            category_name=cat_name_str,
+            subcategory_name=subcat_name_str,
+            product_type=product_type,
+        )
+
         response = HttpResponse(
             buffer.getvalue(),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

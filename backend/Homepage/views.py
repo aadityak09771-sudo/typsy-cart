@@ -616,7 +616,8 @@ def product_detail(request, pk):
         sizes = list(product.sizes.filter(is_active=True))
         variants = list(product.variants.filter(is_active=True))
 
-        if not sizes and variants:
+        # Only synthesize sizes if product has NEITHER colours NOR explicit sizes (size-only variants)
+        if not colours and not sizes and variants:
             seen_names = set()
             sizes = []
             for v in variants:
@@ -632,10 +633,9 @@ def product_detail(request, pk):
             {
                 "id": c.id,
                 "name": c.name,
+                "display_label": c.get_display_label(),
                 "color_code": c.color_code,
-                "images": [
-                    img.get_image_url() for img in c.images.all()
-                ] if c.images.exists() else [],
+                "images": c.get_all_images(),
             }
             for c in colours
         ]

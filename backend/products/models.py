@@ -266,6 +266,19 @@ class Product(models.Model):
         help_text="Product Type: Simple (single price & stock) or Variable (multiple options)",
     )
 
+    VARIANT_DISPLAY_CHOICES = [
+        ("colour", "Display by Colour (e.g. Red, Pink)"),
+        ("name", "Display by Variant Name (e.g. Ruby Red, Rose Pink)"),
+        ("both", "Display Both Colour & Variant Name (e.g. Red – Ruby Red)"),
+    ]
+
+    variant_display_style = models.CharField(
+        max_length=20,
+        choices=VARIANT_DISPLAY_CHOICES,
+        default="colour",
+        help_text="Controls how colour/variant options are presented on the customer product details page.",
+    )
+
     unit_type = models.CharField(
         max_length=20,
         choices=UNIT_TYPE_CHOICES,
@@ -864,6 +877,26 @@ class ProductColour(models.Model):
         if primary_img:
             return primary_img.get_image_url()
         return self.product.get_image_url()
+
+    def get_all_images(self):
+        """Returns list of all image URLs for this colour, primary image guaranteed first."""
+        imgs = list(self.images.all().order_by("-is_primary", "display_order", "id"))
+        urls = []
+        for img in imgs:
+            url = img.get_image_url()
+            if url and url not in urls:
+                urls.append(url)
+        return urls
+
+    def get_display_label(self):
+        style = getattr(self.product, "variant_display_style", "colour") if self.product_id else "colour"
+        v = self.variants.filter(is_active=True).exclude(variant_name="").first()
+        v_name = (v.variant_name if v else "").strip()
+        if style == "name" and v_name:
+            return v_name
+        elif style == "both" and v_name and v_name.lower() != self.name.lower():
+            return f"{self.name} – {v_name}"
+        return self.name
 
 
 class ProductColourImage(models.Model):

@@ -9,6 +9,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from orders.models import OrderItem
+from products.models import optimize_image_url
 
 
 # Valid order statuses that count towards completed/valid sales
@@ -348,6 +349,621 @@ def generate_products_excel(queryset, filter_description="All Filtered Products"
     ws.column_dimensions["H"].width = 22  # Variant Name
     ws.column_dimensions["I"].width = 14  # Size / Unit
     ws.column_dimensions["K"].width = 18  # SKU
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def generate_category_subcategory_excel(
+    queryset,
+    filter_description="All Filtered Products",
+    category_name=None,
+    subcategory_name=None,
+    product_type=None,
+):
+    """
+    Generates a professional 3-worksheet Excel workbook (.xlsx) tailored for
+    Category-wise, Subcategory-wise, and Product Type exports:
+    - Sheet 1: 'Products' – Full product details, pricing, stock, sales, and image URLs.
+    - Sheet 2: 'Variants' – Complete variable product variant attributes, SKUs, prices, stock.
+    - Sheet 3: 'Images' – All media assets (Cover, Gallery, Colour & Variant photos) linked by Product ID.
+
+    Features:
+    - TipsyCart Brand Rose styling
+    - Auto-filter enabled on row 4 across all sheets
+    - Rows 1-4 frozen across all sheets
+    - Auto-adjusted column widths with comfortable minimums
+    - Currency (₹#,##0.00), percentage (0.0%), integer (#,##0), and date formatting
+    - Direct, valid Cloudinary / web image URLs via optimize_image_url
+    """
+    wb = openpyxl.Workbook()
+
+    # ----------------------------------------------------
+    # COLOR PALETTE & STYLES (TipsyCart Brand Palette)
+    # ----------------------------------------------------
+    PRIMARY_ROSE = "9F1239"   # Dark Rose / Brand Header
+    ACCENT_PINK = "FCE7F3"    # Light Pink / Metadata
+    ZEBRA_TINT = "FDF2F8"     # Alternate Row Tint
+    WHITE = "FFFFFF"
+    DARK_TEXT = "1E293B"
+    MUTED_TEXT = "64748B"
+    BORDER_COLOR = "E2E8F0"
+
+    title_font = Font(name="Calibri", size=13, bold=True, color=WHITE)
+    meta_font = Font(name="Calibri", size=9.5, italic=True, color=DARK_TEXT)
+    header_font = Font(name="Calibri", size=10.5, bold=True, color=WHITE)
+    data_font = Font(name="Calibri", size=9.5, color=DARK_TEXT)
+    muted_data_font = Font(name="Calibri", size=9, color=MUTED_TEXT)
+
+    title_fill = PatternFill(start_color=PRIMARY_ROSE, end_color=PRIMARY_ROSE, fill_type="solid")
+    meta_fill = PatternFill(start_color=ACCENT_PINK, end_color=ACCENT_PINK, fill_type="solid")
+    header_fill = PatternFill(start_color="A51655", end_color="A51655", fill_type="solid")
+    zebra_fill = PatternFill(start_color=ZEBRA_TINT, end_color=ZEBRA_TINT, fill_type="solid")
+    white_fill = PatternFill(start_color=WHITE, end_color=WHITE, fill_type="solid")
+
+    thin_border = Border(
+        left=Side(style="thin", color=BORDER_COLOR),
+        right=Side(style="thin", color=BORDER_COLOR),
+        top=Side(style="thin", color=BORDER_COLOR),
+        bottom=Side(style="thin", color=BORDER_COLOR),
+    )
+
+    center_align = Alignment(horizontal="center", vertical="center")
+    left_align = Alignment(horizontal="left", vertical="center")
+    right_align = Alignment(horizontal="right", vertical="center")
+
+    now_dt = timezone.localtime(timezone.now())
+    now_str = now_dt.strftime("%Y-%m-%d %I:%M:%S %p")
+    date_only_str = now_dt.strftime("%Y-%m-%d")
+
+    # ----------------------------------------------------
+    # PRE-FETCH PRODUCTS & SALES ANALYTICS
+    # ----------------------------------------------------
+    products_list = list(
+        queryset.select_related("category_ref", "subcategory_ref")
+        .prefetch_related(
+            "gallery_images",
+            "colours",
+            "colours__images",
+            "variants",
+            "variants__colour",
+            "variants__size",
+        )
+        .order_by("-created_at")
+    )
+    total_products = len(products_list)
+    p_ids = [p.id for p in products_list]
+
+    order_items_qs = OrderItem.objects.filter(
+        product_id__in=p_ids,
+        order__status__in=VALID_ORDER_STATUSES
+    )
+
+    prod_sales_map = {}
+    for row in order_items_qs.values("product_id").annotate(
+        qty=Sum("quantity"),
+        rev=Sum(F("price") * F("quantity"))
+    ):
+        prod_sales_map[row["product_id"]] = {
+            "qty": row["qty"] or 0,
+            "rev": Decimal(str(row["rev"] or "0.00"))
+        }
+
+    var_sales_map = {}
+    for row in order_items_qs.exclude(variant_id=None).values("variant_id").annotate(
+        qty=Sum("quantity"),
+        rev=Sum(F("price") * F("quantity"))
+    ):
+        var_sales_map[row["variant_id"]] = {
+            "qty": row["qty"] or 0,
+            "rev": Decimal(str(row["rev"] or "0.00"))
+        }
+
+    def _setup_sheet_headers(ws, title_text, meta_text, headers):
+        ws.views.sheetView[0].showGridLines = True
+        num_cols = len(headers)
+        end_col_letter = get_column_letter(num_cols)
+
+        # Row 1: Title
+        ws.merge_cells(f"A1:{end_col_letter}1")
+        t_cell = ws["A1"]
+        t_cell.value = title_text
+        t_cell.font = title_font
+        t_cell.fill = title_fill
+        t_cell.alignment = center_align
+        ws.row_dimensions[1].height = 34
+
+        # Row 2: Metadata
+        ws.merge_cells(f"A2:{end_col_letter}2")
+        m_cell = ws["A2"]
+        m_cell.value = meta_text
+        m_cell.font = meta_font
+        m_cell.fill = meta_fill
+        m_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        ws.row_dimensions[2].height = 20
+
+        # Row 3: Blank separator
+        ws.row_dimensions[3].height = 8
+
+        # Row 4: Headers
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=4, column=col_idx, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+        ws.row_dimensions[4].height = 26
+
+    def _finalize_sheet_formatting(ws, headers, current_row, min_widths=None):
+        min_widths = min_widths or {}
+        num_cols = len(headers)
+        end_col_letter = get_column_letter(num_cols)
+
+        # Freeze rows 1-4
+        ws.freeze_panes = "A5"
+
+        # Auto-filter
+        last_row = max(current_row - 1, 4)
+        ws.auto_filter.ref = f"A4:{end_col_letter}{last_row}"
+
+        # Adjust column widths
+        for col in ws.columns:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.row in [1, 2, 3]:
+                    continue
+                if cell.value is not None:
+                    s_len = len(str(cell.value))
+                    if s_len > max_len:
+                        max_len = s_len
+            min_w = min_widths.get(col_letter, 12)
+            ws.column_dimensions[col_letter].width = max(max_len + 3, min_w)
+
+    # ====================================================
+    # SHEET 1: PRODUCTS
+    # ====================================================
+    ws_products = wb.active
+    ws_products.title = "Products"
+
+    prod_headers = [
+        "Product ID",
+        "SKU / Code",
+        "Product Name",
+        "Brand",
+        "Category",
+        "Subcategory",
+        "Product Type",
+        "Description",
+        "Unit Type",
+        "Default Size / Unit",
+        "MRP (₹)",
+        "Selling Price (₹)",
+        "Discount (%)",
+        "Stock Quantity",
+        "Units Sold",
+        "Total Revenue (₹)",
+        "Stock Status",
+        "Product Status",
+        "Is Featured",
+        "Today's Deal",
+        "Variant Count",
+        "Primary Image URL",
+        "Additional Gallery Images",
+        "Created Date",
+        "Export Date",
+    ]
+
+    prod_meta = (
+        f"Generated On: {now_str} (IST)  |  Scope / Filter: {filter_description}  |  "
+        f"Total Products: {total_products}  |  Database Source: Live Django Database"
+    )
+    _setup_sheet_headers(ws_products, "TIPSYCART — PRODUCTS & INVENTORY CATALOG", prod_meta, prod_headers)
+
+    row_p = 5
+    for idx, p in enumerate(products_list):
+        cat_name = p.category_ref.name if p.category_ref else (p.category or "")
+        subcat_name = p.subcategory_ref.name if p.subcategory_ref else (p.subcategory or "")
+        p_type = "Variable" if p.is_variable else "Simple"
+        created_str = timezone.localtime(p.created_at).strftime("%Y-%m-%d") if p.created_at else ""
+        prod_sales = prod_sales_map.get(p.id, {"qty": 0, "rev": Decimal("0.00")})
+
+        mrp = float(p.original_price or p.price)
+        price = float(p.price)
+        disc = float(p.discount_percentage or 0)
+        stock = p.total_stock if p.is_variable else p.stock
+        sold = prod_sales["qty"]
+        rev = float(prod_sales["rev"])
+        status_str = "Active" if p.is_active else "Inactive"
+
+        if stock == 0:
+            stock_status = "Out of Stock"
+        elif stock <= 10:
+            stock_status = "Low Stock"
+        else:
+            stock_status = "In Stock"
+
+        unit_str = f"{p.unit_value:g} {p.unit}".strip() if p.unit_value else (p.unit or "")
+        unit_type_display = p.get_unit_type_display() if hasattr(p, "get_unit_type_display") else p.unit_type
+
+        # Primary and gallery images
+        primary_img_url = optimize_image_url(p.get_image_url()) if p.get_image_url() else ""
+        gallery_urls = [
+            optimize_image_url(g.get_image_url())
+            for g in p.gallery_images.all()
+            if g.get_image_url()
+        ]
+        gallery_urls_str = " ; ".join(gallery_urls) if gallery_urls else ""
+
+        var_count = p.variants.count() if p.is_variable else 0
+        is_feat_str = "Yes" if p.is_featured else "No"
+        is_deal_str = "Yes" if p.is_deal_of_the_day else "No"
+
+        row_fill = zebra_fill if idx % 2 == 1 else white_fill
+
+        values = [
+            p.id,
+            p.product_number or f"TC-PRD-{p.id}",
+            p.name,
+            p.brand or "TipsyCart",
+            cat_name,
+            subcat_name,
+            p_type,
+            p.description or "",
+            unit_type_display,
+            unit_str,
+            mrp,
+            price,
+            disc / 100.0,
+            stock,
+            sold,
+            rev,
+            stock_status,
+            status_str,
+            is_feat_str,
+            is_deal_str,
+            var_count,
+            primary_img_url,
+            gallery_urls_str,
+            created_str,
+            date_only_str,
+        ]
+
+        for col_idx, val in enumerate(values, start=1):
+            cell = ws_products.cell(row=row_p, column=col_idx, value=val)
+            cell.font = data_font
+            cell.fill = row_fill
+            cell.border = thin_border
+
+            # Column specific alignment & format
+            if col_idx in [1, 2, 7, 9, 10, 17, 18, 19, 20, 21, 24, 25]:
+                cell.alignment = center_align
+            elif col_idx in [11, 12, 16]:
+                cell.alignment = right_align
+                cell.number_format = "₹#,##0.00"
+            elif col_idx == 13:
+                cell.alignment = right_align
+                cell.number_format = "0.0%"
+            elif col_idx in [14, 15]:
+                cell.alignment = right_align
+                cell.number_format = "#,##0"
+            else:
+                cell.alignment = left_align
+
+        ws_products.row_dimensions[row_p].height = 20
+        row_p += 1
+
+    prod_min_widths = {
+        "A": 12, "B": 16, "C": 32, "D": 16, "E": 20, "F": 22,
+        "G": 14, "H": 30, "I": 16, "J": 18, "K": 14, "L": 14,
+        "M": 12, "N": 14, "O": 12, "P": 16, "Q": 14, "R": 14,
+        "S": 12, "T": 12, "U": 14, "V": 40, "W": 40, "X": 14, "Y": 14
+    }
+    _finalize_sheet_formatting(ws_products, prod_headers, row_p, prod_min_widths)
+
+    # ====================================================
+    # SHEET 2: VARIANTS
+    # ====================================================
+    ws_variants = wb.create_sheet(title="Variants")
+
+    var_headers = [
+        "Product ID",
+        "Product SKU",
+        "Product Name",
+        "Category",
+        "Subcategory",
+        "Variant ID",
+        "Variant SKU",
+        "Variant Title / Name",
+        "Size / Option",
+        "Colour / Shade",
+        "Colour Hex Code",
+        "Unit / Measurement",
+        "Barcode / EAN",
+        "Variant MRP (₹)",
+        "Variant Selling Price (₹)",
+        "Discount (%)",
+        "Variant Stock",
+        "Units Sold",
+        "Total Revenue (₹)",
+        "Stock Status",
+        "Variant Status",
+        "Variant Image URL",
+        "Created Date",
+    ]
+
+    # Pre-count total variants
+    all_variants_count = sum(len(list(p.variants.all())) for p in products_list if p.is_variable)
+    var_meta = (
+        f"Linked to Products via 'Product ID'  |  Total Variable Products: {sum(1 for p in products_list if p.is_variable)}  |  "
+        f"Total Variants: {all_variants_count}  |  Single Source of Truth: TipsyCart Database"
+    )
+    _setup_sheet_headers(ws_variants, "TIPSYCART — PRODUCT VARIANTS & ATTRIBUTES", var_meta, var_headers)
+
+    row_v = 5
+    var_row_idx = 0
+    for p in products_list:
+        if not p.is_variable:
+            continue
+
+        cat_name = p.category_ref.name if p.category_ref else (p.category or "")
+        subcat_name = p.subcategory_ref.name if p.subcategory_ref else (p.subcategory or "")
+        parent_sku = p.product_number or f"TC-PRD-{p.id}"
+
+        for v in p.variants.all():
+            v_sales = var_sales_map.get(v.id, {"qty": 0, "rev": Decimal("0.00")})
+            v_name = v.variant_name or v.get_title()
+            v_size = v.size.name if v.size else (f"{v.unit_value} {v.unit}".strip() if v.unit_value else (v.unit or ""))
+            v_colour = v.colour.name if v.colour else ""
+            v_hex = v.colour.color_code if v.colour else ""
+            v_unit = f"{v.unit_value:g} {v.unit}".strip() if v.unit_value else (v.unit or "")
+            v_sku = v.sku or f"{parent_sku}-V{v.id}"
+            v_mrp = float(v.original_price or p.original_price or v.price)
+            v_price = float(v.price)
+            v_disc = float(v.discount_percentage or 0)
+            v_stock = v.stock
+            v_sold = v_sales["qty"]
+            v_rev = float(v_sales["rev"])
+            v_status = "Active" if (p.is_active and v.is_active) else "Inactive"
+
+            if v_stock == 0:
+                v_stock_status = "Out of Stock"
+            elif v_stock <= 10:
+                v_stock_status = "Low Stock"
+            else:
+                v_stock_status = "In Stock"
+
+            v_img_url = optimize_image_url(v.get_image_url()) if v.get_image_url() else ""
+            v_created = timezone.localtime(v.created_at).strftime("%Y-%m-%d") if v.created_at else date_only_str
+
+            row_fill = zebra_fill if var_row_idx % 2 == 1 else white_fill
+
+            v_values = [
+                p.id,
+                parent_sku,
+                p.name,
+                cat_name,
+                subcat_name,
+                v.id,
+                v_sku,
+                v_name,
+                v_size,
+                v_colour,
+                v_hex,
+                v_unit,
+                v.barcode or "",
+                v_mrp,
+                v_price,
+                v_disc / 100.0,
+                v_stock,
+                v_sold,
+                v_rev,
+                v_stock_status,
+                v_status,
+                v_img_url,
+                v_created,
+            ]
+
+            for col_idx, val in enumerate(v_values, start=1):
+                cell = ws_variants.cell(row=row_v, column=col_idx, value=val)
+                cell.font = data_font
+                cell.fill = row_fill
+                cell.border = thin_border
+
+                if col_idx in [1, 2, 6, 7, 11, 13, 20, 21, 23]:
+                    cell.alignment = center_align
+                elif col_idx in [14, 15, 19]:
+                    cell.alignment = right_align
+                    cell.number_format = "₹#,##0.00"
+                elif col_idx == 16:
+                    cell.alignment = right_align
+                    cell.number_format = "0.0%"
+                elif col_idx in [17, 18]:
+                    cell.alignment = right_align
+                    cell.number_format = "#,##0"
+                else:
+                    cell.alignment = left_align
+
+            ws_variants.row_dimensions[row_v].height = 20
+            row_v += 1
+            var_row_idx += 1
+
+    var_min_widths = {
+        "A": 12, "B": 16, "C": 30, "D": 20, "E": 22, "F": 12,
+        "G": 18, "H": 24, "I": 16, "J": 16, "K": 16, "L": 18,
+        "M": 16, "N": 14, "O": 14, "P": 12, "Q": 14, "R": 12,
+        "S": 16, "T": 14, "U": 14, "V": 40, "W": 14
+    }
+    _finalize_sheet_formatting(ws_variants, var_headers, row_v, var_min_widths)
+
+    # ====================================================
+    # SHEET 3: IMAGES
+    # ====================================================
+    ws_images = wb.create_sheet(title="Images")
+
+    img_headers = [
+        "Product ID",
+        "Product SKU",
+        "Product Name",
+        "Category",
+        "Image Record ID",
+        "Image Type",
+        "Display Order",
+        "Is Primary",
+        "Alt Text / Label",
+        "Image URL",
+    ]
+
+    img_meta = (
+        f"Linked to Products via 'Product ID'  |  Complete Media Catalog  |  "
+        f"Valid Cloudinary & Web URLs  |  Single Source of Truth: TipsyCart Database"
+    )
+    _setup_sheet_headers(ws_images, "TIPSYCART — PRODUCT IMAGES & MEDIA ASSETS", img_meta, img_headers)
+
+    row_img = 5
+    img_row_idx = 0
+    for p in products_list:
+        cat_name = p.category_ref.name if p.category_ref else (p.category or "")
+        parent_sku = p.product_number or f"TC-PRD-{p.id}"
+        seen_urls = set()
+
+        # 1. Main cover image
+        cover_url = optimize_image_url(p.get_image_url()) if p.get_image_url() else ""
+        if cover_url:
+            seen_urls.add(cover_url)
+            row_fill = zebra_fill if img_row_idx % 2 == 1 else white_fill
+            img_values = [
+                p.id,
+                parent_sku,
+                p.name,
+                cat_name,
+                0,
+                "Cover Image (Primary)",
+                1,
+                "Yes",
+                p.name,
+                cover_url,
+            ]
+            for col_idx, val in enumerate(img_values, start=1):
+                cell = ws_images.cell(row=row_img, column=col_idx, value=val)
+                cell.font = data_font
+                cell.fill = row_fill
+                cell.border = thin_border
+                if col_idx in [1, 2, 5, 7, 8]:
+                    cell.alignment = center_align
+                else:
+                    cell.alignment = left_align
+            ws_images.row_dimensions[row_img].height = 20
+            row_img += 1
+            img_row_idx += 1
+
+        # 2. Gallery images
+        for gimg in p.gallery_images.all().order_by("display_order", "id"):
+            raw_url = gimg.get_image_url()
+            url = optimize_image_url(raw_url) if raw_url else ""
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                row_fill = zebra_fill if img_row_idx % 2 == 1 else white_fill
+                is_p_str = "Yes" if gimg.is_primary else "No"
+                img_values = [
+                    p.id,
+                    parent_sku,
+                    p.name,
+                    cat_name,
+                    gimg.id,
+                    "Gallery Image",
+                    gimg.display_order,
+                    is_p_str,
+                    gimg.alt_text or p.name,
+                    url,
+                ]
+                for col_idx, val in enumerate(img_values, start=1):
+                    cell = ws_images.cell(row=row_img, column=col_idx, value=val)
+                    cell.font = data_font
+                    cell.fill = row_fill
+                    cell.border = thin_border
+                    if col_idx in [1, 2, 5, 7, 8]:
+                        cell.alignment = center_align
+                    else:
+                        cell.alignment = left_align
+                ws_images.row_dimensions[row_img].height = 20
+                row_img += 1
+                img_row_idx += 1
+
+        # 3. Colour images (for variable fashion / cosmetics products)
+        for c in p.colours.all():
+            for cimg in c.images.all().order_by("display_order", "id"):
+                raw_url = cimg.get_image_url()
+                url = optimize_image_url(raw_url) if raw_url else ""
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    row_fill = zebra_fill if img_row_idx % 2 == 1 else white_fill
+                    is_p_str = "Yes" if cimg.is_primary else "No"
+                    img_values = [
+                        p.id,
+                        parent_sku,
+                        p.name,
+                        cat_name,
+                        cimg.id,
+                        f"Colour Variant Image ({c.name})",
+                        cimg.display_order,
+                        is_p_str,
+                        f"{p.name} - {c.name}",
+                        url,
+                    ]
+                    for col_idx, val in enumerate(img_values, start=1):
+                        cell = ws_images.cell(row=row_img, column=col_idx, value=val)
+                        cell.font = data_font
+                        cell.fill = row_fill
+                        cell.border = thin_border
+                        if col_idx in [1, 2, 5, 7, 8]:
+                            cell.alignment = center_align
+                        else:
+                            cell.alignment = left_align
+                    ws_images.row_dimensions[row_img].height = 20
+                    row_img += 1
+                    img_row_idx += 1
+
+        # 4. Variant-specific custom photos
+        for v in p.variants.all():
+            if v.image or v.image_url:
+                raw_url = v.get_image_url()
+                url = optimize_image_url(raw_url) if raw_url else ""
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    row_fill = zebra_fill if img_row_idx % 2 == 1 else white_fill
+                    img_values = [
+                        p.id,
+                        parent_sku,
+                        p.name,
+                        cat_name,
+                        v.id,
+                        f"Variant Photo ({v.get_title()})",
+                        1,
+                        "No",
+                        v.get_full_name(),
+                        url,
+                    ]
+                    for col_idx, val in enumerate(img_values, start=1):
+                        cell = ws_images.cell(row=row_img, column=col_idx, value=val)
+                        cell.font = data_font
+                        cell.fill = row_fill
+                        cell.border = thin_border
+                        if col_idx in [1, 2, 5, 7, 8]:
+                            cell.alignment = center_align
+                        else:
+                            cell.alignment = left_align
+                    ws_images.row_dimensions[row_img].height = 20
+                    row_img += 1
+                    img_row_idx += 1
+
+    img_min_widths = {
+        "A": 12, "B": 16, "C": 30, "D": 20, "E": 14,
+        "F": 24, "G": 14, "H": 12, "I": 28, "J": 50
+    }
+    _finalize_sheet_formatting(ws_images, img_headers, row_img, img_min_widths)
 
     buffer = io.BytesIO()
     wb.save(buffer)

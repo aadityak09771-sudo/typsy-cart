@@ -1249,12 +1249,12 @@
                             type="button"
                             class="tc-colour-btn"
                             data-colour-id="{{ c.id }}"
-                            data-colour-name="{{ c.name }}"
+                            data-colour-name="{{ c.get_display_label }}"
                             data-colour-code="{{ c.color_code }}"
-                            aria-label="Select {{ c.name }}"
+                            aria-label="Select {{ c.get_display_label }}"
                         >
                             <span class="tc-swatch-circle" style="background-color: {{ c.color_code|default:'#000' }};"></span>
-                            <span>{{ c.name }}</span>
+                            <span>{{ c.get_display_label }}</span>
                         </button>
                         {% endfor %}
                     </div>
@@ -1756,6 +1756,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Filter available sizes based on selected colour
     function updateSizeAvailability() {
+        if (!hasSizes) return;
         const sizeButtons = document.querySelectorAll(".tc-size-btn");
         sizeButtons.forEach(btn => {
             const sId = parseInt(btn.dataset.sizeId, 10);
@@ -1939,6 +1940,13 @@ document.addEventListener("DOMContentLoaded", function () {
         addBtn.addEventListener("click", async () => {
             if (!currentMatchedVariant && variantsData.length > 0) {
                 if (noticeEl) {
+                    if (hasColours && hasSizes) {
+                        noticeEl.textContent = "Please select both colour and size to proceed.";
+                    } else if (hasColours) {
+                        noticeEl.textContent = "Please select a colour to proceed.";
+                    } else if (hasSizes) {
+                        noticeEl.textContent = "Please select an option to proceed.";
+                    }
                     noticeEl.style.display = "block";
                     noticeEl.scrollIntoView({ behavior: "smooth", block: "center" });
                 }

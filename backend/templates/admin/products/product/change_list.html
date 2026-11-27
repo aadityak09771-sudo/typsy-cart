@@ -63,11 +63,272 @@
     border-color: #059669 !important;
     font-weight: 700 !important;
   }
+  .object-tools li a.tc-tool-cat-export {
+    background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+    color: #ffffff !important;
+    border-color: #115e59 !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25) !important;
+  }
+  .object-tools li a.tc-tool-cat-export:hover {
+    background: linear-gradient(135deg, #0f766e, #115e59) !important;
+  }
   .object-tools li a.tc-tool-import {
     background: #0284c7 !important;
     color: #ffffff !important;
     border-color: #0369a1 !important;
     font-weight: 700 !important;
+  }
+
+  /* MODAL STYLES FOR CATEGORY EXPORT */
+  .tc-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.65);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  .tc-modal-backdrop.open {
+    display: flex;
+  }
+  .tc-modal-dialog {
+    background: #ffffff;
+    width: 100%;
+    max-width: 580px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    animation: tcModalFadeIn 0.2s ease-out;
+  }
+  @keyframes tcModalFadeIn {
+    from { opacity: 0; transform: translateY(-16px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .tc-modal-header {
+    background: linear-gradient(135deg, #9f1239, #831843);
+    color: #ffffff;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tc-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tc-modal-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #ffffff;
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .tc-modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+  .tc-modal-body {
+    padding: 24px;
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+  .tc-form-row {
+    margin-bottom: 20px;
+  }
+  .tc-form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tc-scope-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .tc-scope-radio {
+    display: none;
+  }
+  .tc-scope-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f8fafc;
+  }
+  .tc-scope-card:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+  }
+  .tc-scope-radio:checked + .tc-scope-card {
+    border-color: #9f1239;
+    background: #fdf2f8;
+    color: #9f1239;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(159, 18, 57, 0.15);
+  }
+  .tc-scope-icon {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .tc-scope-title {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .tc-form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    font-size: 14px;
+    color: #1e293b;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+  .tc-form-select:focus {
+    border-color: #9f1239;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(159, 18, 57, 0.12);
+  }
+  .tc-type-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .tc-type-radio {
+    display: none;
+  }
+  .tc-type-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: #475569;
+    background: #ffffff;
+    transition: all 0.15s;
+  }
+  .tc-type-radio:checked + .tc-type-card {
+    border-color: #0d9488;
+    background: #f0fdfa;
+    color: #0f766e;
+    font-weight: 700;
+  }
+  .tc-preview-box {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 18px;
+  }
+  .tc-preview-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .tc-filename-preview {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0f766e;
+    word-break: break-all;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+  }
+  .tc-sheets-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tc-sheet-pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: #831843;
+    background: #fdf2f8;
+    border: 1px solid #fbcfe8;
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .tc-modal-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  .tc-btn-cancel {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tc-btn-cancel:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+  .tc-btn-download {
+    padding: 9px 22px;
+    border-radius: 8px;
+    border: 1px solid #0f766e;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+    transition: all 0.15s;
+  }
+  .tc-btn-download:hover {
+    background: linear-gradient(135deg, #0f766e, #115e59);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
   }
 </style>
 {% endblock %}
@@ -81,6 +342,11 @@
     <li>
         <a href="{% url 'admin:products_product_export_excel' %}?{{ request.GET.urlencode }}" class="tc-tool-export addlink">
             📥 Export to Excel (.xlsx)
+        </a>
+    </li>
+    <li>
+        <a href="javascript:void(0)" onclick="openCategoryExportModal()" class="tc-tool-cat-export addlink">
+            🎯 Export by Category / Subcategory
         </a>
     </li>
     <li>
@@ -138,4 +404,296 @@
     Total Matching Products: <strong>{{ cl.result_count }}</strong>
   </div>
 </div>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+
+<!-- DYNAMIC EXPORT PRODUCTS TO EXCEL MODAL -->
+<div id="tc-category-export-modal" class="tc-modal-backdrop" onclick="if(event.target === this) closeCategoryExportModal();">
+  <div class="tc-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="tc-modal-title">
+    <div class="tc-modal-header">
+      <h3 id="tc-modal-title">
+        <span>🎯</span>
+        <span>EXPORT PRODUCTS TO EXCEL</span>
+      </h3>
+      <button type="button" class="tc-modal-close-btn" onclick="closeCategoryExportModal()" aria-label="Close modal">&times;</button>
+    </div>
+
+    <div class="tc-modal-body">
+      <!-- 1. EXPORT SCOPE -->
+      <div class="tc-form-row">
+        <label class="tc-form-label">1. Choose Export Scope</label>
+        <div class="tc-scope-options">
+          <label>
+            <input type="radio" name="tc_scope" value="all" class="tc-scope-radio" checked onchange="handleScopeChange()">
+            <div class="tc-scope-card">
+              <span class="tc-scope-icon">🌐</span>
+              <span class="tc-scope-title">All Products</span>
+            </div>
+          </label>
+          <label>
+            <input type="radio" name="tc_scope" value="category" class="tc-scope-radio" onchange="handleScopeChange()">
+            <div class="tc-scope-card">
+              <span class="tc-scope-icon">📂</span>
+              <span class="tc-scope-title">Select Category</span>
+            </div>
+          </label>
+          <label>
+            <input type="radio" name="tc_scope" value="subcategory" class="tc-scope-radio" onchange="handleScopeChange()">
+            <div class="tc-scope-card">
+              <span class="tc-scope-icon">📑</span>
+              <span class="tc-scope-title">Select Subcategory</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. CATEGORY DROPDOWN -->
+      <div id="tc-cat-select-container" class="tc-form-row" style="display: none;">
+        <label for="tc-export-category-select" class="tc-form-label">Select Category</label>
+        <select id="tc-export-category-select" class="tc-form-select" onchange="handleCategorySelectChange()">
+          <option value="">— Choose a Category —</option>
+          {% for cat in export_categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- 3. SUBCATEGORY DROPDOWN -->
+      <div id="tc-subcat-select-container" class="tc-form-row" style="display: none;">
+        <label for="tc-export-subcategory-select" class="tc-form-label">Select Subcategory</label>
+        <select id="tc-export-subcategory-select" class="tc-form-select" onchange="updateExportPreview()">
+          <option value="">— All Subcategories in Selected Category —</option>
+        </select>
+      </div>
+
+      <!-- 4. PRODUCT TYPE -->
+      <div class="tc-form-row">
+        <label class="tc-form-label">2. Filter by Product Type</label>
+        <div class="tc-type-options">
+          <label>
+            <input type="radio" name="tc_product_type" value="all" class="tc-type-radio" checked onchange="updateExportPreview()">
+            <div class="tc-type-card">
+              All Products
+            </div>
+          </label>
+          <label>
+            <input type="radio" name="tc_product_type" value="simple" class="tc-type-radio" onchange="updateExportPreview()">
+            <div class="tc-type-card">
+              Simple Only
+            </div>
+          </label>
+          <label>
+            <input type="radio" name="tc_product_type" value="variable" class="tc-type-radio" onchange="updateExportPreview()">
+            <div class="tc-type-card">
+              Variable Only
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 5. PREVIEW & WORKBOOK STRUCTURE -->
+      <div class="tc-preview-box">
+        <div class="tc-preview-title">Download Target & Filename Preview</div>
+        <div id="tc-export-filename-preview" class="tc-filename-preview">TipsyCart_All_Products.xlsx</div>
+        <div style="margin-bottom: 6px; font-size: 12px; color: #475569;" id="tc-export-summary-text">
+          Scope: All Products | All Product Types
+        </div>
+        <div class="tc-sheets-pills">
+          <span class="tc-sheet-pill">📄 Sheet 1: Products</span>
+          <span class="tc-sheet-pill">📊 Sheet 2: Variants</span>
+          <span class="tc-sheet-pill">🖼️ Sheet 3: Images</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tc-modal-footer">
+      <button type="button" class="tc-btn-cancel" onclick="closeCategoryExportModal()">Cancel</button>
+      <button type="button" class="tc-btn-download" onclick="triggerCategoryExport()">
+        <span>📥</span>
+        <span>Download Excel (.xlsx)</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tcExportCategoriesData = {{ export_categories_json|default:"[]"|safe }};
+
+  function openCategoryExportModal() {
+    const modal = document.getElementById('tc-category-export-modal');
+    if (modal) {
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      handleScopeChange();
+    }
+  }
+
+  function closeCategoryExportModal() {
+    const modal = document.getElementById('tc-category-export-modal');
+    if (modal) {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Handle ESC key to close modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeCategoryExportModal();
+    }
+  });
+
+  function getSelectedScope() {
+    const checked = document.querySelector('input[name="tc_scope"]:checked');
+    return checked ? checked.value : 'all';
+  }
+
+  function getSelectedProductType() {
+    const checked = document.querySelector('input[name="tc_product_type"]:checked');
+    return checked ? checked.value : 'all';
+  }
+
+  function handleScopeChange() {
+    const scope = getSelectedScope();
+    const catContainer = document.getElementById('tc-cat-select-container');
+    const subcatContainer = document.getElementById('tc-subcat-select-container');
+
+    if (scope === 'all') {
+      catContainer.style.display = 'none';
+      subcatContainer.style.display = 'none';
+    } else if (scope === 'category') {
+      catContainer.style.display = 'block';
+      subcatContainer.style.display = 'none';
+    } else if (scope === 'subcategory') {
+      catContainer.style.display = 'block';
+      subcatContainer.style.display = 'block';
+      handleCategorySelectChange();
+    }
+    updateExportPreview();
+  }
+
+  function handleCategorySelectChange() {
+    const catSelect = document.getElementById('tc-export-category-select');
+    const subcatSelect = document.getElementById('tc-export-subcategory-select');
+    const selectedCatId = parseInt(catSelect.value, 10);
+
+    subcatSelect.innerHTML = '<option value="">— All Subcategories in Selected Category —</option>';
+
+    if (!isNaN(selectedCatId)) {
+      const catObj = tcExportCategoriesData.find(c => c.id === selectedCatId);
+      if (catObj && catObj.subcategories && catObj.subcategories.length > 0) {
+        catObj.subcategories.forEach(sub => {
+          const opt = document.createElement('option');
+          opt.value = sub.id;
+          opt.textContent = sub.name;
+          subcatSelect.appendChild(opt);
+        });
+      }
+    }
+    updateExportPreview();
+  }
+
+  function sanitizeForPreview(str) {
+    return (str || '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+
+  function updateExportPreview() {
+    const scope = getSelectedScope();
+    const pType = getSelectedProductType();
+    const catSelect = document.getElementById('tc-export-category-select');
+    const subcatSelect = document.getElementById('tc-export-subcategory-select');
+
+    let catName = '';
+    let subcatName = '';
+
+    if (catSelect && catSelect.selectedIndex > 0) {
+      catName = catSelect.options[catSelect.selectedIndex].text.trim();
+    }
+    if (subcatSelect && subcatSelect.selectedIndex > 0) {
+      subcatName = subcatSelect.options[subcatSelect.selectedIndex].text.trim();
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const filenameParts = ['TipsyCart'];
+
+    if (scope === 'category' && catName) {
+      filenameParts.push(sanitizeForPreview(catName));
+    } else if (scope === 'subcategory') {
+      if (catName) filenameParts.push(sanitizeForPreview(catName));
+      if (subcatName) filenameParts.push(sanitizeForPreview(subcatName));
+      else if (!catName) filenameParts.push('All_Products');
+    } else {
+      filenameParts.push('All_Products');
+    }
+
+    if (pType === 'simple') {
+      filenameParts.push('Simple_Products');
+    } else if (pType === 'variable') {
+      filenameParts.push('Variable_Products');
+    }
+
+    filenameParts.push(todayStr);
+    const previewFilename = filenameParts.join('_') + '.xlsx';
+
+    const filenameElem = document.getElementById('tc-export-filename-preview');
+    if (filenameElem) {
+      filenameElem.textContent = previewFilename;
+    }
+
+    const summaryElem = document.getElementById('tc-export-summary-text');
+    if (summaryElem) {
+      let targetDesc = 'All Products';
+      if (scope === 'category') {
+        targetDesc = catName ? `Category: ${catName} (All Subcategories)` : 'Category: [Select a category]';
+      } else if (scope === 'subcategory') {
+        targetDesc = catName ? (subcatName ? `Subcategory: ${catName} → ${subcatName}` : `Category: ${catName} (All Subcategories)`) : 'Subcategory: [Select category & subcategory]';
+      }
+      const pTypeDesc = pType === 'simple' ? 'Simple Products Only' : (pType === 'variable' ? 'Variable Products Only' : 'All Product Types');
+      summaryElem.textContent = `Target: ${targetDesc} | ${pTypeDesc}`;
+    }
+  }
+
+  function triggerCategoryExport() {
+    const scope = getSelectedScope();
+    const pType = getSelectedProductType();
+    const catSelect = document.getElementById('tc-export-category-select');
+    const subcatSelect = document.getElementById('tc-export-subcategory-select');
+
+    const catId = catSelect ? catSelect.value : '';
+    const subcatId = subcatSelect ? subcatSelect.value : '';
+
+    if (scope === 'category' && !catId) {
+      alert('Please select a Category from the dropdown.');
+      catSelect.focus();
+      return;
+    }
+
+    if (scope === 'subcategory' && !catId) {
+      alert('Please select a Category first.');
+      catSelect.focus();
+      return;
+    }
+
+    const baseUrl = "{% url 'admin:products_product_export_excel' %}";
+    const params = new URLSearchParams();
+
+    if (scope === 'category') {
+      params.append('category_id', catId);
+    } else if (scope === 'subcategory') {
+      params.append('category_id', catId);
+      if (subcatId) {
+        params.append('subcategory_id', subcatId);
+      }
+    }
+
+    if (pType && pType !== 'all') {
+      params.append('product_type', pType);
+    }
+
+    window.location.href = baseUrl + '?' + params.toString();
+    closeCategoryExportModal();
+  }
+</script>
 {% endblock %}

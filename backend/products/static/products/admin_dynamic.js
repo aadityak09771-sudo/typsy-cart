@@ -430,10 +430,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateProductTypeUI() {
       const mode = productTypeSelect.value;
+      const styleRow = document.querySelector(".field-variant_display_style");
+      const guideEl = document.getElementById("tc-collapsible-guide");
+      const sizePresetsEl = document.getElementById("tc-size-presets-bar");
+
       if (mode === "simple") {
         if (coloursGroup) coloursGroup.style.display = "none";
         if (sizesGroup) sizesGroup.style.display = "none";
         if (variantsGroup) variantsGroup.style.display = "none";
+        if (styleRow) styleRow.style.display = "none";
+        if (guideEl) guideEl.style.display = "none";
+        if (sizePresetsEl) sizePresetsEl.style.display = "none";
 
         if (noticeBanner) {
           noticeBanner.className = "tc-admin-notice-banner";
@@ -449,6 +456,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (coloursGroup) coloursGroup.style.display = "";
         if (sizesGroup) sizesGroup.style.display = "";
         if (variantsGroup) variantsGroup.style.display = "";
+        if (styleRow) styleRow.style.display = "";
+        if (guideEl) guideEl.style.display = "";
+        if (sizePresetsEl) sizePresetsEl.style.display = "";
 
         if (noticeBanner) {
           noticeBanner.className = "tc-admin-notice-banner tc-variable-banner";
@@ -456,7 +466,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <span>⚡</span>
             <div>
               <strong>Variable Product Mode Active:</strong> This product offers multiple options (e.g. Weights, Volumes, Colours, or Sizes).
-              Configure options in <strong>Section 6 (Sizes)</strong> &amp; <strong>Section 7 (Variants)</strong> below. Each variant has its own independent price, discount, SKU, and stock.
+              Configure options in <strong>Section 6 (Colours &amp; Sizes)</strong> &amp; <strong>Section 7 (Variants)</strong> below. Each variant has its own independent price, discount, SKU, and stock.
             </div>
           `;
         }
@@ -666,4 +676,210 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   updateCardPreview();
+
+  // -------------------------------------------------------------
+  // 7. INJECT COLLAPSIBLE ADMIN HELP GUIDE & QUICK SIZE PRESETS
+  // -------------------------------------------------------------
+  function injectCollapsibleGuide() {
+    const coloursGroup = document.querySelector("#colours-group");
+    if (!coloursGroup || document.getElementById("tc-collapsible-guide")) return;
+
+    const guide = document.createElement("details");
+    guide.id = "tc-collapsible-guide";
+    guide.className = "tc-collapsible-guide";
+    guide.innerHTML = `
+      <summary class="tc-guide-summary">
+        <div class="tc-guide-summary-left">
+          <span class="tc-guide-icon">📖</span>
+          <span class="tc-guide-title">How to Add Product Colours, Sizes &amp; Variants?</span>
+        </div>
+        <span class="tc-guide-toggle-badge">Click to Expand Guide ▾</span>
+      </summary>
+      <div class="tc-guide-body">
+        <div class="tc-guide-steps-grid">
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 1</span>
+            <h6>Product Type</h6>
+            <p>In <strong>Section 3</strong>, select <strong>Variable Product</strong> and click <em>Save and continue editing</em> below.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 2</span>
+            <h6>Display Style</h6>
+            <p>Select your customer display preference: <strong>Display by Colour</strong>, <strong>Display by Variant Name</strong>, or <strong>Both</strong>.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 3</span>
+            <h6>Add Colours (Optional)</h6>
+            <p>In <strong>Section 6 (Colours)</strong>, pick colours from the Global Library or enter custom names and HEX codes.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 4</span>
+            <h6>Multiple Photos per Colour</h6>
+            <p>Upload front, side, and detail photos for each colour. Choose which photo is <strong>Primary (★)</strong> and set display order.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 5</span>
+            <h6>Add Sizes / Weights (Optional)</h6>
+            <p>In <strong>Section 6 (Sizes)</strong>, add sizes or use 1-click presets (Clothing, Groceries, Cosmetics). Optional—leave empty if not needed.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 6</span>
+            <h6>Generate Variants</h6>
+            <p>In <strong>Section 7</strong>, click <strong>"⚡ Auto-Generate All Variant Combinations"</strong> to create all independent selling options.</p>
+          </div>
+          <div class="tc-guide-step-card">
+            <span class="tc-step-badge">Step 7</span>
+            <h6>Prices, Stock &amp; Save</h6>
+            <p>Set independent Selling Price, MRP, and Stock for each variant in Section 7. Each variant can also have its own image. Click Save!</p>
+          </div>
+        </div>
+      </div>
+    `;
+    coloursGroup.parentNode.insertBefore(guide, coloursGroup);
+  }
+
+  function injectSizePresetsBar() {
+    const sizesGroup = document.querySelector("#sizes-group");
+    if (!sizesGroup || document.getElementById("tc-size-presets-bar")) return;
+
+    const bar = document.createElement("div");
+    bar.id = "tc-size-presets-bar";
+    bar.className = "tc-size-presets-bar";
+    bar.innerHTML = `
+      <div class="tc-size-presets-header">
+        <span class="tc-presets-icon">⚡</span>
+        <strong>Quick Size &amp; Weight Presets:</strong>
+        <span class="tc-presets-subtitle">Click to auto-populate standard sizes/weights (or enter custom sizes below)</span>
+      </div>
+      <div class="tc-preset-buttons">
+        <button type="button" class="tc-preset-pill" data-preset="clothing">👕 Clothing (S, M, L, XL, XXL)</button>
+        <button type="button" class="tc-preset-pill" data-preset="groceries">🥦 Groceries (250g, 500g, 1kg, 2kg)</button>
+        <button type="button" class="tc-preset-pill" data-preset="cosmetics">💄 Cosmetics (5ml, 10ml, 20ml)</button>
+        <button type="button" class="tc-preset-pill" data-preset="general">📦 General (Small, Medium, Large)</button>
+        <button type="button" class="tc-preset-pill tc-preset-clear" data-preset="clear">✕ Clear Options</button>
+      </div>
+    `;
+
+    const presets = {
+      clothing: ["S", "M", "L", "XL", "XXL"],
+      groceries: ["250g", "500g", "1kg", "2kg"],
+      cosmetics: ["5ml", "10ml", "20ml"],
+      general: ["Small", "Medium", "Large"],
+    };
+
+    bar.addEventListener("click", function (e) {
+      const btn = e.target.closest(".tc-preset-pill");
+      if (!btn) return;
+      const pKey = btn.dataset.preset;
+
+      if (pKey === "clear") {
+        const rows = sizesGroup.querySelectorAll("tr.form-row, tr[id^='sizes-']");
+        rows.forEach(r => {
+          const inp = r.querySelector("input[name$='-name']");
+          const delCheck = r.querySelector("input[name$='-DELETE']");
+          if (delCheck) {
+            delCheck.checked = true;
+          } else if (inp) {
+            inp.value = "";
+          }
+        });
+        return;
+      }
+
+      const items = presets[pKey];
+      if (!items) return;
+
+      items.forEach((itemText, idx) => {
+        let rows = sizesGroup.querySelectorAll("tr.form-row:not(.empty-form), tr[id^='sizes-']:not(.empty-form)");
+        let targetRow = null;
+        for (let r of rows) {
+          const inp = r.querySelector("input[name$='-name']");
+          if (inp && (!inp.value || inp.value.trim() === "")) {
+            targetRow = r;
+            break;
+          }
+        }
+
+        if (!targetRow) {
+          const addBtn = sizesGroup.querySelector(".add-row a");
+          if (addBtn) {
+            addBtn.click();
+            rows = sizesGroup.querySelectorAll("tr.form-row:not(.empty-form), tr[id^='sizes-']:not(.empty-form)");
+            targetRow = rows[rows.length - 1];
+          }
+        }
+
+        if (targetRow) {
+          const inp = targetRow.querySelector("input[name$='-name']");
+          const orderInp = targetRow.querySelector("input[name$='-display_order']");
+          const activeCheck = targetRow.querySelector("input[name$='-is_active']");
+          if (inp) inp.value = itemText;
+          if (orderInp) orderInp.value = idx + 1;
+          if (activeCheck) activeCheck.checked = true;
+        }
+      });
+    });
+
+    const anchor = sizesGroup.querySelector("table, .tabular, fieldset") || sizesGroup.firstChild;
+    sizesGroup.insertBefore(bar, anchor);
+  }
+
+  injectCollapsibleGuide();
+  injectSizePresetsBar();
 });
+
+// -------------------------------------------------------------
+// GLOBAL HANDLERS FOR COLOUR MULTI-IMAGE WIDGET
+// -------------------------------------------------------------
+window.tcHandleColourFilesPicked = function (input, prefix) {
+  function esc(str) {
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  const container = document.getElementById(`tc-colour-pending-previews-${prefix}`);
+  if (!container) return;
+  container.innerHTML = "";
+  if (!input.files || input.files.length === 0) return;
+
+  Array.from(input.files).forEach((file, idx) => {
+    const card = document.createElement("div");
+    card.className = "tc-cim-pending-card";
+    const imgId = `tc-cim-pending-img-${prefix}-${idx}`;
+    card.innerHTML = `
+      <div class="tc-cim-pending-thumb">
+        <img id="${imgId}" src="" alt="Pending preview" />
+      </div>
+      <div class="tc-cim-pending-meta">
+        <span class="tc-cim-pending-name">${esc(file.name)}</span>
+        <span class="tc-cim-pending-status">Ready to save (${(file.size / 1024).toFixed(1)} KB)</span>
+      </div>
+    `;
+    container.appendChild(card);
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = document.getElementById(imgId);
+      if (img) img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+window.tcHandleColourPrimaryChange = function (radio, prefix) {
+  const wrap = radio.closest(".tc-colour-images-manager-wrap");
+  if (!wrap) return;
+  wrap.querySelectorAll(".tc-cim-card").forEach(c => c.classList.remove("is-primary"));
+  const card = radio.closest(".tc-cim-card");
+  if (card && radio.checked) {
+    card.classList.add("is-primary");
+  }
+};
+
+window.tcHandleColourDeleteToggle = function (checkbox, imgId) {
+  const card = document.getElementById(`tc-cim-card-${imgId}`);
+  if (!card) return;
+  card.classList.toggle("marked-for-delete", checkbox.checked);
+};
