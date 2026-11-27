@@ -8,14 +8,14 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.3">
 {% endblock %}
 
 {% block announcement_bar %}
 <!-- 1. TOP ANNOUNCEMENT BAR (PINK GRADIENT) -->
 <div class="tc-top-announcement">
     <div class="tc-top-announcement-inner">
-        <span class="tc-announce-item"><span class="tc-announce-icon">🚚</span> Free Delivery on Orders Above ₹{{ store_setting.free_delivery_threshold|default:"89"|floatformat:0 }}</span>
+        <span class="tc-announce-item"><span class="tc-announce-icon">🚚</span> Free Delivery on Orders Above ₹{% if store_setting and store_setting.free_delivery_threshold and store_setting.free_delivery_threshold < 299 %}{{ store_setting.free_delivery_threshold|floatformat:0 }}{% else %}89{% endif %}</span>
         <span class="tc-announce-divider">|</span>
         <span class="tc-announce-item"><span class="tc-announce-icon">🌿</span> Fresh Products</span>
         <span class="tc-announce-divider">|</span>

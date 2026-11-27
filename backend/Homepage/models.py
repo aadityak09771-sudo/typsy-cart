@@ -50,7 +50,10 @@ class StoreSetting(models.Model):
     def get_settings(cls):
         setting = cls.objects.first()
         if not setting:
-            setting = cls.objects.create()
+            setting = cls.objects.create(free_delivery_threshold=Decimal("89.00"))
+        elif setting.free_delivery_threshold == Decimal("299.00") or float(setting.free_delivery_threshold) >= 299:
+            setting.free_delivery_threshold = Decimal("89.00")
+            setting.save(update_fields=["free_delivery_threshold"])
         return setting
 
 
