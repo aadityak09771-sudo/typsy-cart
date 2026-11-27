@@ -8,7 +8,7 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.3">
+<link rel="stylesheet" href="{% static 'home/css/homepage_redesign.css' %}?v=1.4">
 {% endblock %}
 
 {% block announcement_bar %}
@@ -29,18 +29,16 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
 {% block content %}
 <div class="tc-home-redesign">
 
-    <!-- 2. MAIN HERO BANNER SECTION (EXACT REFERENCE DESIGN) -->
+    <!-- 2. MAIN HERO BANNER SECTION (REAL FULL BANNER IMAGE WITH OVERLAY TEXT) -->
     <section class="tc-hero-section">
         <div class="tc-home-container">
             <div class="tc-hero-slider">
-                <div class="tc-hero-card tc-hero-slide">
-                    <!-- Desktop Background Artwork (1024x512 with groceries on right & soft pink gradient on left) -->
-                    <div class="tc-hero-desktop-bg" aria-hidden="true">
-                        <img src="{% static 'home/images/hero-banner-new.jpg' %}" alt="TipsyCart Groceries & Daily Essentials" class="tc-hero-bg-art" loading="eager">
-                    </div>
+                <div class="tc-hero-banner-wrap">
+                    <!-- Real Authentic Banner Artwork (1024x512) -->
+                    <img src="{% static 'home/images/hero-banner-new.jpg' %}" alt="Everything you need, all in one cart — TipsyCart" class="tc-hero-banner-img" loading="eager">
 
-                    <!-- Left Text Content -->
-                    <div class="tc-hero-left">
+                    <!-- Overlay Content Sitting Directly Over the Left Pink Studio Area -->
+                    <div class="tc-hero-overlay">
                         <span class="tc-hero-tag-pill">KANPUR'S HYPERLOCAL LIFESTYLE STORE</span>
                         <h1 class="tc-hero-title">
                             Everything you need,<br>
@@ -53,37 +51,6 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                             <span>Explore Products</span>
                             <span class="tc-arrow">→</span>
                         </a>
-                    </div>
-
-                    <!-- Right Visual Area (Desktop pointer badge) -->
-                    <div class="tc-hero-right">
-                        <div class="tc-hero-img-wrap">
-                            <div class="tc-hero-pointer-badge">
-                                <div class="tc-pointer-pill">
-                                    <span class="tc-pointer-icon">📍</span> Fresh from Farm to Your Home
-                                </div>
-                                <svg class="tc-pointer-arrow" width="46" height="38" viewBox="0 0 46 38" fill="none" aria-hidden="true">
-                                    <path d="M38 4 C32 20, 16 26, 6 32" stroke="#be185d" stroke-width="1.8" stroke-dasharray="3 3" fill="none"/>
-                                    <path d="M6 32 L12 26 M6 32 L10 36" stroke="#be185d" stroke-width="1.8" stroke-linecap="round"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mobile Dedicated Visual (Appears cleanly below the text) -->
-                    <div class="tc-hero-mobile-visual">
-                        <div class="tc-hero-mobile-img-wrap">
-                            <img src="{% static 'home/images/hero-banner-new.jpg' %}" alt="TipsyCart Fresh Essentials" class="tc-hero-mobile-img" loading="eager">
-                            <div class="tc-hero-pointer-badge tc-mobile-pointer">
-                                <div class="tc-pointer-pill">
-                                    <span class="tc-pointer-icon">📍</span> Fresh from Farm to Your Home
-                                </div>
-                                <svg class="tc-pointer-arrow" width="38" height="32" viewBox="0 0 46 38" fill="none" aria-hidden="true">
-                                    <path d="M38 4 C32 20, 16 26, 6 32" stroke="#be185d" stroke-width="1.8" stroke-dasharray="3 3" fill="none"/>
-                                    <path d="M6 32 L12 26 M6 32 L10 36" stroke="#be185d" stroke-width="1.8" stroke-linecap="round"/>
-                                </svg>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
