@@ -21,7 +21,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     description = models.TextField(blank=True, default="")
-    image = models.ImageField(upload_to="categories/", blank=True, null=True)
+    image = models.ImageField(upload_to="categories/", max_length=500, blank=True, null=True)
     image_url = models.CharField(max_length=500, blank=True, default="")
     display_order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first")
     is_active = models.BooleanField(default=True)
@@ -164,7 +164,7 @@ class Subcategory(models.Model):
     name = models.CharField(max_length=100, db_index=True)
     slug = models.SlugField(max_length=120, blank=True)
     description = models.TextField(blank=True, default="")
-    image = models.ImageField(upload_to="subcategories/", blank=True, null=True)
+    image = models.ImageField(upload_to="subcategories/", max_length=500, blank=True, null=True)
     image_url = models.CharField(max_length=500, blank=True, default="")
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -313,12 +313,12 @@ class Product(models.Model):
 
     # Legacy category CharField maintained for 100% backward compatibility
     category = models.CharField(
-        max_length=50,
+        max_length=150,
         choices=CATEGORY_CHOICES,
         db_index=True,
     )
     subcategory = models.CharField(
-        max_length=100,
+        max_length=150,
         blank=True,
         default="",
         db_index=True,
@@ -341,7 +341,7 @@ class Product(models.Model):
     )
 
     brand = models.CharField(
-        max_length=100,
+        max_length=150,
         blank=True,
         default="",
     )
@@ -389,6 +389,7 @@ class Product(models.Model):
     # Direct image file upload + URL fallback
     image = models.ImageField(
         upload_to="products/",
+        max_length=500,
         blank=True,
         null=True,
         help_text="Upload image file directly from computer",
@@ -710,6 +711,7 @@ class ProductImage(models.Model):
     )
     image = models.ImageField(
         upload_to="products/gallery/",
+        max_length=500,
         blank=True,
         null=True,
         help_text="Upload gallery image file directly from computer (Cloudinary/local)",
@@ -870,6 +872,20 @@ class ProductColour(models.Model):
                 self.name = self.color_master.name
             if not self.color_code or self.color_code == "#000000":
                 self.color_code = self.color_master.hex_code
+
+        # Bulletproof duplicate prevention: Auto-disambiguate if another colour has the same name on this product
+        if self.product_id and self.name:
+            self.name = self.name.strip()
+            qs = ProductColour.objects.filter(product_id=self.product_id, name__iexact=self.name)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                count = 2
+                base_name = self.name
+                while ProductColour.objects.filter(product_id=self.product_id, name__iexact=f"{base_name} #{count}").exists():
+                    count += 1
+                self.name = f"{base_name} #{count}"
+
         super().save(*args, **kwargs)
 
     def get_primary_image_url(self):
@@ -909,6 +925,7 @@ class ProductColourImage(models.Model):
     )
     image = models.ImageField(
         upload_to="products/variants/",
+        max_length=500,
         blank=True,
         null=True,
         help_text="Upload image file directly from computer (Cloudinary/local)",
@@ -1002,6 +1019,21 @@ class ProductSize(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        # Bulletproof duplicate prevention: Auto-disambiguate if another size has the same name on this product
+        if self.product_id and self.name:
+            self.name = self.name.strip()
+            qs = ProductSize.objects.filter(product_id=self.product_id, name__iexact=self.name)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                count = 2
+                base_name = self.name
+                while ProductSize.objects.filter(product_id=self.product_id, name__iexact=f"{base_name} #{count}").exists():
+                    count += 1
+                self.name = f"{base_name} #{count}"
+        super().save(*args, **kwargs)
+
 
 class ProductVariant(models.Model):
     product = models.ForeignKey(
@@ -1024,14 +1056,14 @@ class ProductVariant(models.Model):
         blank=True,
     )
     sku = models.CharField(
-        max_length=100,
+        max_length=200,
         blank=True,
         default="",
         db_index=True,
         help_text="Unique SKU for this variant (e.g. TC-BLK-M)",
     )
     variant_name = models.CharField(
-        max_length=100,
+        max_length=255,
         blank=True,
         default="",
         help_text="Custom variant label (e.g. 250 g, 500 g, 1 kg, Pack of 2, Red / M)",
@@ -1050,13 +1082,14 @@ class ProductVariant(models.Model):
         help_text="Numeric weight or quantity value (e.g. 250, 500, 1)",
     )
     barcode = models.CharField(
-        max_length=100,
+        max_length=150,
         blank=True,
         default="",
         help_text="Optional EAN/UPC barcode",
     )
     image = models.ImageField(
         upload_to="products/variants/",
+        max_length=500,
         null=True,
         blank=True,
         help_text="Optional custom photo for this variant (e.g. 250g pack photo, 1kg pack photo). If blank, uses main product photo.",

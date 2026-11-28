@@ -61,7 +61,7 @@ class HeroBanner(models.Model):
     title = models.CharField(max_length=200, default="Everything you need, all in one cart.")
     subtitle = models.CharField(max_length=300, blank=True, default="From fresh groceries to personal care and safety essentials, shop what matters with TipsyCart.")
     badge_text = models.CharField(max_length=100, blank=True, default="KANPUR'S HYPERLOCAL LIFESTYLE STORE")
-    image = models.ImageField(upload_to="banners/", blank=True, null=True, help_text="Upload custom banner image")
+    image = models.ImageField(upload_to="banners/", max_length=500, blank=True, null=True, help_text="Upload custom banner image")
     image_url = models.CharField(max_length=500, blank=True, default="/static/home/images/shop-banner-desktop.png")
     button_text = models.CharField(max_length=50, default="Explore Products")
     button_link = models.CharField(max_length=200, default="/shop/")

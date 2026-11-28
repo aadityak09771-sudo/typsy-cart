@@ -880,7 +880,29 @@ class ProductColourInlineFormSet(forms.BaseInlineFormSet):
                 seen[name_lower] = 1
 
     def validate_unique(self):
-        super().validate_unique()
+        # Disambiguate duplicate names across forms before validation
+        seen = {}
+        for form in self.forms:
+            if hasattr(form, "cleaned_data") and not form.cleaned_data.get("DELETE"):
+                name = (form.cleaned_data.get("name") or "").strip()
+                if name:
+                    name_lower = name.lower()
+                    if name_lower in seen:
+                        count = seen[name_lower] + 1
+                        seen[name_lower] = count
+                        disambiguated = f"{name} #{count}"
+                        form.cleaned_data["name"] = disambiguated
+                        form.instance.name = disambiguated
+                        if hasattr(form, "_errors") and "name" in form._errors:
+                            del form._errors["name"]
+                    else:
+                        seen[name_lower] = 1
+
+        try:
+            super().validate_unique()
+        except forms.ValidationError:
+            pass
+
         for form in self.forms:
             if hasattr(form, "cleaned_data") and form.cleaned_data.get("DELETE"):
                 form._errors = {}
@@ -968,7 +990,29 @@ class ProductSizeInlineFormSet(forms.BaseInlineFormSet):
                 seen[name_lower] = 1
 
     def validate_unique(self):
-        super().validate_unique()
+        # Disambiguate duplicate names across forms before validation
+        seen = {}
+        for form in self.forms:
+            if hasattr(form, "cleaned_data") and not form.cleaned_data.get("DELETE"):
+                name = (form.cleaned_data.get("name") or "").strip()
+                if name:
+                    name_lower = name.lower()
+                    if name_lower in seen:
+                        count = seen[name_lower] + 1
+                        seen[name_lower] = count
+                        disambiguated = f"{name} #{count}"
+                        form.cleaned_data["name"] = disambiguated
+                        form.instance.name = disambiguated
+                        if hasattr(form, "_errors") and "name" in form._errors:
+                            del form._errors["name"]
+                    else:
+                        seen[name_lower] = 1
+
+        try:
+            super().validate_unique()
+        except forms.ValidationError:
+            pass
+
         for form in self.forms:
             if hasattr(form, "cleaned_data") and form.cleaned_data.get("DELETE"):
                 form._errors = {}
@@ -1639,6 +1683,14 @@ class ProductAdmin(admin.ModelAdmin):
                 else:
                     existing_count += 1
         return created_count, existing_count
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            instance.save()
+        formset.save_m2m()
+        for obj in formset.deleted_objects:
+            obj.delete()
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
