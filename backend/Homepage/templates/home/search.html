@@ -229,6 +229,18 @@
                 Found <strong>{{ results_count }}</strong> item{{ results_count|pluralize }} matching your search.
             </p>
 
+            {% if suggested_query %}
+                <div class="tc-search-correction-notice" style="background:#fff; border:1.5px solid #fbcfe8; border-radius:10px; padding:10px 16px; margin: 12px 0 14px; display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#475569;">
+                    <span>💡</span>
+                    <span>Showing matching results for <a href="/search/?q={{ suggested_query|urlencode }}" style="color:#a51655; font-weight:700; text-decoration:underline;">{{ suggested_query }}</a> (auto-corrected from "{{ query }}")</span>
+                </div>
+            {% elif category_fallback %}
+                <div class="tc-search-correction-notice" style="background:#fff; border:1.5px solid #fbcfe8; border-radius:10px; padding:10px 16px; margin: 12px 0 14px; display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#475569;">
+                    <span>✨</span>
+                    <span>No exact match for "{{ query }}", showing top essentials in <strong style="color:#a51655;">{{ fallback_category_name }}</strong>:</span>
+                </div>
+            {% endif %}
+
             <!-- Category Filter Pills -->
             <div class="tc-filter-pill-bar">
                 <a href="/search/?q={{ query|urlencode }}" class="tc-filter-pill {% if not selected_category %}active{% endif %}">

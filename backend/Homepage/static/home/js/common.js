@@ -518,7 +518,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (navSearchResultsList) {
-                    navSearchResultsList.innerHTML = results.map((item, idx) => {
+                    const didYouMeanHtml = data.did_you_mean
+                        ? `<div style="padding: 7px 14px; font-size: 12px; color: #475569; background: #fff0f6; border-bottom: 1px solid #fce7f3; display: flex; align-items: center; gap: 6px;"><span>💡</span><span>Showing results for <strong style="color: #a51655;">${escapeHtml(data.did_you_mean)}</strong></span></div>`
+                        : '';
+
+                    navSearchResultsList.innerHTML = didYouMeanHtml + results.map((item, idx) => {
                         const priceHtml = item.is_variable && item.price_range_display
                             ? `<span class="nav-search-price">${escapeHtml(item.price_range_display)}</span>`
                             : `<span class="nav-search-price">₹${escapeHtml(item.price)}</span>`;
@@ -531,6 +535,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         const categoryHtml = item.category
                             ? `<span class="nav-search-badge">${escapeHtml(item.category)}</span>`
                             : '';
+                        const colourHtml = item.matched_colour_name
+                            ? `<span class="nav-search-badge" style="background: #fff0f5; color: #a51655; border: 1px solid #fbcfe8; font-weight: 700;">💄 Shade: ${escapeHtml(item.matched_colour_name)}</span>`
+                            : '';
 
                         return `
                             <a href="${escapeHtml(item.url)}" class="nav-search-item" data-index="${idx}" role="option">
@@ -540,6 +547,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="nav-search-meta">
                                         ${item.brand ? `<span>${escapeHtml(item.brand)}</span> • ` : ''}
                                         ${categoryHtml}
+                                        ${colourHtml}
                                         ${discountHtml}
                                     </div>
                                 </div>

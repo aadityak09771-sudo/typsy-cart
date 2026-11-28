@@ -8,7 +8,7 @@ from django.db.models import Q, F
 from django.core.cache import cache
 from django.utils.text import slugify
 
-from products.models import Product, Category, Subcategory
+from products.models import Product, Category, Subcategory, ProductColour, ColorMaster
 from Homepage.models import StoreSetting, HeroBanner, FAQItem
 from .signals import HOMEPAGE_CACHE_KEY, purge_homepage_cache
 
@@ -405,6 +405,10 @@ def search_view(request):
         "variants", "colours", "colours__images", "sizes", "gallery_images"
     )
 
+    suggested_query = ""
+    category_fallback = False
+    fallback_category_name = ""
+
     if query:
         words = query.split()
         q_filter = Q()
@@ -423,7 +427,96 @@ def search_view(request):
                 Q(colours__name__icontains=w) |
                 Q(colours__color_master__name__icontains=w)
             )
-        products_qs = products_qs.filter(q_filter).distinct()
+        matched_qs = products_qs.filter(q_filter).distinct()
+
+        # Typo tolerance & category fallback if exact search finds 0 products
+        if not matched_qs.exists():
+            import difflib
+            catalog_words = set()
+            for row in Product.objects.filter(is_active=True).values_list("name", "brand", "category", "subcategory"):
+                for field in row:
+                    if field:
+                        for token in str(field).lower().split():
+                            clean_token = "".join(ch for ch in token if ch.isalnum())
+                            if len(clean_token) >= 3:
+                                catalog_words.add(clean_token)
+            for cat_name in Category.objects.filter(is_active=True).values_list("name", flat=True):
+                if cat_name:
+                    for token in str(cat_name).lower().split():
+                        clean_token = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean_token) >= 3:
+                            catalog_words.add(clean_token)
+            for sub_name in Subcategory.objects.filter(is_active=True).values_list("name", flat=True):
+                if sub_name:
+                    for token in str(sub_name).lower().split():
+                        clean_token = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean_token) >= 3:
+                            catalog_words.add(clean_token)
+            for cm_name in ColorMaster.objects.filter(is_active=True).values_list("name", flat=True):
+                if cm_name:
+                    for token in str(cm_name).lower().split():
+                        clean_token = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean_token) >= 3:
+                            catalog_words.add(clean_token)
+            for c_name in ProductColour.objects.filter(is_active=True).values_list("name", flat=True):
+                if c_name:
+                    for token in str(c_name).lower().split():
+                        clean_token = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean_token) >= 3:
+                            catalog_words.add(clean_token)
+
+            corrected_words = []
+            has_correction = False
+            for w in words[:5]:
+                w_clean = "".join(ch for ch in w.lower() if ch.isalnum())
+                if not w_clean:
+                    continue
+                matches = difflib.get_close_matches(w_clean, catalog_words, n=1, cutoff=0.55)
+                if matches and matches[0] != w_clean:
+                    corrected_words.append(matches[0])
+                    has_correction = True
+                else:
+                    corrected_words.append(w_clean)
+
+            if has_correction and corrected_words:
+                alt_filter = Q()
+                for cw in corrected_words:
+                    alt_filter &= (
+                        Q(name__icontains=cw) |
+                        Q(brand__icontains=cw) |
+                        Q(category__icontains=cw) |
+                        Q(subcategory__icontains=cw) |
+                        Q(colours__name__icontains=cw)
+                    )
+                alt_qs = products_qs.filter(alt_filter).distinct()
+                if alt_qs.exists():
+                    matched_qs = alt_qs
+                    suggested_query = " ".join(corrected_words)
+
+            # Category Fallback if still no products found
+            if not matched_qs.exists():
+                q_lower = query.lower()
+                matched_cat = None
+                for cat in Category.objects.filter(is_active=True):
+                    c_name_lower = cat.name.lower()
+                    if c_name_lower in q_lower or any(difflib.get_close_matches(w, c_name_lower.split(), cutoff=0.6) for w in q_lower.split()):
+                        matched_cat = cat
+                        fallback_category_name = cat.name
+                        break
+                if not matched_cat:
+                    for sub in Subcategory.objects.filter(is_active=True).select_related("category"):
+                        s_name_lower = sub.name.lower()
+                        if s_name_lower in q_lower or any(difflib.get_close_matches(w, s_name_lower.split(), cutoff=0.6) for w in q_lower.split()):
+                            matched_cat = sub.category
+                            fallback_category_name = sub.name
+                            break
+                if matched_cat:
+                    category_fallback = True
+                    matched_qs = products_qs.filter(
+                        Q(category_ref=matched_cat) | Q(category__iexact=matched_cat.name)
+                    ).distinct()
+
+        products_qs = matched_qs
 
     if category_slug and category_slug != "all":
         products_qs = products_qs.filter(
@@ -451,11 +544,119 @@ def search_view(request):
     return render(request, "home/search.html", {
         "products": products_qs,
         "query": query,
+        "suggested_query": suggested_query,
+        "category_fallback": category_fallback,
+        "fallback_category_name": fallback_category_name,
         "results_count": products_qs.count(),
         "categories_list": categories_list,
         "selected_category": category_slug,
         "selected_subcategory": subcategory_slug,
         "selected_sort": sort,
+    })
+
+
+def search_suggestions_api(request):
+    """
+    Live autocomplete search API returning instant product, shade, and category suggestions.
+    """
+    from django.http import JsonResponse
+    from django.db.models import Q
+    import difflib
+
+    query = request.GET.get("q", "").strip()
+    if len(query) < 2:
+        return JsonResponse({"products": [], "colours": [], "categories": []})
+
+    words = query.split()[:3]
+    prod_q = Q()
+    for w in words:
+        prod_q &= (
+            Q(name__icontains=w) |
+            Q(brand__icontains=w) |
+            Q(category__icontains=w) |
+            Q(subcategory__icontains=w) |
+            Q(colours__name__icontains=w)
+        )
+
+    products = list(
+        Product.objects.filter(is_active=True).filter(prod_q).select_related("category_ref").prefetch_related("colours")[:5]
+    )
+
+    # Typo tolerance in suggestions if 0 products found
+    did_you_mean = ""
+    if not products:
+        catalog_words = set()
+        for p in Product.objects.filter(is_active=True).values_list("name", flat=True)[:100]:
+            for tok in p.lower().split():
+                if len(tok) >= 3:
+                    catalog_words.add(tok)
+        corrected = []
+        for w in words:
+            m = difflib.get_close_matches(w.lower(), catalog_words, n=1, cutoff=0.55)
+            corrected.append(m[0] if m else w)
+        if corrected != words:
+            corr_q = Q()
+            for cw in corrected:
+                corr_q &= Q(name__icontains=cw) | Q(category__icontains=cw) | Q(colours__name__icontains=cw)
+            products = list(Product.objects.filter(is_active=True).filter(corr_q).select_related("category_ref").prefetch_related("colours")[:5])
+            if products:
+                did_you_mean = " ".join(corrected)
+
+    prod_results = []
+    for p in products:
+        prod_results.append({
+            "id": p.id,
+            "name": p.name,
+            "category": p.category,
+            "price": str(p.min_price if p.is_variable else p.price),
+            "image_url": p.get_image_url(),
+            "url": f"/product/{p.id}/",
+        })
+
+    # Matching Colours/Shades
+    col_q = Q()
+    for w in words:
+        col_q &= (Q(name__icontains=w) | Q(color_master__name__icontains=w))
+    colours = list(
+        ProductColour.objects.filter(is_active=True, product__is_active=True).filter(col_q).select_related("product")[:5]
+    )
+    col_results = []
+    seen_colours = set()
+    for c in colours:
+        key = (c.name.lower(), c.product_id)
+        if key in seen_colours:
+            continue
+        seen_colours.add(key)
+        col_results.append({
+            "id": c.id,
+            "name": c.name,
+            "color_code": c.color_code,
+            "product_name": c.product.name,
+            "product_id": c.product_id,
+            "image_url": c.get_primary_image_url(),
+            "url": f"/product/{c.product_id}/?colour={c.name}",
+        })
+
+    # Matching Categories / Subcategories
+    cat_results = []
+    for cat in Category.objects.filter(is_active=True, name__icontains=query)[:3]:
+        cat_results.append({
+            "name": cat.name,
+            "type": "Category",
+            "url": f"/shop/?category={cat.slug}",
+        })
+    for sub in Subcategory.objects.filter(is_active=True, name__icontains=query).select_related("category")[:3]:
+        cat_results.append({
+            "name": sub.name,
+            "type": f"In {sub.category.name}",
+            "url": f"/shop/?category={sub.category.slug}&subcategory={sub.slug}",
+        })
+
+    return JsonResponse({
+        "products": prod_results,
+        "colours": col_results,
+        "categories": cat_results,
+        "did_you_mean": did_you_mean,
     })
 
 

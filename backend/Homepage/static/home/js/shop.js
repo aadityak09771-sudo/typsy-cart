@@ -608,6 +608,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // Render products
     // --------------------------------
 
+    function isSimilarWord(a, b) {
+        if (!a || !b) return false;
+        if (a === b) return true;
+        if (a.includes(b) || b.includes(a)) return true;
+        const al = a.length, bl = b.length;
+        if (Math.abs(al - bl) > 2) return false;
+        if (al < 3 || bl < 3) return false;
+        let prev = [];
+        for (let j = 0; j <= bl; j++) prev[j] = j;
+        for (let i = 1; i <= al; i++) {
+            let curr = [i];
+            for (let j = 1; j <= bl; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+            }
+            prev = curr;
+        }
+        return prev[bl] <= (Math.max(al, bl) >= 6 ? 2 : 1);
+    }
+
     function renderProducts() {
         const query = searchInput.value.trim().toLowerCase();
         const selectedCategory = categoryFilter.value;
@@ -631,6 +651,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 matchesSubcategory(product, currentSubcategory)
             );
         });
+
+        // Typo-tolerant fuzzy matching if exact query returned 0 products
+        if (filtered.length === 0 && query.length >= 3) {
+            filtered = products.filter(product => {
+                if (!matchesCategory(product, selectedCategory)) return false;
+                const colourNames = Array.isArray(product.colours) ? product.colours.map(c => c.name).join(" ") : "";
+                const tokens = [
+                    product.name,
+                    product.category,
+                    product.subcategory,
+                    product.brand,
+                    colourNames
+                ].join(" ").toLowerCase().split(/[\s,–-]+/);
+
+                const queryWords = query.split(/\s+/).filter(Boolean);
+                return queryWords.every(qw => {
+                    return tokens.some(tok => isSimilarWord(qw, tok));
+                });
+            });
+        }
 
         // When browsing 'all' categories, deduplicate identical cross-category items so customers see unique products
         if (selectedCategory === "all") {

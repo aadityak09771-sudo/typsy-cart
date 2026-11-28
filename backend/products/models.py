@@ -453,8 +453,10 @@ class Product(models.Model):
             if self.original_price > self.price:
                 self.discount_enabled = True
                 self.discount_type = "percentage"
-                diff = self.original_price - self.price
-                self.discount_value = round((diff / self.original_price) * Decimal("100.00"), 2)
+                orig = Decimal(str(self.original_price))
+                cur = Decimal(str(self.price))
+                diff = orig - cur
+                self.discount_value = round((diff / orig) * Decimal("100.00"), 2)
             elif self.discount_enabled and self.discount_value and self.discount_value > 0:
                 # If price was not manually changed and discount is explicitly configured
                 if self.discount_type == "percentage":
@@ -1201,8 +1203,10 @@ class ProductVariant(models.Model):
             if self.original_price > self.price:
                 self.discount_enabled = True
                 self.discount_type = "percentage"
-                diff = self.original_price - self.price
-                self.discount_value = round((diff / self.original_price) * Decimal("100.00"), 2)
+                orig = Decimal(str(self.original_price))
+                cur = Decimal(str(self.price))
+                diff = orig - cur
+                self.discount_value = round((diff / orig) * Decimal("100.00"), 2)
             else:
                 self.discount_enabled = False
                 self.discount_value = Decimal("0.00")

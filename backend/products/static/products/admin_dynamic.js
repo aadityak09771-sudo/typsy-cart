@@ -794,6 +794,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
       items.forEach((itemText, idx) => {
         let rows = sizesGroup.querySelectorAll("tr.form-row:not(.empty-form), tr[id^='sizes-']:not(.empty-form)");
+
+        // Skip if this size is already present in an active row
+        for (let r of rows) {
+          const delCheck = r.querySelector("input[name$='-DELETE']");
+          if (delCheck && delCheck.checked) continue;
+          const inp = r.querySelector("input[name$='-name']");
+          if (inp && inp.value.trim().toLowerCase() === itemText.trim().toLowerCase()) {
+            return;
+          }
+        }
+
         let targetRow = null;
         for (let r of rows) {
           const inp = r.querySelector("input[name$='-name']");
@@ -843,21 +854,26 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
       </div>
       <div class="tc-lipstick-palette-pills">
-        <button type="button" class="tc-shade-pill" data-name="Red" data-hex="#D32F2F" title="Red (#D32F2F)"><span class="tc-shade-dot" style="background:#D32F2F;"></span><span>Red</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Young Pink" data-hex="#E85D88" title="Young Pink (#E85D88)"><span class="tc-shade-dot" style="background:#E85D88;"></span><span>Young Pink</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Cherry Red" data-hex="#B31B32" title="Cherry Red (#B31B32)"><span class="tc-shade-dot" style="background:#B31B32;"></span><span>Cherry Red</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Tree Oil" data-hex="#8C533C" title="Tree Oil (#8C533C)"><span class="tc-shade-dot" style="background:#8C533C;"></span><span>Tree Oil</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Marron Mature" data-hex="#582424" title="Marron Mature (#582424)"><span class="tc-shade-dot" style="background:#582424;"></span><span>Marron Mature</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Dark Orange" data-hex="#BA4529" title="Dark Orange (#BA4529)"><span class="tc-shade-dot" style="background:#BA4529;"></span><span>Dark Orange</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Chrome Red" data-hex="#53232C" title="Chrome Red (#53232C)"><span class="tc-shade-dot" style="background:#53232C;"></span><span>Chrome Red</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Poppy Red" data-hex="#B52B2D" title="Poppy Red (#B52B2D)"><span class="tc-shade-dot" style="background:#B52B2D;"></span><span>Poppy Red</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Skin Kiss" data-hex="#BA6E73" title="Skin Kiss (#BA6E73)"><span class="tc-shade-dot" style="background:#BA6E73;"></span><span>Skin Kiss</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Grape" data-hex="#572F5F" title="Grape (#572F5F)"><span class="tc-shade-dot" style="background:#572F5F;"></span><span>Grape</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Blood Red" data-hex="#781B24" title="Blood Red (#781B24)"><span class="tc-shade-dot" style="background:#781B24;"></span><span>Blood Red</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Dark Purple" data-hex="#381F33" title="Dark Purple (#381F33)"><span class="tc-shade-dot" style="background:#381F33;"></span><span>Dark Purple</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Nude" data-hex="#C89D7C" title="Nude (#C89D7C)"><span class="tc-shade-dot" style="background:#C89D7C;"></span><span>Nude</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Rose Pink" data-hex="#E06A8B" title="Rose Pink (#E06A8B)"><span class="tc-shade-dot" style="background:#E06A8B;"></span><span>Rose Pink</span></button>
-        <button type="button" class="tc-shade-pill" data-name="Coral" data-hex="#F88379" title="Coral (#F88379)"><span class="tc-shade-dot" style="background:#F88379;"></span><span>Coral</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Red" data-hex="#D0112B" title="Red (#D0112B)"><span class="tc-shade-dot" style="background:#D0112B;"></span><span>Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Young Pink" data-hex="#DE5B7B" title="Young Pink (#DE5B7B)"><span class="tc-shade-dot" style="background:#DE5B7B;"></span><span>Young Pink</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Cherry Red" data-hex="#B8142A" title="Cherry Red (#B8142A)"><span class="tc-shade-dot" style="background:#B8142A;"></span><span>Cherry Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Tree Oil" data-hex="#9C5B3E" title="Tree Oil (#9C5B3E)"><span class="tc-shade-dot" style="background:#9C5B3E;"></span><span>Tree Oil</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Marron Mature" data-hex="#6B2026" title="Marron Mature (#6B2026)"><span class="tc-shade-dot" style="background:#6B2026;"></span><span>Marron Mature</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Dark Orange" data-hex="#C84B22" title="Dark Orange (#C84B22)"><span class="tc-shade-dot" style="background:#C84B22;"></span><span>Dark Orange</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Chrome Red" data-hex="#9E1228" title="Chrome Red (#9E1228)"><span class="tc-shade-dot" style="background:#9E1228;"></span><span>Chrome Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Poppy Red" data-hex="#D4222E" title="Poppy Red (#D4222E)"><span class="tc-shade-dot" style="background:#D4222E;"></span><span>Poppy Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Skin Kiss" data-hex="#C97A7E" title="Skin Kiss (#C97A7E)"><span class="tc-shade-dot" style="background:#C97A7E;"></span><span>Skin Kiss</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Grape" data-hex="#68255F" title="Grape (#68255F)"><span class="tc-shade-dot" style="background:#68255F;"></span><span>Grape</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Blood Red" data-hex="#850B18" title="Blood Red (#850B18)"><span class="tc-shade-dot" style="background:#850B18;"></span><span>Blood Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Dark Purple" data-hex="#42163E" title="Dark Purple (#42163E)"><span class="tc-shade-dot" style="background:#42163E;"></span><span>Dark Purple</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Nude" data-hex="#C99B7D" title="Nude (#C99B7D)"><span class="tc-shade-dot" style="background:#C99B7D;"></span><span>Nude</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Rose Pink" data-hex="#DC5E84" title="Rose Pink (#DC5E84)"><span class="tc-shade-dot" style="background:#DC5E84;"></span><span>Rose Pink</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Coral" data-hex="#E86358" title="Coral (#E86358)"><span class="tc-shade-dot" style="background:#E86358;"></span><span>Coral</span></button>
+
+        <span style="display:inline-block; width:1px; height:20px; background:#e2e8f0; margin:0 4px; vertical-align:middle;"></span>
+        <button type="button" class="tc-shade-pill" data-name="Ivory Glow" data-hex="#F5E0CD" title="Ivory Glow (#F5E0CD) - Foundation"><span class="tc-shade-dot" style="background:#F5E0CD; border:1px solid #d4bda8;"></span><span>Ivory Glow</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Creme Glow" data-hex="#E8C8A6" title="Creme Glow (#E8C8A6) - Foundation"><span class="tc-shade-dot" style="background:#E8C8A6; border:1px solid #c9aa88;"></span><span>Creme Glow</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Nude Glow" data-hex="#D1A57B" title="Nude Glow (#D1A57B) - Foundation"><span class="tc-shade-dot" style="background:#D1A57B; border:1px solid #b38860;"></span><span>Nude Glow</span></button>
       </div>
     `;
 
@@ -868,6 +884,21 @@ document.addEventListener("DOMContentLoaded", function () {
       const sHex = btn.dataset.hex;
 
       let colourRows = coloursGroup.querySelectorAll(".inline-related:not(.empty-form)");
+
+      // Check if shade already exists in any row to prevent accidental duplicates
+      for (let r of colourRows) {
+        const delCheck = r.querySelector("input[name$='-DELETE']");
+        if (delCheck && delCheck.checked) continue;
+        const nameInp = r.querySelector("input[name$='-name']");
+        if (nameInp && nameInp.value.trim().toLowerCase() === sName.trim().toLowerCase()) {
+          r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          r.style.transition = 'box-shadow 0.3s ease';
+          r.style.boxShadow = '0 0 0 3px #a51655';
+          setTimeout(() => { r.style.boxShadow = ''; }, 1500);
+          return;
+        }
+      }
+
       let targetRow = null;
       for (let r of colourRows) {
         const nameInp = r.querySelector("input[name$='-name']");

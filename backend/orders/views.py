@@ -22,7 +22,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from delivery.models import DeliveryAssignment, OrderStatusHistory
-from products.models import Product, Category, Subcategory, ProductVariant, ProductColour, ProductSize
+from products.models import Product, Category, Subcategory, ProductVariant, ProductColour, ProductSize, ColorMaster
 
 from .models import Cart, CartItem, Order, OrderItem, Coupon
 
@@ -1213,6 +1213,8 @@ def search_autocomplete(request):
         return JsonResponse({"results": [], "query": query, "total": 0})
 
     try:
+        import difflib
+        from urllib.parse import quote
         from django.db.models import Q
         words = query.split()
         q_filter = Q()
@@ -1227,23 +1229,134 @@ def search_autocomplete(request):
                 Q(product_number__icontains=w) |
                 Q(description__icontains=w) |
                 Q(variants__sku__icontains=w) |
-                Q(variants__variant_name__icontains=w)
+                Q(variants__variant_name__icontains=w) |
+                Q(colours__name__icontains=w) |
+                Q(colours__color_master__name__icontains=w)
             )
 
-        products = Product.objects.filter(
+        products = list(Product.objects.filter(
             q_filter,
             is_active=True
         ).select_related(
             "category_ref", "subcategory_ref"
         ).prefetch_related(
             "gallery_images",
-            "variants"
-        ).distinct()[:10]
+            "variants",
+            "colours",
+            "colours__images",
+        ).distinct()[:10])
+
+        did_you_mean = ""
+        # Typo tolerance: if 0 products found, check close matches in catalog vocabulary
+        if not products:
+            catalog_words = set()
+            for row in Product.objects.filter(is_active=True).values_list("name", "category", "subcategory", "brand"):
+                for field in row:
+                    if field:
+                        for token in str(field).lower().split():
+                            clean = "".join(ch for ch in token if ch.isalnum())
+                            if len(clean) >= 3:
+                                catalog_words.add(clean)
+            for cat_name in Category.objects.filter(is_active=True).values_list("name", flat=True):
+                if cat_name:
+                    for token in str(cat_name).lower().split():
+                        clean = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean) >= 3:
+                            catalog_words.add(clean)
+            for sub_name in Subcategory.objects.filter(is_active=True).values_list("name", flat=True):
+                if sub_name:
+                    for token in str(sub_name).lower().split():
+                        clean = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean) >= 3:
+                            catalog_words.add(clean)
+            for col_name in ProductColour.objects.filter(is_active=True).values_list("name", flat=True):
+                if col_name:
+                    for token in str(col_name).lower().split():
+                        clean = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean) >= 3:
+                            catalog_words.add(clean)
+            for cm_name in ColorMaster.objects.filter(is_active=True).values_list("name", flat=True):
+                if cm_name:
+                    for token in str(cm_name).lower().split():
+                        clean = "".join(ch for ch in token if ch.isalnum())
+                        if len(clean) >= 3:
+                            catalog_words.add(clean)
+
+            corrected = []
+            has_correction = False
+            for w in words[:4]:
+                w_clean = "".join(ch for ch in w.lower() if ch.isalnum())
+                if not w_clean:
+                    continue
+                matches = difflib.get_close_matches(w_clean, catalog_words, n=1, cutoff=0.55)
+                if matches and matches[0] != w_clean:
+                    corrected.append(matches[0])
+                    has_correction = True
+                else:
+                    corrected.append(w_clean)
+
+            if has_correction and corrected:
+                corr_filter = Q()
+                for cw in corrected:
+                    corr_filter &= (
+                        Q(name__icontains=cw) |
+                        Q(brand__icontains=cw) |
+                        Q(category__icontains=cw) |
+                        Q(subcategory__icontains=cw) |
+                        Q(colours__name__icontains=cw)
+                    )
+                products = list(Product.objects.filter(
+                    corr_filter,
+                    is_active=True
+                ).select_related(
+                    "category_ref", "subcategory_ref"
+                ).prefetch_related(
+                    "gallery_images", "variants", "colours", "colours__images"
+                ).distinct()[:10])
+                if products:
+                    did_you_mean = " ".join(corrected)
+
+            # Category Fallback if still no products found
+            if not products:
+                q_lower = query.lower()
+                matched_cat = None
+                for cat in Category.objects.filter(is_active=True):
+                    c_name_lower = cat.name.lower()
+                    if c_name_lower in q_lower or any(difflib.get_close_matches(w, c_name_lower.split(), cutoff=0.6) for w in q_lower.split()):
+                        matched_cat = cat
+                        break
+                if not matched_cat:
+                    for sub in Subcategory.objects.filter(is_active=True).select_related("category"):
+                        s_name_lower = sub.name.lower()
+                        if s_name_lower in q_lower or any(difflib.get_close_matches(w, s_name_lower.split(), cutoff=0.6) for w in q_lower.split()):
+                            matched_cat = sub.category
+                            break
+                if matched_cat:
+                    products = list(Product.objects.filter(
+                        Q(category_ref=matched_cat) | Q(category__iexact=matched_cat.name),
+                        is_active=True
+                    ).select_related("category_ref", "subcategory_ref").prefetch_related("colours")[:8])
 
         results = []
         for p in products:
             is_var = p.is_variable
             p_price = p.min_price if is_var else p.price
+
+            # Detect if query matched a specific colour
+            matched_colour = None
+            if is_var:
+                q_lower = query.lower()
+                for c in p.colours.all():
+                    if not c.is_active:
+                        continue
+                    c_name = c.name.lower()
+                    if c_name in q_lower or q_lower in c_name:
+                        matched_colour = c
+                        break
+
+            item_url = f"/product/{p.id}/?colour={quote(matched_colour.name)}" if matched_colour else f"/product/{p.id}/"
+            item_img = matched_colour.get_primary_image_url() if matched_colour else p.get_image_url()
+
             results.append({
                 "id": p.id,
                 "name": p.name,
@@ -1255,20 +1368,22 @@ def search_autocomplete(request):
                 "price_range_display": p.price_range_display,
                 "discount_percentage": p.discount_percentage,
                 "is_variable": is_var,
+                "matched_colour_name": matched_colour.name if matched_colour else "",
                 "stock": p.total_stock if is_var else p.stock,
                 "is_available": p.is_available and (p.total_stock > 0 if is_var else p.stock > 0),
-                "image_url": p.get_image_url(),
+                "image_url": item_img,
                 "gallery_images": [img["url"] for img in p.get_all_images()],
                 "unit_type": p.unit_type,
                 "unit": p.unit or "",
                 "unit_value": str(p.unit_value) if p.unit_value is not None else "",
                 "unit_selector_label": p.unit_selector_label,
-                "url": f"/product/{p.id}/",
+                "url": item_url,
             })
 
         return JsonResponse({
             "results": results,
             "query": query,
+            "did_you_mean": did_you_mean,
             "total": len(results),
         })
     except Exception as e:

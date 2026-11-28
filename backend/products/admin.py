@@ -841,9 +841,64 @@ class ProductColourInlineForm(forms.ModelForm):
             })
 
 
+class ProductColourInlineFormSet(forms.BaseInlineFormSet):
+    """
+    Prevents validation crashes when duplicate colour names are submitted.
+    Auto-deduplicates empty accidental duplicates or auto-disambiguates names so
+    the product save succeeds and the user's uploaded images are never lost.
+    """
+    def clean(self):
+        super().clean()
+        seen = {}
+        if hasattr(self, "instance") and getattr(self.instance, "pk", None):
+            existing_pks = [f.instance.pk for f in self.forms if getattr(f.instance, "pk", None)]
+            for existing_name in self.instance.colours.exclude(pk__in=existing_pks).values_list("name", flat=True):
+                if existing_name:
+                    seen[existing_name.strip().lower()] = 1
+
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or form.cleaned_data.get("DELETE"):
+                continue
+            name = (form.cleaned_data.get("name") or "").strip()
+            if not name:
+                continue
+            name_lower = name.lower()
+            if name_lower in seen:
+                prefix = form.prefix
+                bulk_files = form.files.getlist(f"colour_bulk_files_{prefix}") if form.files else []
+                if not bulk_files and not getattr(form.instance, "pk", None):
+                    form.cleaned_data["DELETE"] = True
+                else:
+                    count = seen[name_lower] + 1
+                    seen[name_lower] = count
+                    disambiguated = f"{name} #{count}"
+                    form.cleaned_data["name"] = disambiguated
+                    form.instance.name = disambiguated
+                    if hasattr(form, "_errors") and "name" in form._errors:
+                        del form._errors["name"]
+            else:
+                seen[name_lower] = 1
+
+    def validate_unique(self):
+        super().validate_unique()
+        for form in self.forms:
+            if hasattr(form, "cleaned_data") and form.cleaned_data.get("DELETE"):
+                form._errors = {}
+            elif hasattr(form, "_errors") and "__all__" in form._errors:
+                filtered_errs = [
+                    e for e in form._errors["__all__"]
+                    if "with this Product and Name already exists" not in str(e)
+                ]
+                if filtered_errs:
+                    form._errors["__all__"] = form.error_class(filtered_errs)
+                else:
+                    del form._errors["__all__"]
+
+
 class ProductColourInline(admin.StackedInline):
     model = ProductColour
     form = ProductColourInlineForm
+    formset = ProductColourInlineFormSet
     extra = 1
     fields = (
         ("color_master", "name", "color_code", "swatch_preview", "display_order", "is_active"),
@@ -878,9 +933,60 @@ class ProductSizeInlineForm(forms.ModelForm):
             self.fields["name"].help_text = "Enter weight or size only (e.g. 250g, 1kg). Do not enter product name."
 
 
+class ProductSizeInlineFormSet(forms.BaseInlineFormSet):
+    """
+    Prevents validation crashes when duplicate size/weight names are submitted.
+    """
+    def clean(self):
+        super().clean()
+        seen = {}
+        if hasattr(self, "instance") and getattr(self.instance, "pk", None):
+            existing_pks = [f.instance.pk for f in self.forms if getattr(f.instance, "pk", None)]
+            for existing_name in self.instance.sizes.exclude(pk__in=existing_pks).values_list("name", flat=True):
+                if existing_name:
+                    seen[existing_name.strip().lower()] = 1
+
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or form.cleaned_data.get("DELETE"):
+                continue
+            name = (form.cleaned_data.get("name") or "").strip()
+            if not name:
+                continue
+            name_lower = name.lower()
+            if name_lower in seen:
+                if not getattr(form.instance, "pk", None):
+                    form.cleaned_data["DELETE"] = True
+                else:
+                    count = seen[name_lower] + 1
+                    seen[name_lower] = count
+                    disambiguated = f"{name} #{count}"
+                    form.cleaned_data["name"] = disambiguated
+                    form.instance.name = disambiguated
+                    if hasattr(form, "_errors") and "name" in form._errors:
+                        del form._errors["name"]
+            else:
+                seen[name_lower] = 1
+
+    def validate_unique(self):
+        super().validate_unique()
+        for form in self.forms:
+            if hasattr(form, "cleaned_data") and form.cleaned_data.get("DELETE"):
+                form._errors = {}
+            elif hasattr(form, "_errors") and "__all__" in form._errors:
+                filtered_errs = [
+                    e for e in form._errors["__all__"]
+                    if "with this Product and Name already exists" not in str(e)
+                ]
+                if filtered_errs:
+                    form._errors["__all__"] = form.error_class(filtered_errs)
+                else:
+                    del form._errors["__all__"]
+
+
 class ProductSizeInline(admin.TabularInline):
     model = ProductSize
     form = ProductSizeInlineForm
+    formset = ProductSizeInlineFormSet
     extra = 1
     fields = ("name", "display_order", "is_active")
     show_change_link = True

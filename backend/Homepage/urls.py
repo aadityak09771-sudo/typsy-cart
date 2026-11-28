@@ -29,4 +29,7 @@ urlpatterns = [
 
     # Newsletter Subscription Endpoint
     path("newsletter/subscribe/", views.subscribe_newsletter, name="newsletter_subscribe"),
+
+    # Live Search Autocomplete Suggestions API
+    path("api/search/suggestions/", views.search_suggestions_api, name="search_suggestions_api"),
 ]
