@@ -433,6 +433,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const styleRow = document.querySelector(".field-variant_display_style");
       const guideEl = document.getElementById("tc-collapsible-guide");
       const sizePresetsEl = document.getElementById("tc-size-presets-bar");
+      const paletteEl = document.getElementById("tc-lipstick-palette-bar");
 
       if (mode === "simple") {
         if (coloursGroup) coloursGroup.style.display = "none";
@@ -441,6 +442,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (styleRow) styleRow.style.display = "none";
         if (guideEl) guideEl.style.display = "none";
         if (sizePresetsEl) sizePresetsEl.style.display = "none";
+        if (paletteEl) paletteEl.style.display = "none";
 
         if (noticeBanner) {
           noticeBanner.className = "tc-admin-notice-banner";
@@ -459,6 +461,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (styleRow) styleRow.style.display = "";
         if (guideEl) guideEl.style.display = "";
         if (sizePresetsEl) sizePresetsEl.style.display = "";
+        if (paletteEl) paletteEl.style.display = "";
 
         if (noticeBanner) {
           noticeBanner.className = "tc-admin-notice-banner tc-variable-banner";
@@ -553,7 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const cName = match[1].trim();
         const cHex = match[2].trim().toUpperCase();
 
-        if (nameInput && (!nameInput.value || nameInput.value.trim() === "")) {
+        if (nameInput) {
           nameInput.value = cName;
         }
         if (hexInput) {
@@ -824,7 +827,92 @@ document.addEventListener("DOMContentLoaded", function () {
     sizesGroup.insertBefore(bar, anchor);
   }
 
+  function injectLipstickPaletteBar() {
+    const coloursGroup = document.querySelector("#colours-group");
+    if (!coloursGroup || document.getElementById("tc-lipstick-palette-bar")) return;
+
+    const bar = document.createElement("div");
+    bar.id = "tc-lipstick-palette-bar";
+    bar.className = "tc-lipstick-palette-bar";
+    bar.innerHTML = `
+      <div class="tc-lipstick-palette-header">
+        <span class="tc-palette-icon">💄</span>
+        <div>
+          <strong>Lipstick &amp; Beauty Shades Palette:</strong>
+          <span class="tc-palette-subtitle">Click any shade below to auto-fill its exact colour name, HEX code and visual swatch:</span>
+        </div>
+      </div>
+      <div class="tc-lipstick-palette-pills">
+        <button type="button" class="tc-shade-pill" data-name="Red" data-hex="#D32F2F" title="Red (#D32F2F)"><span class="tc-shade-dot" style="background:#D32F2F;"></span><span>Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Young Pink" data-hex="#E85D88" title="Young Pink (#E85D88)"><span class="tc-shade-dot" style="background:#E85D88;"></span><span>Young Pink</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Cherry Red" data-hex="#B31B32" title="Cherry Red (#B31B32)"><span class="tc-shade-dot" style="background:#B31B32;"></span><span>Cherry Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Tree Oil" data-hex="#8C533C" title="Tree Oil (#8C533C)"><span class="tc-shade-dot" style="background:#8C533C;"></span><span>Tree Oil</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Marron Mature" data-hex="#582424" title="Marron Mature (#582424)"><span class="tc-shade-dot" style="background:#582424;"></span><span>Marron Mature</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Dark Orange" data-hex="#BA4529" title="Dark Orange (#BA4529)"><span class="tc-shade-dot" style="background:#BA4529;"></span><span>Dark Orange</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Chrome Red" data-hex="#53232C" title="Chrome Red (#53232C)"><span class="tc-shade-dot" style="background:#53232C;"></span><span>Chrome Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Poppy Red" data-hex="#B52B2D" title="Poppy Red (#B52B2D)"><span class="tc-shade-dot" style="background:#B52B2D;"></span><span>Poppy Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Skin Kiss" data-hex="#BA6E73" title="Skin Kiss (#BA6E73)"><span class="tc-shade-dot" style="background:#BA6E73;"></span><span>Skin Kiss</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Grape" data-hex="#572F5F" title="Grape (#572F5F)"><span class="tc-shade-dot" style="background:#572F5F;"></span><span>Grape</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Blood Red" data-hex="#781B24" title="Blood Red (#781B24)"><span class="tc-shade-dot" style="background:#781B24;"></span><span>Blood Red</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Dark Purple" data-hex="#381F33" title="Dark Purple (#381F33)"><span class="tc-shade-dot" style="background:#381F33;"></span><span>Dark Purple</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Nude" data-hex="#C89D7C" title="Nude (#C89D7C)"><span class="tc-shade-dot" style="background:#C89D7C;"></span><span>Nude</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Rose Pink" data-hex="#E06A8B" title="Rose Pink (#E06A8B)"><span class="tc-shade-dot" style="background:#E06A8B;"></span><span>Rose Pink</span></button>
+        <button type="button" class="tc-shade-pill" data-name="Coral" data-hex="#F88379" title="Coral (#F88379)"><span class="tc-shade-dot" style="background:#F88379;"></span><span>Coral</span></button>
+      </div>
+    `;
+
+    bar.addEventListener("click", function (e) {
+      const btn = e.target.closest(".tc-shade-pill");
+      if (!btn) return;
+      const sName = btn.dataset.name;
+      const sHex = btn.dataset.hex;
+
+      let colourRows = coloursGroup.querySelectorAll(".inline-related:not(.empty-form)");
+      let targetRow = null;
+      for (let r of colourRows) {
+        const nameInp = r.querySelector("input[name$='-name']");
+        if (nameInp && (!nameInp.value || nameInp.value.trim() === "")) {
+          targetRow = r;
+          break;
+        }
+      }
+
+      if (!targetRow) {
+        const addBtn = coloursGroup.querySelector(".add-row a");
+        if (addBtn) {
+          addBtn.click();
+          colourRows = coloursGroup.querySelectorAll(".inline-related:not(.empty-form)");
+          targetRow = colourRows[colourRows.length - 1];
+        }
+      }
+
+      if (targetRow) {
+        const nameInp = targetRow.querySelector("input[name$='-name']");
+        const hexInp = targetRow.querySelector("input[name$='-color_code']");
+        const swatchCircle = targetRow.querySelector(".tc-colour-swatch-circle");
+        const cmSelect = targetRow.querySelector("select[name$='-color_master']");
+
+        if (nameInp) nameInp.value = sName;
+        if (hexInp) hexInp.value = sHex;
+        if (swatchCircle) swatchCircle.style.backgroundColor = sHex;
+
+        if (cmSelect) {
+          for (let opt of cmSelect.options) {
+            if (opt.textContent.toLowerCase().includes(sName.toLowerCase())) {
+              cmSelect.value = opt.value;
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    const anchor = coloursGroup.querySelector(".inline-related, fieldset, table") || coloursGroup.firstChild;
+    coloursGroup.insertBefore(bar, anchor);
+  }
+
   injectCollapsibleGuide();
+  injectLipstickPaletteBar();
   injectSizePresetsBar();
 });
 
