@@ -215,15 +215,45 @@
   </div>
 
   <!-- UPLOAD FORM -->
-  <form method="POST" enctype="multipart/form-data" action="{% url 'admin:products_product_import_excel' %}">
+  <form method="POST" enctype="multipart/form-data" action="{% url 'admin:products_product_import_excel' %}" id="tc_excel_upload_form">
     {% csrf_token %}
-    <div class="tc-upload-area">
-      <div style="font-size: 42px; margin-bottom: 12px;">📊 📦</div>
-      <label for="excel_file_input" style="display: block; font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 8px; cursor: pointer;">
-        Choose an Excel (.xlsx) or ZIP package (.zip)
-      </label>
-      <input type="file" id="excel_file_input" name="excel_file" accept=".xlsx, .zip" required style="margin: 12px auto; display: block; font-size: 13px;">
-      <p style="margin: 8px 0 0; color: #9ca3af; font-size: 12px;">Supported extensions: <strong>.xlsx</strong> or <strong>.zip</strong> (Maximum size: 50 MB)</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+      <!-- SLOT 1: EXCEL SPREADSHEET (OR COMBINED ZIP) -->
+      <div class="tc-upload-area" style="margin-bottom: 0; background: #ffffff; border: 2px dashed #ec4899; border-radius: 12px; padding: 26px 18px; text-align: center;">
+        <div style="font-size: 38px; margin-bottom: 8px;">📊</div>
+        <label for="excel_file_input" style="display: block; font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px; cursor: pointer;">
+          1. Select Product Excel File (.xlsx)
+        </label>
+        <p style="margin: 0 0 12px; color: #6b7280; font-size: 12.5px;">
+          Contains names, prices, categories, SKU &amp; image filenames (or a combined .zip)
+        </p>
+        <input type="file" id="excel_file_input" name="excel_file" accept=".xlsx, .xls, .csv, .zip" style="margin: 0 auto; display: block; font-size: 13px; max-width: 100%;">
+        <span style="display: inline-block; margin-top: 10px; font-size: 11.5px; color: #a51655; font-weight: 700;">★ Primary Spreadsheet</span>
+      </div>
+
+      <!-- SLOT 2: IMAGES ZIP ARCHIVE -->
+      <div class="tc-upload-area" style="margin-bottom: 0; background: #ffffff; border: 2px dashed #10b981; border-radius: 12px; padding: 26px 18px; text-align: center;">
+        <div style="font-size: 38px; margin-bottom: 8px;">📦 🖼️</div>
+        <label for="zip_images_input" style="display: block; font-size: 15px; font-weight: 700; color: #166534; margin-bottom: 4px; cursor: pointer;">
+          2. Select Product Images ZIP (.zip)
+        </label>
+        <p style="margin: 0 0 12px; color: #6b7280; font-size: 12.5px;">
+          (Optional) ZIP of photos matching the image filenames in your Excel
+        </p>
+        <input type="file" id="zip_images_input" name="zip_images_file" accept=".zip" style="margin: 0 auto; display: block; font-size: 13px; max-width: 100%;">
+        <span style="display: inline-block; margin-top: 10px; font-size: 11.5px; color: #059669; font-weight: 700;">✓ Auto-mapped to products &amp; Cloudinary</span>
+      </div>
+    </div>
+
+    <!-- HELPFUL TIPS CALLOUT -->
+    <div style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; color: #831843; line-height: 1.5;">
+      <strong>💡 Kaise Upload Karein (Easy Options):</strong>
+      <ul style="margin: 6px 0 0; padding-left: 20px;">
+        <li><strong>Excel + Images ek sath:</strong> Box 1 me apna <code>.xlsx</code> choose karein aur Box 2 me images ka <code>.zip</code> choose karein, fir button dabayein!</li>
+        <li><strong>Akela Excel:</strong> Agar aap online image links (URLs) use kar rahe hain ya local images nahi hain, toh sirf Box 1 me <code>.xlsx</code> choose karein.</li>
+        <li><strong>Single Combined ZIP:</strong> Agar aapne Excel aur Images dono ko ek hi ZIP folder me compress kiya hai, toh us ZIP ko direct Box 1 me upload kar sakte hain.</li>
+      </ul>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -235,6 +265,17 @@
       </button>
     </div>
   </form>
+
+  <script>
+    document.getElementById("tc_excel_upload_form").addEventListener("submit", function(e) {
+      var f1 = document.getElementById("excel_file_input").files.length;
+      var f2 = document.getElementById("zip_images_input").files.length;
+      if (f1 === 0 && f2 === 0) {
+        e.preventDefault();
+        alert("Kripya pehle apna Excel (.xlsx) file ya ZIP package select karein.");
+      }
+    });
+  </script>
 
 </div>
 {% endblock %}

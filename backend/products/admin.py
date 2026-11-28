@@ -2014,8 +2014,12 @@ class ProductAdmin(admin.ModelAdmin):
            Images are staged in a secure temp folder and automatically mapped by filename.
         """
         if request.method == "POST":
-            uploaded_file = request.FILES.get("excel_file") or request.FILES.get("zip_file")
-            if not uploaded_file:
+            # Collect all files uploaded across single or multiple inputs
+            all_files = []
+            for k in ("excel_file", "zip_file", "zip_images_file", "files"):
+                all_files.extend(request.FILES.getlist(k))
+
+            if not all_files:
                 return render(
                     request,
                     "admin/products/product/excel_import.html",
@@ -2023,19 +2027,62 @@ class ProductAdmin(admin.ModelAdmin):
                         **self.admin_site.each_context(request),
                         "title": "Import Products from Excel (.xlsx or .zip)",
                         "opts": self.model._meta,
-                        "error_message": "Please select a valid .xlsx or .zip file to upload.",
+                        "error_message": "Please select a valid .xlsx Excel file or .zip package to upload.",
                     }
                 )
 
-            fname = uploaded_file.name.lower()
+            excel_upload = None
+            zip_upload = None
+
+            for f in all_files:
+                fn = f.name.lower()
+                if fn.endswith((".xlsx", ".xls", ".csv")) and not excel_upload:
+                    excel_upload = f
+                elif fn.endswith(".zip") and not zip_upload:
+                    zip_upload = f
+
             token = f"tc_imp_{uuid.uuid4().hex[:12]}"
             image_files_map = {}
             excel_bytes = None
             temp_img_dir = None
 
-            if fname.endswith(".zip"):
+            # Case 1: Separate Excel file + separate ZIP archive of images uploaded together in one go
+            if excel_upload and zip_upload:
+                excel_bytes = excel_upload
                 try:
-                    zf = zipfile.ZipFile(uploaded_file)
+                    zf = zipfile.ZipFile(zip_upload)
+                    temp_img_dir = os.path.join(tempfile.gettempdir(), f"tc_import_imgs_{token}")
+                    os.makedirs(temp_img_dir, exist_ok=True)
+                    for info in zf.infolist():
+                        if info.is_dir() or "__macosx" in info.filename.lower() or info.filename.startswith("."):
+                            continue
+                        clean_path = sanitize_zip_path(info.filename)
+                        base_name = os.path.basename(clean_path).strip()
+                        _, ext = os.path.splitext(base_name.lower())
+                        if ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"):
+                            img_data = zf.read(info.filename)
+                            save_path = os.path.join(temp_img_dir, base_name.lower())
+                            with open(save_path, "wb") as f_img:
+                                f_img.write(img_data)
+                            image_files_map[base_name.lower()] = img_data
+                except Exception as e:
+                    if temp_img_dir and os.path.exists(temp_img_dir):
+                        shutil.rmtree(temp_img_dir, ignore_errors=True)
+                    return render(
+                        request,
+                        "admin/products/product/excel_import.html",
+                        {
+                            **self.admin_site.each_context(request),
+                            "title": "Import Products from Excel (.xlsx or .zip)",
+                            "opts": self.model._meta,
+                            "error_message": f"Failed to extract product images ZIP archive: {str(e)}",
+                        }
+                    )
+
+            # Case 2: Only a ZIP was uploaded (could contain spreadsheet + images)
+            elif zip_upload and not excel_upload:
+                try:
+                    zf = zipfile.ZipFile(zip_upload)
                     spreadsheet_name = None
                     temp_img_dir = os.path.join(tempfile.gettempdir(), f"tc_import_imgs_{token}")
                     os.makedirs(temp_img_dir, exist_ok=True)
@@ -2067,7 +2114,7 @@ class ProductAdmin(admin.ModelAdmin):
                                 **self.admin_site.each_context(request),
                                 "title": "Import Products from Excel (.xlsx or .zip)",
                                 "opts": self.model._meta,
-                                "error_message": "No .xlsx or .csv spreadsheet found inside the ZIP archive. Please ensure your spreadsheet is included in the ZIP file.",
+                                "error_message": "No .xlsx or .csv spreadsheet found inside this ZIP archive. If your images are in this ZIP, please also select your Excel (.xlsx) file in the spreadsheet box below.",
                             }
                         )
 
@@ -2085,8 +2132,11 @@ class ProductAdmin(admin.ModelAdmin):
                             "error_message": f"Failed to extract ZIP archive: {str(e)}",
                         }
                     )
-            elif fname.endswith(".xlsx") or fname.endswith(".xls"):
-                excel_bytes = uploaded_file
+
+            # Case 3: Only an Excel file was uploaded
+            elif excel_upload:
+                excel_bytes = excel_upload
+
             else:
                 return render(
                     request,
@@ -2095,7 +2145,7 @@ class ProductAdmin(admin.ModelAdmin):
                         **self.admin_site.each_context(request),
                         "title": "Import Products from Excel (.xlsx or .zip)",
                         "opts": self.model._meta,
-                        "error_message": "Unsupported file format. Please upload a .xlsx Excel file or a .zip archive containing an Excel file + images.",
+                        "error_message": "Unsupported file format. Please upload a .xlsx Excel file and/or a .zip archive.",
                     }
                 )
 
