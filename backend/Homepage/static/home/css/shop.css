@@ -1216,3 +1216,38 @@
         display: none;
     }
 }
+
+/* Product Card Interactive Colour Swatches */
+.tc-card-swatches {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 5px 0 7px;
+    flex-wrap: wrap;
+}
+
+.tc-card-swatch-dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0, 0, 0, 0.2);
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.tc-card-swatch-dot:hover {
+    transform: scale(1.25);
+    border-color: #a51655 !important;
+    box-shadow: 0 0 0 2px rgba(165, 22, 85, 0.25) !important;
+}
+
+.tc-card-swatch-dot.active {
+    border: 2px solid #a51655 !important;
+    box-shadow: 0 0 0 2.5px rgba(165, 22, 85, 0.3) !important;
+    transform: scale(1.15);
+}

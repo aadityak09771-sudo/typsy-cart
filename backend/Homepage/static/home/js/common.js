@@ -915,6 +915,63 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // 5. Colour swatch dot click on product cards
+        const swatchDot = e.target.closest(".tc-card-swatch-dot");
+        if (swatchDot) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = swatchDot.closest("[data-card-product-id]");
+            if (!card) return;
+
+            // Highlight active swatch dot in this card
+            const allDots = card.querySelectorAll(".tc-card-swatch-dot");
+            allDots.forEach(d => {
+                d.classList.remove("active");
+                d.style.borderColor = "rgba(0,0,0,0.2)";
+                d.style.boxShadow = "none";
+            });
+            swatchDot.classList.add("active");
+            swatchDot.style.borderColor = "#a51655";
+            swatchDot.style.boxShadow = "0 0 0 2px rgba(165,22,85,0.3)";
+
+            const colourName = swatchDot.dataset.colourName || "";
+            const colourImg = swatchDot.dataset.img || "";
+            const pId = card.dataset.cardProductId || card.dataset.id;
+
+            // Preview image on the card
+            if (colourImg) {
+                const slider = card.querySelector(".tc-card-slider");
+                if (slider) {
+                    let images = [];
+                    try { images = JSON.parse(slider.dataset.images || "[]"); } catch {}
+                    const imgIdx = images.indexOf(colourImg);
+                    if (imgIdx >= 0) {
+                        navigateSlider(slider, imgIdx);
+                    } else {
+                        const imgEl = slider.querySelector(".tc-slider-img");
+                        if (imgEl) imgEl.src = colourImg;
+                    }
+                } else {
+                    const imgEl = card.querySelector(".tc-card-img, .product-image");
+                    if (imgEl) imgEl.src = colourImg;
+                }
+            }
+
+            // Update product link(s) on the card to deep-link to this colour
+            if (colourName && pId) {
+                const deepUrl = `/product/${pId}/?colour=${encodeURIComponent(colourName)}`;
+                const track = card.querySelector(".tc-slider-track");
+                if (track) {
+                    track.setAttribute("onclick", `if(window.saveShopNavState)window.saveShopNavState(); window.location.href='${deepUrl}';`);
+                }
+                const titleLink = card.querySelector("a.tc-card-name, a.tc-card-title, a.tc-card-link-title, h2 a, h3 a");
+                if (titleLink) {
+                    titleLink.href = deepUrl;
+                }
+            }
+            return;
+        }
+
         // Helper to extract complete product card data safely
         function extractCardProductData(card) {
             const pId = card.dataset.cardProductId || card.dataset.id;
@@ -1014,6 +1071,22 @@ document.addEventListener("DOMContentLoaded", () => {
             changeCartQtyGlobal(pId, -1, vId);
             syncCardStepper(card);
             return;
+        }
+    });
+
+    // Hover over colour swatch dot on product cards previews that shade's image
+    document.addEventListener("mouseover", e => {
+        const swatchDot = e.target.closest(".tc-card-swatch-dot");
+        if (swatchDot) {
+            const card = swatchDot.closest("[data-card-product-id]");
+            if (!card) return;
+            const colourImg = swatchDot.dataset.img;
+            if (colourImg) {
+                const imgEl = card.querySelector(".tc-slider-img, .tc-card-img, .product-image");
+                if (imgEl && imgEl.src !== colourImg) {
+                    imgEl.src = colourImg;
+                }
+            }
         }
     });
 

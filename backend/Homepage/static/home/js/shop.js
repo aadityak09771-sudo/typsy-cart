@@ -613,12 +613,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedCategory = categoryFilter.value;
 
         let filtered = products.filter(product => {
+            const colourNames = Array.isArray(product.colours) ? product.colours.map(c => c.name).join(" ") : "";
+            const variantNames = Array.isArray(product.variants) ? product.variants.map(v => v.variant_name || v.title || "").join(" ") : "";
             const searchableText = [
                 product.name,
                 product.description,
                 product.category,
                 product.subcategory,
-                product.brand
+                product.brand,
+                colourNames,
+                variantNames
             ].join(" ").toLowerCase();
 
             return (
@@ -700,37 +704,73 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
+            // Check if query specifically matched any colour of this product
+            let matchedColour = null;
+            if (query && isVariable && Array.isArray(product.colours)) {
+                matchedColour = product.colours.find(c => {
+                    const cName = (c.name || "").toLowerCase();
+                    return query.includes(cName) || cName.includes(query);
+                }) || null;
+            }
+
+            const initialColour = matchedColour || null;
+            const initialColourName = initialColour ? initialColour.name : "";
+            const initialColourImg = (initialColour && initialColour.image_url) ? initialColour.image_url : null;
+
+            // If a specific colour is matched from search, show its photo first
+            let displayImages = images;
+            if (initialColourImg) {
+                displayImages = [initialColourImg, ...images.filter(img => img !== initialColourImg)];
+            }
+
+            const initialProductUrl = initialColourName
+                ? `/product/${product.id}/?colour=${encodeURIComponent(initialColourName)}`
+                : `/product/${product.id}/`;
+
             // Colours indicator
             let coloursIndicatorHtml = "";
             if (isVariable && Array.isArray(product.colours) && product.colours.length > 0) {
+                const maxDots = 7;
                 coloursIndicatorHtml = `
-                    <div class="product-colours-indicator" style="display:flex; align-items:center; gap:5px; margin: 4px 0 6px;">
-                        ${product.colours.slice(0, 5).map(c => `
-                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${escapeHTML(c.color_code || '#000')}; border:1px solid rgba(0,0,0,0.15);" title="${escapeHTML(c.name)}"></span>
-                        `).join("")}
-                        ${product.colours.length > 5 ? `<span style="font-size:10px; color:#64748b; font-weight:700;">+${product.colours.length - 5}</span>` : ""}
+                    <div class="product-colours-indicator tc-card-swatches" style="display:flex; align-items:center; gap:6px; margin: 5px 0 7px; flex-wrap:wrap;">
+                        ${product.colours.slice(0, maxDots).map(c => {
+                            const isDotActive = initialColour ? (c.id === initialColour.id || c.name === initialColour.name) : false;
+                            return `
+                                <button
+                                    type="button"
+                                    class="tc-card-swatch-dot ${isDotActive ? 'active' : ''}"
+                                    data-colour-id="${c.id}"
+                                    data-colour-name="${escapeHTML(c.name)}"
+                                    data-img="${escapeHTML(c.image_url || '')}"
+                                    title="${escapeHTML(c.name)}"
+                                    aria-label="${escapeHTML(c.name)}"
+                                    style="width:15px; height:15px; border-radius:50%; background-color:${escapeHTML(c.color_code || '#000')}; border:${isDotActive ? '2.5px solid #a51655' : '1.5px solid rgba(0,0,0,0.2)'}; padding:0; cursor:pointer; outline:none; transition:transform 0.15s ease, box-shadow 0.15s ease; box-shadow:${isDotActive ? '0 0 0 2px rgba(165,22,85,0.3)' : 'none'};"
+                                ></button>
+                            `;
+                        }).join("")}
+                        ${product.colours.length > maxDots ? `<span style="font-size:11px; color:#64748b; font-weight:700; cursor:pointer;" title="View all ${product.colours.length} shades" onclick="window.location.href='${initialProductUrl}';">+${product.colours.length - maxDots}</span>` : ""}
                     </div>
                 `;
             }
 
             // Slider markup - click on track navigates to product details, while arrows & dots only navigate photos
             const sliderHtml = `
-                <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(images))}" data-current-index="0">
+                <div class="tc-card-slider" data-images="${escapeHTML(JSON.stringify(displayImages))}" data-current-index="0">
                     ${discountPct > 0 ? `<span class="tc-card-discount-badge tc-discount-badge">${discountPct}% OFF</span>` : ""}
-                    <div class="tc-slider-track" onclick="if(window.saveShopNavState)window.saveShopNavState(); window.location.href='/product/${product.id}/';" style="cursor:pointer;" title="View ${escapeHTML(product.name)}">
+                    <div class="tc-slider-track" onclick="if(window.saveShopNavState)window.saveShopNavState(); window.location.href='${initialProductUrl}';" style="cursor:pointer;" title="View ${escapeHTML(product.name)}">
                         <img
                             class="product-image tc-slider-img"
-                            src="${escapeHTML(images[0])}"
+                            src="${escapeHTML(displayImages[0])}"
                             alt="${altText}"
                             loading="lazy"
                             onerror="if (this.getAttribute('data-fallback') !== '1') { this.setAttribute('data-fallback', '1'); this.src = '${fallbackUrl}'; this.classList.add('tc-img-fallback'); }"
                         >
                     </div>
-                    ${images.length > 1 ? `
+                    ${displayImages.length > 1 ? `
                         <button type="button" class="tc-slider-arrow tc-slider-prev" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Previous image">‹</button>
                         <button type="button" class="tc-slider-arrow tc-slider-next" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Next image">›</button>
                         <div class="tc-slider-dots">
-                            ${images.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="event.preventDefault(); event.stopPropagation();"></span>`).join("")}
+                            ${displayImages.map((_, i) => `<span class="tc-slider-dot ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="event.preventDefault(); event.stopPropagation();"></span>`).join("")}
                         </div>
                     ` : ""}
                 </div>
@@ -774,7 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <h2 style="margin: 4px 0 2px;">
-                        <a href="/product/${product.id}/" style="color:inherit; text-decoration:none;">
+                        <a href="${initialProductUrl}" class="tc-card-link-title" style="color:inherit; text-decoration:none;">
                             ${escapeHTML(product.name)}
                         </a>
                     </h2>

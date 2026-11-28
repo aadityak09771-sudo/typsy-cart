@@ -170,6 +170,25 @@ Shop everyday essentials, fresh groceries, personal hygiene, period care, safety
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            {% if p.is_variable and p.colours %}
+                                <div class="product-colours-indicator tc-card-swatches" style="display:flex; align-items:center; gap:5px; margin: 5px 0 7px; flex-wrap:wrap;">
+                                    {% for c in p.colours|slice:":7" %}
+                                    <button
+                                        type="button"
+                                        class="tc-card-swatch-dot"
+                                        data-colour-id="{{ c.id }}"
+                                        data-colour-name="{{ c.name }}"
+                                        data-img="{{ c.image_url }}"
+                                        title="{{ c.name }}"
+                                        aria-label="{{ c.name }}"
+                                        style="width:14px; height:14px; border-radius:50%; background-color:{{ c.color_code|default:'#000' }}; border:1.5px solid rgba(0,0,0,0.2); padding:0; cursor:pointer; outline:none; transition:transform 0.15s ease, box-shadow 0.15s ease;"
+                                    ></button>
+                                    {% endfor %}
+                                    {% if p.colours|length > 7 %}
+                                        <span style="font-size:10px; color:#64748b; font-weight:700; cursor:pointer;" title="View all {{ p.colours|length }} shades" onclick="window.location.href='/product/{{ p.id }}/';">+{{ p.colours|length|add:"-7" }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                             <div class="tc-card-bottom">
                                 <div class="tc-card-price-row">
                                     <span class="tc-card-curr-price tc-current-price tc-price-current">₹{{ p.price }}</span>

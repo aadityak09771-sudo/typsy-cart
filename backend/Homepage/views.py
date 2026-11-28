@@ -90,6 +90,15 @@ def serialize_homepage_product(p):
         "unit_name": p.unit or "",
         "is_variable": is_var,
         "variants": variants_list,
+        "colours": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "color_code": c.color_code,
+                "image_url": c.get_primary_image_url(),
+            }
+            for c in p.colours.all() if c.is_active
+        ] if is_var else [],
         "selected_variant_id": first_var.id if first_var else "",
         "in_stock": in_stock,
         "image_url": p.get_image_url(),
@@ -393,7 +402,7 @@ def search_view(request):
     products_qs = Product.objects.filter(is_active=True).select_related(
         "category_ref", "subcategory_ref"
     ).prefetch_related(
-        "variants", "colours", "sizes", "gallery_images"
+        "variants", "colours", "colours__images", "sizes", "gallery_images"
     )
 
     if query:
@@ -410,7 +419,9 @@ def search_view(request):
                 Q(product_number__icontains=w) |
                 Q(description__icontains=w) |
                 Q(variants__sku__icontains=w) |
-                Q(variants__variant_name__icontains=w)
+                Q(variants__variant_name__icontains=w) |
+                Q(colours__name__icontains=w) |
+                Q(colours__color_master__name__icontains=w)
             )
         products_qs = products_qs.filter(q_filter).distinct()
 
@@ -599,6 +610,9 @@ def product_detail(request, pk):
     elif product.subcategory:
         subcategory_slug = slugify(product.subcategory)
 
+    requested_colour = (request.GET.get("colour", "") or request.GET.get("color", "")).strip()
+    requested_colour_id = (request.GET.get("colour_id", "") or request.GET.get("color_id", "")).strip()
+
     context = {
         "product": product,
         "is_variable": is_variable,
@@ -609,6 +623,8 @@ def product_detail(request, pk):
         "unit_selector_label": product.unit_selector_label,
         "category_slug": category_slug,
         "subcategory_slug": subcategory_slug,
+        "requested_colour": requested_colour,
+        "requested_colour_id": requested_colour_id,
     }
 
     if is_variable:

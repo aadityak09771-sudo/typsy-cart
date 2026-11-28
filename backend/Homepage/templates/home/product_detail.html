@@ -1250,6 +1250,7 @@
                             class="tc-colour-btn"
                             data-colour-id="{{ c.id }}"
                             data-colour-name="{{ c.get_display_label }}"
+                            data-raw-colour-name="{{ c.name }}"
                             data-colour-code="{{ c.color_code }}"
                             aria-label="Select {{ c.get_display_label }}"
                         >
@@ -1874,6 +1875,18 @@ document.addEventListener("DOMContentLoaded", function () {
             updateGalleryForColour(selectedColourId);
             updateSizeAvailability();
 
+            // Synchronize URL query parameter without full page reload
+            try {
+                const colParam = btn.dataset.rawColourName || btn.dataset.colourName;
+                if (colParam) {
+                    const pageUrl = new URL(window.location.href);
+                    pageUrl.searchParams.set("colour", colParam);
+                    window.history.replaceState(null, "", pageUrl.toString());
+                }
+            } catch (e) {
+                console.warn("Could not sync colour to URL:", e);
+            }
+
             // Auto-select first available size for this colour if none active or current is disabled
             const currentActiveSize = document.querySelector(".tc-size-btn.active");
             if (!currentActiveSize || currentActiveSize.classList.contains("disabled")) {
@@ -1902,15 +1915,80 @@ document.addEventListener("DOMContentLoaded", function () {
             if (selectedSizeNameEl) {
                 selectedSizeNameEl.textContent = btn.dataset.sizeName;
             }
+
+            // Synchronize size in URL if applicable
+            try {
+                if (btn.dataset.sizeName) {
+                    const pageUrl = new URL(window.location.href);
+                    pageUrl.searchParams.set("size", btn.dataset.sizeName);
+                    window.history.replaceState(null, "", pageUrl.toString());
+                }
+            } catch (e) {}
+
             syncVariantState();
         });
     });
 
-    // Auto-select first colour by default if available; otherwise auto-select first option
+    // Auto-select colour: check URL query param (?colour= or ?colour_id=) first, then fallback to first colour
     if (hasColours) {
-        const firstColourBtn = document.querySelector(".tc-colour-btn");
-        if (firstColourBtn) {
-            firstColourBtn.click();
+        let targetColourBtn = null;
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reqColour = (urlParams.get("colour") || urlParams.get("color") || "{{ requested_colour|escapejs }}").trim().toLowerCase();
+            const reqColourId = (urlParams.get("colour_id") || urlParams.get("color_id") || "{{ requested_colour_id|escapejs }}").trim();
+
+            const allColourBtns = Array.from(document.querySelectorAll(".tc-colour-btn"));
+
+            if (reqColourId) {
+                targetColourBtn = allColourBtns.find(b => b.dataset.colourId === reqColourId);
+            }
+
+            if (!targetColourBtn && reqColour) {
+                // 1. Exact match on raw name or display name
+                targetColourBtn = allColourBtns.find(b => {
+                    const raw = (b.dataset.rawColourName || "").trim().toLowerCase();
+                    const disp = (b.dataset.colourName || "").trim().toLowerCase();
+                    return raw === reqColour || disp === reqColour;
+                });
+
+                // 2. Substring match (e.g. "cherry" matches "Cherry Red", or "cherry red lipstick" matches "cherry red")
+                if (!targetColourBtn) {
+                    targetColourBtn = allColourBtns.find(b => {
+                        const raw = (b.dataset.rawColourName || "").trim().toLowerCase();
+                        const disp = (b.dataset.colourName || "").trim().toLowerCase();
+                        return (raw && (reqColour.includes(raw) || raw.includes(reqColour))) ||
+                               (disp && (reqColour.includes(disp) || disp.includes(reqColour)));
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn("Error resolving requested colour from URL:", e);
+        }
+
+        if (!targetColourBtn) {
+            targetColourBtn = document.querySelector(".tc-colour-btn");
+        }
+
+        if (targetColourBtn) {
+            targetColourBtn.click();
+
+            // Check if size was also requested in URL
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const reqSize = (urlParams.get("size") || "").trim().toLowerCase();
+                const reqSizeId = (urlParams.get("size_id") || "").trim();
+                if (reqSize || reqSizeId) {
+                    const allSizeBtns = Array.from(document.querySelectorAll(".tc-size-btn:not(.disabled)"));
+                    const targetSizeBtn = allSizeBtns.find(b => {
+                        if (reqSizeId && b.dataset.sizeId === reqSizeId) return true;
+                        if (reqSize && (b.dataset.sizeName || "").trim().toLowerCase() === reqSize) return true;
+                        return false;
+                    });
+                    if (targetSizeBtn) {
+                        targetSizeBtn.click();
+                    }
+                }
+            } catch (e) {}
         }
     } else {
         updateSizeAvailability();

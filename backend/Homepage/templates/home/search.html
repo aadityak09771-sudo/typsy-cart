@@ -315,6 +315,26 @@
                         {% endfor %}
                     </div>
                 {% endif %}
+
+                {% if p.is_variable and p.colours.all %}
+                    <div class="product-colours-indicator tc-card-swatches" style="display:flex; align-items:center; gap:6px; margin: 6px 0 8px; flex-wrap:wrap;">
+                        {% for c in p.colours.all|slice:":7" %}
+                        <button
+                            type="button"
+                            class="tc-card-swatch-dot"
+                            data-colour-id="{{ c.id }}"
+                            data-colour-name="{{ c.name }}"
+                            data-img="{{ c.get_primary_image_url }}"
+                            title="{{ c.name }}"
+                            aria-label="{{ c.name }}"
+                            style="width:15px; height:15px; border-radius:50%; background-color:{{ c.color_code|default:'#000' }}; border:1.5px solid rgba(0,0,0,0.2); padding:0; cursor:pointer; outline:none; transition:transform 0.15s ease, box-shadow 0.15s ease;"
+                        ></button>
+                        {% endfor %}
+                        {% if p.colours.all|length > 7 %}
+                            <span style="font-size:11px; color:#64748b; font-weight:700; cursor:pointer;" title="View all {{ p.colours.all|length }} shades" onclick="window.location.href='/product/{{ p.id }}/';">+{{ p.colours.all|length|add:"-7" }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
 
             <div class="tc-card-pricing" style="margin-top:auto;">
@@ -365,4 +385,25 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const searchParam = new URLSearchParams(window.location.search).get("q") || "";
+    if (searchParam) {
+        const qLower = searchParam.trim().toLowerCase();
+        document.querySelectorAll(".tc-product-card").forEach(card => {
+            const dots = Array.from(card.querySelectorAll(".tc-card-swatch-dot"));
+            const matchedDot = dots.find(d => {
+                const name = (d.dataset.colourName || "").toLowerCase();
+                return qLower.includes(name) || name.includes(qLower);
+            });
+            if (matchedDot) {
+                matchedDot.click();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
